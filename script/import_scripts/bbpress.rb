@@ -19,6 +19,16 @@ class ImportScripts::Bbpress < ImportScripts::Base
       #password: "password",
       database: BB_PRESS_DB
     )
+    puts "loading post mappings..."
+    @post_number_map = {}
+    Post.pluck(:id, :post_number).each do |post_id, post_number|
+      @post_number_map[post_id] = post_number
+    end
+  end
+
+  def created_post(post)
+    @post_number_map[post.id] = post.post_number
+    super
   end
 
   def table_name(name)
@@ -74,13 +84,17 @@ class ImportScripts::Bbpress < ImportScripts::Base
                           post_content,
                           post_title,
                           post_type,
+                          post_name,
+                          meta_value as reply_to,
                           post_parent
-                     FROM #{table_name 'posts'}
-                    WHERE post_status <> 'spam'
+                     FROM #{table_name 'posts'} p
+          LEFT OUTER JOIN (select * from #{table_name 'postmeta'} where meta_key='_bbp_reply_to') pm
+                       ON p.ID = pm.post_id
+                    WHERE post_status = 'publish'
                       AND post_type IN ('topic', 'reply')
                  ORDER BY id
                     LIMIT #{batch_size}
-                   OFFSET #{offset}", cache_rows: false)
+                   OFFSET #{offset}", cache_rows: true)
 
       break if results.size < 1
 
@@ -97,16 +111,18 @@ class ImportScripts::Bbpress < ImportScripts::Base
           mapped[:raw] = mapped[:raw].gsub("<pre><code>", "```\n").gsub("</code></pre>", "\n```")
         end
         mapped[:created_at] = post["post_date"]
-        mapped[:custom_fields] = {import_id: post["id"]}
+        mapped[:custom_fields] = {import_id: post["id"], import_slug: post["post_name"]}
 
         if post["post_type"] == "topic"
           mapped[:category] = category_id_from_imported_category_id(post["post_parent"])
           mapped[:title] = CGI.unescapeHTML post["post_title"]
+          mapped[:slug] = post["post_name"]
         else
           parent = topic_lookup_from_imported_post_id(post["post_parent"])
           if parent
             mapped[:topic_id] = parent[:topic_id]
-            mapped[:reply_to_post_number] = parent[:post_number] if parent[:post_number] > 1
+            reply_to_post_id = post_id_from_imported_post_id(post["reply_to"]) if post["reply_to"]
+            mapped[:reply_to_post_number] = @post_number_map[reply_to_post_id] if @post_number_map[reply_to_post_id]
           else
             puts "Skipping #{post["id"]}: #{post["post_content"][0..40]}"
             skip = true

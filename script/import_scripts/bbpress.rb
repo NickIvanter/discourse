@@ -28,7 +28,6 @@ class ImportScripts::Bbpress < ImportScripts::Base
   def execute
     users_results = @client.query("
        SELECT id,
-              user_login username,
               display_name name,
               user_url website,
               user_email email,

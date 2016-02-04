@@ -384,6 +384,7 @@ GEM
     thread_safe (0.3.5)
     tilt (1.4.1)
     timecop (0.8.0)
+    translit (0.1.5)
     trollop (2.1.2)
     tzinfo (1.2.2)
       thread_safe (~> 0.1)
@@ -494,6 +495,7 @@ DEPENDENCIES
   therubyracer
   thin
   timecop
+  translit
   uglifier
   unf
   unicorn

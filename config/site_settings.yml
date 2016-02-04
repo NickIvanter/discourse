@@ -57,7 +57,7 @@ required:
 
 basic:
   default_locale:
-    default: 'en'
+    default: 'ru'
     enum: 'LocaleSiteSetting'
     refresh: true
     shadowed_by_global: true
@@ -204,7 +204,7 @@ login:
     default: false
   login_required:
     client: true
-    default: false
+    default: true
   must_approve_users:
     client: true
     default: false
@@ -899,7 +899,7 @@ uncategorized:
     default: true
 
   slug_generation_method:
-    default: 'ascii'
+    default: 'encoded'
     enum: 'SlugSetting'
 
   permalink_normalizations:

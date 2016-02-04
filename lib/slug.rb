@@ -34,6 +34,7 @@ module Slug
           .gsub(/[:\/\?#\[\]@!\$&'\(\)\*\+,;=_\.~%\\`^\s|\{\}"<>]+/, '') # :/?#[]@!$&'()*+,;=_.~%\`^|{}"<>
           .gsub(/\A-+|-+\z/, '') # remove possible trailing and preceding dashes
           .squeeze('-') # squeeze continuous dashes to prettify slug
+          .mb_chars.downcase.to_s
   end
 
   def self.none_generator(string)

@@ -52,8 +52,8 @@ class ImportScripts::Bbpress < ImportScripts::Base
 
     puts '', '', "creating categories"
 
-    create_categories(@client.query("SELECT id, post_name, post_parent from #{table_name 'posts'} WHERE post_type = 'forum' AND post_name != '' ORDER BY post_parent")) do |c|
-      result = {id: c['id'], name: c['post_name']}
+    create_categories(@client.query("SELECT id, post_title, post_parent from #{table_name 'posts'} WHERE post_type = 'forum' AND post_title != '' ORDER BY post_parent")) do |c|
+      result = {id: c['id'], name: c['post_title']}
       parent_id = c['post_parent'].to_i
       if parent_id > 0
         result[:parent_category_id] = category_id_from_imported_category_id(parent_id)

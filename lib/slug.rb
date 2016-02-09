@@ -26,12 +26,9 @@ module Slug
   end
 
   def self.encoded_generator(string)
-    # This generator will sanitize almost all special characters,
-    # including reserved characters from RFC3986.
-    # See also URI::REGEXP::PATTERN.
     string.strip
           .gsub(/\s+/, '-')
-          .gsub(/[:\/\?#\[\]@!\$&'\(\)\*\+,;=_\.~%\\`^\s|\{\}"<>]+/, '') # :/?#[]@!$&'()*+,;=_.~%\`^|{}"<>
+          .gsub(/\P{Alnum}/, '-') # replace any non-alphanumeric with a dash
           .gsub(/\A-+|-+\z/, '') # remove possible trailing and preceding dashes
           .squeeze('-') # squeeze continuous dashes to prettify slug
           .mb_chars.downcase.to_s

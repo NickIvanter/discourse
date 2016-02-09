@@ -39,7 +39,6 @@ class ImportScripts::Bbpress < ImportScripts::Base
     users_results = @client.query("
        SELECT id,
               display_name name,
-              user_url website,
               user_email email,
               user_registered created_at
          FROM #{table_name 'users'}", cache_rows: false)

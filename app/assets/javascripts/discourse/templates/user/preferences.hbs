@@ -130,31 +130,10 @@
       </div>
     {{/if}}
 
-    <div class="control-group pref-bio">
-      <label class="control-label">{{i18n 'user.bio'}}</label>
-      <div class="controls bio-composer">
-        {{d-editor value=model.bio_raw}}
-      </div>
-    </div>
-
     {{#each uf in userFields}}
       {{user-field field=uf.field value=uf.value}}
     {{/each}}
     <div class='clearfix'></div>
-
-    <div class="control-group pref-location">
-      <label class="control-label">{{i18n 'user.location'}}</label>
-      <div class="controls">
-        {{input type="text" value=model.location class="input-xxlarge" id='edit-location'}}
-      </div>
-    </div>
-
-    <div class="control-group pref-website">
-      <label class="control-label">{{i18n 'user.website'}}</label>
-      <div class="controls">
-        {{input type="text" value=model.website class="input-xxlarge"}}
-      </div>
-    </div>
 
     <div class="control-group pref-card-badge">
       <label class="control-label">{{i18n 'user.card_badge.title'}}</label>

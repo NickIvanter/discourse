@@ -7,7 +7,7 @@ module Email
       builder = Email::MessageBuilder.new(*builder_args)
       headers(builder.header_args) if builder.header_args.present?
       mail(builder.build_args).tap { |message|
-        if message and h = builder.html_part
+        if message && h = builder.html_part
           message.html_part = h
         end
       }
@@ -34,9 +34,9 @@ module Email
           @template_args[:respond_instructions] = ''
         else
           @template_args[:respond_instructions] = if allow_reply_by_email?
-            I18n.t('user_notifications.reply_by_email', @template_args)
+            @opts[:private_reply] ? I18n.t('user_notifications.reply_by_email_pm', @template_args) : I18n.t('user_notifications.reply_by_email', @template_args)
           else
-            I18n.t('user_notifications.visit_link_to_respond', @template_args)
+            @opts[:private_reply] ? I18n.t('user_notifications.visit_link_to_respond_pm', @template_args) : I18n.t('user_notifications.visit_link_to_respond', @template_args)
           end
         end
       end

@@ -496,10 +496,11 @@ email:
   email_time_window_mins:
     default: 10
     client: true
+  private_email_time_window_seconds: 20
   email_posts_context: 5
   digest_min_excerpt_length: 100
   digest_topics: 20
-  suppress_digest_email_after_days: 365
+  delete_digest_email_after_days: 365
   disable_digest_emails:
     default: false
     client: true
@@ -538,6 +539,9 @@ email:
     default: true
   unsubscribe_via_email_footer:
     default: false
+  delete_email_logs_after_days:
+    default: 365
+    min: 0
 
 files:
   max_image_size_kb: 3072

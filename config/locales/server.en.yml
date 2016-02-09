@@ -1038,6 +1038,7 @@ en:
     create_thumbnails: "Create thumbnails and lightbox images that are too large to fit in a post."
 
     email_time_window_mins: "Wait (n) minutes before sending any notification emails, to give users a chance to edit and finalize their posts."
+    private_email_time_window_seconds: "Wait (n) seconds before sending any private notification emails, to give users a chance to edit and finalize their posts."
     email_posts_context: "How many prior replies to include as context in notification emails."
     flush_timings_secs: "How frequently we flush timing data to the server, in seconds."
     title_max_word_length: "The maximum allowed word length, in characters, in a topic title."
@@ -1115,6 +1116,8 @@ en:
     unsubscribe_via_email: "Allow users to unsubscribe from emails by sending an email with 'unsubscribe' in the subject or body"
     unsubscribe_via_email_footer: "Attach an unsubscribe link to the footer of sent emails"
 
+    delete_email_logs_after_days: "Delete email logs after (N) days. 0 to keep indefinitely"
+
     pop3_polling_enabled: "Poll via POP3 for email replies."
     pop3_polling_ssl: "Use SSL while connecting to the POP3 server. (Recommended)"
     pop3_polling_period_mins: "The period in minutes between checking the POP3 account for email. NOTE: requires restart."
@@ -1144,7 +1147,7 @@ en:
     automatically_download_gravatars: "Download Gravatars for users upon account creation or email change."
     digest_topics: "The maximum number of topics to display in the email digest."
     digest_min_excerpt_length: "Minimum post excerpt in the email digest, in characters."
-    suppress_digest_email_after_days: "Suppress digest emails for users not seen on the site for more than (n) days."
+    delete_digest_email_after_days: "Suppress digest emails for users not seen on the site for more than (n) days."
     disable_digest_emails: "Disable digest emails for all users."
 
     detect_custom_avatars: "Whether or not to check that users have uploaded custom profile pictures."
@@ -1979,8 +1982,10 @@ en:
       description: "Not interested in getting these emails? No problem! Click below to unsubscribe instantly:"
 
     header_instructions: ''
-    reply_by_email: "[Visit Topic](%{base_url}%{url}) or reply to this email to respond."
-    visit_link_to_respond: "[Visit Topic](%{base_url}%{url}) to respond."
+    reply_by_email: "[Visit Topic](%{base_url}%{url}) or reply to this email to respond"
+    visit_link_to_respond: "[Visit Topic](%{base_url}%{url}) to respond"
+    reply_by_email_pm: "[Visit Message](%{base_url}%{url}) or reply to this email to respond"
+    visit_link_to_respond_pm: "[Visit Message](%{base_url}%{url}) to respond"
 
     posted_by: "Posted by %{username} on %{post_date}"
 

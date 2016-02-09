@@ -402,7 +402,7 @@ posting:
     client: true
     default: 15
   enable_private_messages:
-    default: true
+    default: false
     client: true
   editing_grace_period: 300
   post_edit_time_limit: 86400
@@ -449,7 +449,7 @@ posting:
   post_excerpt_maxlength: 300
   display_name_on_posts:
     client: true
-    default: false
+    default: true
   show_time_gap_days:
     default: 7
     client: true
@@ -589,7 +589,7 @@ files:
     regex: '^https?:\/\/.+[^\/]$'
   allow_profile_backgrounds:
     client: true
-    default: true
+    default: false
   automatically_download_gravatars: true
   allow_uploaded_avatars:
     client: true

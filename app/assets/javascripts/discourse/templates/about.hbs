@@ -43,6 +43,7 @@
       </section>
     {{/if}}
 
+    {{#if currentUser.admin}}
     <section class='about stats'>
       <h3>{{i18n 'about.stats'}}</h3>
 
@@ -85,6 +86,7 @@
         </tr>
       </table>
     </section>
+    {{/if}}
 
     {{#if contactInfo}}
       <section class='about contact'>

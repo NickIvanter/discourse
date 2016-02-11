@@ -8,8 +8,6 @@
     <% else %>
       <li class='nav-item-faq'><a class='<%= @page == 'faq' ? 'active' : '' %>' href='<%=faq_path%>'><%= t 'js.faq' %></a></li>
     <% end %>
-    <li class='nav-item-tos'><a href='<%= tos_path %>' class='<%= @page == 'tos' ? 'active' : '' %>'><%= t 'terms_of_service.title' %></a></li>
-    <li class='nav-item-privacy'><a href='<%= privacy_path %>' class='<%= @page == 'privacy' ? 'active' : '' %>'><%= t 'privacy' %></a></li>
   </ul>
 
   <% if staff? %>

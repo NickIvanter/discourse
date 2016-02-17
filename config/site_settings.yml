@@ -491,6 +491,8 @@ posting:
   notify_about_queued_posts_after:
     default: 24
     min: 0
+  approve_stealth_mode:
+    default: false
 
 email:
   email_time_window_mins:

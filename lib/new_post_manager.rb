@@ -1,6 +1,7 @@
 require_dependency 'post_creator'
 require_dependency 'new_post_result'
 require_dependency 'post_enqueuer'
+require_dependency 'post_stealth_mapper'
 
 # Determines what actions should be taken with new posts.
 #
@@ -99,6 +100,10 @@ class NewPostManager
     handlers.size > 1
   end
 
+  def self.stealth_enabled?
+    SiteSetting.approve_stealth_mode
+  end
+
   def initialize(user, args)
     @user = user
     @args = args.delete_if {|_, v| v.nil?}
@@ -112,14 +117,27 @@ class NewPostManager
     end
 
     # Perform handlers until one returns a result
-    handled = NewPostManager.handlers.any? do |handler|
-      result = handler.call(self)
-      return result if result
+    # and remember that result
+    handled_result = nil
 
-      false
+    handled = NewPostManager.handlers.any? do |handler|
+      handled_result = handler.call(self)
     end
 
-    perform_create_post unless handled
+    # Create post if nothing happened or approve_stealth mode is on
+    create_result = perform_create_post if self.class.stealth_enabled? || !handled
+
+    # Do mapping from posts to queued_posts if approve_stealth mode is on
+    if self.class.stealth_enabled? && create_result && handled_result
+      stealth(handled_result, create_result)
+    end
+
+    # Return a result
+    if handled && !self.class.stealth_enabled?
+      handled_result
+    else
+      create_result
+    end
   end
 
   # Enqueue this post in a queue
@@ -155,6 +173,14 @@ class NewPostManager
     end
 
     result
+  end
+
+  # Create hiding mapping from posts to queued_posts
+  def stealth(enqueue_result, post_result)
+    stealth_mapper = PostStealthMapper.new(enqueue_result, post_result)
+    mapping = stealth_mapper.cloak
+
+    mapping
   end
 
 end

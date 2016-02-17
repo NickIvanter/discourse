@@ -47,6 +47,8 @@ class Post < ActiveRecord::Base
 
   has_many :user_actions, foreign_key: :target_post_id
 
+  has_one :stealth_post_map, foreign_key: :post_id
+
   validates_with ::Validators::PostValidator
 
   # We can pass several creating options to a post via attributes
@@ -88,6 +90,10 @@ class Post < ActiveRecord::Base
 
   def self.find_by_detail(key, value)
     includes(:post_details).find_by(post_details: { key: key, value: value })
+  end
+
+  def stealth?
+    stealth_post_map
   end
 
   def whisper?

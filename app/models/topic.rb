@@ -109,6 +109,8 @@ class Topic < ActiveRecord::Base
 
   has_one :first_post, -> {where post_number: 1}, class_name: Post
 
+  has_one :stealth_post_map, foreign_key: :topic_id
+
   # When we want to temporarily attach some data to a forum topic (usually before serialization)
   attr_accessor :user_data
 
@@ -147,6 +149,18 @@ class Topic < ActiveRecord::Base
            SELECT c.id FROM categories c
            WHERE #{condition[0]})", condition[1])
   }
+
+  scope :with_stealth_map, -> { includes(:stealth_post_map) }
+  scope :cloak_stealth, -> (guardian) {
+    if guardian.authenticated?
+      unless guardian.is_admin? || guardian.is_moderator?
+        with_stealth_map.where("stealth_post_maps.topic_id is null OR (topics.user_id = ? AND stealth_post_maps.topic_id is not null)", guardian.user.id)
+      end
+    else
+        with_stealth_map.where("stealth_post_maps.topic_id is null")
+    end
+  }
+
 
   attr_accessor :ignore_category_auto_close
   attr_accessor :skip_callbacks

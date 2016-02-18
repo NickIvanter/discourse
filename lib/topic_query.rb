@@ -7,6 +7,7 @@ require_dependency 'topic_list'
 require_dependency 'suggested_topics_builder'
 require_dependency 'topic_query_sql'
 require_dependency 'avatar_lookup'
+require_dependency 'new_post_manager'
 
 class TopicQuery
   # Could be rewritten to %i if Ruby 1.9 is no longer supported
@@ -423,6 +424,8 @@ class TopicQuery
 
       # Start with a list of all topics
       result = Topic.unscoped
+
+      result = result.cloak_stealth(@guardian) if NewPostManager.stealth_enabled?
 
       if @user
         result = result.joins("LEFT OUTER JOIN topic_users AS tu ON (topics.id = tu.topic_id AND tu.user_id = #{@user.id.to_i})")

@@ -395,6 +395,9 @@ class TopicView
     @contains_gaps = false
     @filtered_posts = unfiltered_posts
 
+    # TODO: filter out stealth posts
+    @filtered_posts = @filtered_posts.cloak_stealth(@guardian)
+
     # Filters
     if @filter == 'summary'
       @filtered_posts = @filtered_posts.summary(@topic.id)

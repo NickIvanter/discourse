@@ -7,6 +7,9 @@ class QueuedPost < ActiveRecord::Base
   belongs_to :approved_by, class_name: "User"
   belongs_to :rejected_by, class_name: "User"
 
+  has_one :stealth_post_map, foreign_key: :queued_id
+  scope :with_stealth_map, -> { includes(:stealth_post_map) }
+
   def create_pending_action
     UserAction.log_action!(action_type: UserAction::PENDING,
                            user_id: user_id,
@@ -45,8 +48,31 @@ class QueuedPost < ActiveRecord::Base
     MessageBus.publish('/queue_counts', msg, user_ids: User.staff.pluck(:id))
   end
 
+  # Delete stealth post and topic if any
+  def destroy_cloaked!
+    Post.find(stealth_post_map.post_id).destroy if stealth_post_map.present? && stealth_post_map.post_id.present?
+    Topic.find(stealth_post_map.topic_id).destroy if stealth_post_map.present? && stealth_post_map.topic_id.present?
+  end
+
+  def cleanup_cloaking!
+    stealth_post_map.destroy
+  end
+
+  def edit_cloaked!(raw)
+    if stealth_post_map.present? && stealth_post_map.post_id.present?
+      post = Post.find(stealth_post_map.post_id)
+      post.update_column(:raw, raw)
+      post.rebake!
+    end
+  end
+
   def reject!(rejected_by)
-    change_to!(:rejected, rejected_by)
+    QueuedPost.transaction do
+      change_to!(:rejected, rejected_by)
+      destroy_cloaked!
+      cleanup_cloaking!
+    end
+
     DiscourseEvent.trigger(:rejected_post, self)
   end
 
@@ -68,17 +94,27 @@ class QueuedPost < ActiveRecord::Base
         user.update_columns(blocked: false)
       end
 
-      creator = PostCreator.new(user, create_options.merge(skip_validations: true))
-      created_post = creator.create
+      cleanup_cloaking!
 
-      unless created_post && creator.errors.blank?
-        raise StandardError, "Failed to create post #{raw[0..100]} #{creator.errors.full_messages.inspect}"
+      unless NewPostManager.stealth_enabled?
+        creator = PostCreator.new(user, create_options.merge(skip_validations: true))
+        created_post = creator.create
+        unless created_post && creator.errors.blank?
+          raise StandardError, "Failed to create post #{raw[0..100]} #{creator.errors.full_messages.inspect}"
+        end
       end
 
     end
 
     DiscourseEvent.trigger(:approved_post, self)
     created_post
+  end
+
+  def edit_content!(raw)
+    QueuedPost.transaction do
+      update_column(:raw, raw)
+      edit_cloaked!(raw) if NewPostManager.stealth_enabled?
+    end
   end
 
   private

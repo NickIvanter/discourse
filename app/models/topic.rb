@@ -157,7 +157,7 @@ class Topic < ActiveRecord::Base
         with_stealth_map.where("stealth_post_maps.topic_id is null OR (topics.user_id = ? AND stealth_post_maps.topic_id is not null)", guardian.user.id)
       end
     else
-        with_stealth_map.where("stealth_post_maps.topic_id is null")
+      with_stealth_map.where("stealth_post_maps.topic_id is null")
     end
   }
 

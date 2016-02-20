@@ -1,11 +1,10 @@
-require 'translit'
 module UserNameSuggester
   GENERIC_NAMES = ['i', 'me', 'info', 'support', 'admin', 'webmaster', 'hello', 'mail', 'office', 'contact', 'team']
 
   def self.suggest(name, allow_username = nil)
     return unless name.present?
-    #name = parse_name_from_email(name)
-    name = Translit.convert(name, :english)
+    name = name.parameterize
+    name = parse_name_from_email(name)
     find_available_username_based_on(name.downcase.partition(" ").first, allow_username)
   end
 

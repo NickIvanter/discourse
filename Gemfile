@@ -207,5 +207,3 @@ group :profile do
 end
 
 gem 'mysql2'
-gem 'translit'
-

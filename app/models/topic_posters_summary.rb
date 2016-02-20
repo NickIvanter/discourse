@@ -4,6 +4,7 @@ class TopicPostersSummary
   def initialize(topic, options = {})
     @topic = topic
     @options = options
+    @guardian = Guardian.new(@options[:user])
   end
 
   def summary
@@ -16,7 +17,7 @@ class TopicPostersSummary
     TopicPoster.new.tap do |topic_poster|
       topic_poster.user = user
       topic_poster.description = descriptions_for(user)
-      if topic.last_post_user_id == user.id
+      if topic.cloak_last_post_user_id(@guardian) == user.id
         topic_poster.extras = 'latest'
         topic_poster.extras << ' single' if user_ids.uniq.size == 1
       end
@@ -38,8 +39,9 @@ class TopicPostersSummary
 
   def shuffle_last_poster_to_back_in(summary)
     unless last_poster_is_topic_creator?
-      summary.reject!{ |u| u.id == topic.last_post_user_id }
-      summary << avatar_lookup[topic.last_post_user_id]
+      last_id = topic.cloak_last_post_user_id(@guardian)
+      summary.reject!{ |u| u.id == last_id }
+      summary << avatar_lookup[last_id]
     end
     summary
   end
@@ -56,7 +58,7 @@ class TopicPostersSummary
   end
 
   def last_poster_is_topic_creator?
-    topic.user_id == topic.last_post_user_id
+    topic.user_id == topic.cloak_last_post_user_id(@guardian)
   end
 
   def sorted_top_posters
@@ -68,7 +70,24 @@ class TopicPostersSummary
   end
 
   def user_ids
-    [ topic.user_id, topic.last_post_user_id, *topic.featured_user_ids ]
+    ids = [ topic.user_id, topic.cloak_last_post_user_id(@guardian), *topic.featured_user_ids ]
+    return ids if !NewPostManager.stealth_enabled? || (@guardian.authenticated? && (@guardian.is_admin? || @guardian.is_moderator?))
+
+    filter_cloaked(ids)
+  end
+
+  def filter_cloaked(ids)
+    post_ids = topic.posts.cloak_stealth(@guardian).map { |p| p.user.id } # Only shown not cloaked ids
+    result = Array.new
+
+    # May be some instant ruby set operation?
+    ids.each do |user_id|
+      if post_ids.include?(user_id)
+        result << user_id
+      end
+    end
+
+    result
   end
 
   def avatar_lookup

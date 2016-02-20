@@ -56,7 +56,7 @@ class Post < ActiveRecord::Base
 
   SHORT_POST_CHARS = 1200
 
-  scope :by_newest, -> { order('created_at desc, id desc') }
+  scope :by_newest, -> { order('posts.created_at desc, posts.id desc') }
   scope :by_post_number, -> { order('post_number ASC') }
   scope :with_user, -> { includes(:user) }
   scope :created_since, lambda { |time_ago| where('posts.created_at > ?', time_ago) }
@@ -65,7 +65,7 @@ class Post < ActiveRecord::Base
   scope :with_topic_subtype, ->(subtype) { joins(:topic).where('topics.subtype = ?', subtype) }
   scope :visible, -> { joins(:topic).where('topics.visible = true').where(hidden: false) }
   scope :secured, lambda { |guardian| where('posts.post_type in (?)', Topic.visible_post_types(guardian && guardian.user))}
-  scope :with_stealth_map, -> { includes(:stealth_post_map) }
+  scope :with_stealth_map, -> { eager_load(:stealth_post_map) }
   scope :cloak_stealth, -> (guardian) {
     if guardian.authenticated?
       unless  guardian.is_admin? || guardian.is_moderator?

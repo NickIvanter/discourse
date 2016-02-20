@@ -150,7 +150,7 @@ class Topic < ActiveRecord::Base
            WHERE #{condition[0]})", condition[1])
   }
 
-  scope :with_stealth_map, -> { includes(:stealth_post_map) }
+  scope :with_stealth_map, -> { eager_load(:stealth_post_map) }
   scope :cloak_stealth, -> (guardian) {
     if guardian.authenticated?
       unless guardian.is_admin? || guardian.is_moderator?
@@ -160,6 +160,10 @@ class Topic < ActiveRecord::Base
       with_stealth_map.where("stealth_post_maps.topic_id is null")
     end
   }
+
+  def cloak_last_post_user_id(guardian)
+    posts.by_newest.cloak_stealth(guardian).first.user_id
+  end
 
 
   attr_accessor :ignore_category_auto_close

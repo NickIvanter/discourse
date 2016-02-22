@@ -3,9 +3,10 @@ module UserNameSuggester
 
   def self.suggest(name, allow_username = nil)
     return unless name.present?
+    I18n.locale = :ru
     name = name.parameterize
     name = parse_name_from_email(name)
-    find_available_username_based_on(name.downcase.partition(" ").first, allow_username)
+    find_available_username_based_on(name.downcase.partition(/ |-/).first, allow_username)
   end
 
   def self.parse_name_from_email(name)

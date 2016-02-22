@@ -24,6 +24,8 @@ class ImportScripts::Bbpress < ImportScripts::Base
     Post.pluck(:id, :post_number).each do |post_id, post_number|
       @post_number_map[post_id] = post_number
     end
+
+    @topic_subscriptions_map = {}
   end
 
   def created_post(post)
@@ -40,13 +42,44 @@ class ImportScripts::Bbpress < ImportScripts::Base
        SELECT id,
               display_name name,
               user_email email,
-              user_registered created_at
-         FROM #{table_name 'users'}", cache_rows: false)
+              user_registered created_at,
+              topic_subscriptions,
+              forum_subscriptions
+         FROM #{table_name 'users'} u
+LEFT OUTER JOIN (select user_id, meta_value as topic_subscriptions from #{table_name 'usermeta'} where meta_key like'%_bbp_subscriptions') um
+             ON u.id = um.user_id
+LEFT OUTER JOIN (select user_id, meta_value as forum_subscriptions from #{table_name 'usermeta'} where meta_key like'%_bbp_forum_subscriptions') um1
+             ON u.id = um1.user_id",
+                                  cache_rows: false)
 
     puts '', "creating users"
 
     create_users(users_results) do |u|
-      ActiveSupport::HashWithIndifferentAccess.new(u)
+
+      new_user_data = ActiveSupport::HashWithIndifferentAccess.new(u)
+
+      # Save topic subscriptions into a temporary hash, because we can't subscribe the newly created user
+      # to any topics yet because no topics have been imported at this point. So we'll subscribe him later.
+      topic_subscriptions = new_user_data.delete(:topic_subscriptions)
+      @topic_subscriptions_map[new_user_data[:id]] = topic_subscriptions if topic_subscriptions
+
+      forum_subscriptions = new_user_data.delete(:forum_subscriptions)
+
+      new_user_data.merge(
+        {
+          post_create_action: proc do |user|
+            # Do not ever send any emails unless the user was subscribed to a bbPress forum
+            if forum_subscriptions.nil?
+              user.user_option.update_columns(email_always: false,
+                                              email_digests: false,
+                                              email_direct: false,
+                                              email_private_messages: false)
+            else
+              # Do nothing, let the site-wide default email settings be applied
+            end
+          end
+        }
+      )
     end
 
 
@@ -62,6 +95,25 @@ class ImportScripts::Bbpress < ImportScripts::Base
     end
 
     import_posts
+    migrate_subscriptions
+  end
+
+  def migrate_subscriptions
+    puts "", "migrating topic subscriptions"
+
+    total_count = @topic_subscriptions_map.count
+    progress_count = 0
+
+    @topic_subscriptions_map.each do |imported_user_id, list_of_topics|
+      user_id = user_id_from_imported_user_id(imported_user_id)
+      list_of_topics.to_s.split(",").each do |imported_topic_id|
+        topic = topic_lookup_from_imported_post_id(imported_topic_id.to_i)
+        next if topic.nil?
+        TopicUser.change(user_id, topic[:topic_id], notification_level: TopicUser.notification_levels[:watching])
+      end
+      progress_count += 1
+      print_status(progress_count, total_count)
+    end
   end
 
   def import_posts
@@ -161,6 +213,9 @@ class ImportScripts::Bbpress < ImportScripts::Base
             skip = true
           end
         end
+
+        # Do not subscribe post authors to any topics by default
+        mapped[:auto_track] = false
 
         skip ? nil : mapped
       end

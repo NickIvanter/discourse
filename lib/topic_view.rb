@@ -260,7 +260,7 @@ class TopicView
                                  .cloak_stealth(@guardian)
                                  .where("user_id IS NOT NULL")
                                  .group(:user_id)
-                                 .order(if NewPostManager.stealth_enabled? then "count_id DESC" else "count_all DESC" end)
+                                 .order(if NewPostManager.stealth_enabled? && !@guardian.can_see_stealth? then "count_id DESC" else "count_all DESC" end)
                                  .limit(24)
                                  .count
   end

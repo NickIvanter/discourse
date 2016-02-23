@@ -127,7 +127,7 @@ class TopicUser < ActiveRecord::Base
 
     def track_visit!(topic,user)
       topic_id = topic.is_a?(Topic) ? topic.id : topic
-      user_id = user.is_a?(User) ? user.id : topic
+      user_id = user.is_a?(User) ? user.id : user
 
       now = DateTime.now
       rows = TopicUser.where(topic_id: topic_id, user_id: user_id).update_all(last_visited_at: now)
@@ -160,7 +160,8 @@ class TopicUser < ActiveRecord::Base
       # ... user visited the topic but did not read the posts
       #
       # 86400000 = 1 day
-      rows = exec_sql("UPDATE topic_users
+      unless NewPostManager.stealth_enabled?
+        rows = exec_sql("UPDATE topic_users
                                     SET
                                       last_read_post_number = GREATEST(:post_number, tu.last_read_post_number),
                                       highest_seen_post_number = t.highest_post_number,
@@ -184,7 +185,35 @@ class TopicUser < ActiveRecord::Base
                                   RETURNING
                                     topic_users.notification_level, tu.notification_level old_level, tu.last_read_post_number
                                 ",
-                                args).values
+                        args).values
+      else
+        rows = exec_sql("UPDATE topic_users
+                                    SET
+                                      last_read_post_number = t.highest_post_number,
+                                      highest_seen_post_number = t.highest_post_number,
+                                      total_msecs_viewed = LEAST(tu.total_msecs_viewed + :msecs,86400000),
+                                      notification_level =
+                                         case when tu.notifications_reason_id is null and (tu.total_msecs_viewed + :msecs) >
+                                            coalesce(u.auto_track_topics_after_msecs,:threshold) and
+                                            coalesce(u.auto_track_topics_after_msecs, :threshold) >= 0 then
+                                              :tracking
+                                         else
+                                            tu.notification_level
+                                         end
+                                  FROM topic_users tu
+                                  join topics t on t.id = tu.topic_id
+                                  join users u on u.id = :user_id
+                                  WHERE
+                                       tu.topic_id = topic_users.topic_id AND
+                                       tu.user_id = topic_users.user_id AND
+                                       tu.topic_id = :topic_id AND
+                                       tu.user_id = :user_id
+                                  RETURNING
+                                    topic_users.notification_level, tu.notification_level old_level, tu.last_read_post_number
+                                ",
+                        args).values
+      end
+
 
       if rows.length == 1
         before = rows[0][1].to_i
@@ -213,7 +242,8 @@ class TopicUser < ActiveRecord::Base
 
         user.update_posts_read!(post_number, mobile: opts[:mobile])
 
-        exec_sql("INSERT INTO topic_users (user_id, topic_id, last_read_post_number, highest_seen_post_number, last_visited_at, first_visited_at, notification_level)
+        unless NewPostManager.stealth_enabled?
+          exec_sql("INSERT INTO topic_users (user_id, topic_id, last_read_post_number, highest_seen_post_number, last_visited_at, first_visited_at, notification_level)
                   SELECT :user_id, :topic_id, :post_number, ft.highest_post_number, :now, :now, :new_status
                   FROM topics AS ft
                   JOIN users u on u.id = :user_id
@@ -221,7 +251,18 @@ class TopicUser < ActiveRecord::Base
                     AND NOT EXISTS(SELECT 1
                                    FROM topic_users AS ftu
                                    WHERE ftu.user_id = :user_id and ftu.topic_id = :topic_id)",
-                  args)
+                   args)
+        else
+          exec_sql("INSERT INTO topic_users (user_id, topic_id, last_read_post_number, highest_seen_post_number, last_visited_at, first_visited_at, notification_level)
+                  SELECT :user_id, :topic_id, ft.highest_post_number, ft.highest_post_number, :now, :now, :new_status
+                  FROM topics AS ft
+                  JOIN users u on u.id = :user_id
+                  WHERE ft.id = :topic_id
+                    AND NOT EXISTS(SELECT 1
+                                   FROM topic_users AS ftu
+                                   WHERE ftu.user_id = :user_id and ftu.topic_id = :topic_id)",
+                   args)
+        end
 
         MessageBus.publish("/topic/#{topic_id}", { notification_level_change: args[:new_status] }, user_ids: [user.id])
       end

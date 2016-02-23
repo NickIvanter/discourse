@@ -79,10 +79,12 @@ class Guardian
   end
 
   def stealth_actions(user_action:, anon_action:)
-    if authenticated?
-      user_action.call unless can_see_stealth?
-    else
-      anon_action.call
+    if NewPostManager.stealth_enabled?
+      if authenticated?
+        user_action.call unless can_see_stealth?
+      else
+        anon_action.call
+      end
     end
   end
 

@@ -67,14 +67,15 @@ class Post < ActiveRecord::Base
   scope :secured, lambda { |guardian| where('posts.post_type in (?)', Topic.visible_post_types(guardian && guardian.user))}
   scope :with_stealth_map, -> { eager_load(:stealth_post_map) }
   scope :cloak_stealth, -> (guardian) {
-    if guardian.authenticated?
-      unless  guardian.is_admin? || guardian.is_moderator?
-        with_stealth_map.where("stealth_post_maps.post_id is null OR (posts.user_id = ? AND stealth_post_maps.post_id is not null)", guardian.user.id)
-      end
-    else
-      with_stealth_map.where("stealth_post_maps.post_id is null")
-    end
+    guardian.stealth_actions(
+        user_action: ->{with_stealth_map.where("stealth_post_maps.post_id is null OR (posts.user_id = ? AND stealth_post_maps.post_id is not null)", guardian.user.id)},
+        anon_action: ->{with_stealth_map.where("stealth_post_maps.post_id is null")}
+    )
   }
+
+  def self.find_cloak_last_post(guardian)
+    cloak_stealth(guardian).by_newest.first
+  end
 
   delegate :username, to: :user
 

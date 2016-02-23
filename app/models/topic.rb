@@ -152,19 +152,19 @@ class Topic < ActiveRecord::Base
 
   scope :with_stealth_map, -> { eager_load(:stealth_post_map) }
   scope :cloak_stealth, -> (guardian) {
-    if guardian.authenticated?
-      unless guardian.is_admin? || guardian.is_moderator?
-        with_stealth_map.where("stealth_post_maps.topic_id is null OR (topics.user_id = ? AND stealth_post_maps.topic_id is not null)", guardian.user.id)
-      end
-    else
-      with_stealth_map.where("stealth_post_maps.topic_id is null")
-    end
+    guardian.stealth_actions(
+      user_action: ->{with_stealth_map.where("stealth_post_maps.topic_id is null OR (topics.user_id = ? AND stealth_post_maps.topic_id is not null)", guardian.user.id)},
+      anon_action: ->{with_stealth_map.where("stealth_post_maps.topic_id is null")}
+    )
   }
 
   def cloak_last_post_user_id(guardian)
     posts.by_newest.cloak_stealth(guardian).first.user_id
   end
 
+  def cloak_last_poster(guardian)
+    User.find(cloak_last_post_user_id(guardian))
+  end
 
   attr_accessor :ignore_category_auto_close
   attr_accessor :skip_callbacks
@@ -325,9 +325,11 @@ class Topic < ActiveRecord::Base
     opts = opts || {}
     score = "#{ListController.best_period_for(since)}_score"
 
+    guardian=Guardian.new(user)
     topics = Topic
               .visible
-              .secured(Guardian.new(user))
+              .secured(guardian)
+              .cloak_stealth(guardian)
               .joins("LEFT OUTER JOIN topic_users ON topic_users.topic_id = topics.id AND topic_users.user_id = #{user.id.to_i}")
               .joins("LEFT OUTER JOIN users ON users.id = topics.user_id")
               .where(closed: false, archived: false)
@@ -422,8 +424,11 @@ class Topic < ActiveRecord::Base
 
     # Exclude category definitions from similar topic suggestions
 
+    guardian=Guardian.new(user)
+
     candidates = Topic.visible
-       .secured(Guardian.new(user))
+       .secured(guardian)
+       .cloak_stealth(guardian)
        .listable_topics
        .joins('JOIN topic_search_data s ON topics.id = s.topic_id')
        .where("search_data @@ #{ts_query}")

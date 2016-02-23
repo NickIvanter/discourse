@@ -80,14 +80,7 @@ class TopicPostersSummary
     post_ids = topic.posts.cloak_stealth(@guardian).map { |p| p.user.id } # Only shown not cloaked ids
     result = Array.new
 
-    # May be some instant ruby set operation?
-    ids.each do |user_id|
-      if post_ids.include?(user_id)
-        result << user_id
-      end
-    end
-
-    result
+    post_ids & ids
   end
 
   def avatar_lookup

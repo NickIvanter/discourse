@@ -206,7 +206,7 @@ class TopicView
 
   # Find the sort order for a post in the topic
   def sort_order_for_post_number(post_number)
-    posts = Post.where(topic_id: @topic.id, post_number: post_number).with_deleted
+    posts = Post.cloak_stealth(@guardian).where(topic_id: @topic.id, post_number: post_number).with_deleted
     posts = filter_post_types(posts)
     posts.select(:sort_order).first.try(:sort_order)
   end
@@ -257,9 +257,10 @@ class TopicView
 
   def post_counts_by_user
     @post_counts_by_user ||= Post.where(topic_id: @topic.id)
+                                 .cloak_stealth(@guardian)
                                  .where("user_id IS NOT NULL")
                                  .group(:user_id)
-                                 .order("count_all DESC")
+                                 .order(if NewPostManager.stealth_enabled? then "count_id DESC" else "count_all DESC" end)
                                  .limit(24)
                                  .count
   end
@@ -356,7 +357,8 @@ class TopicView
 
   def filter_posts_by_ids(post_ids)
     # TODO: Sort might be off
-    @posts = Post.where(id: post_ids, topic_id: @topic.id)
+    @posts = Post.cloak_stealth(@guardian)
+                 .where(id: post_ids, topic_id: @topic.id)
                  .includes(:user, :reply_to_user)
                  .order('sort_order')
     @posts = filter_post_types(@posts)

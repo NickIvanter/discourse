@@ -225,12 +225,11 @@ LEFT OUTER JOIN (select user_id, meta_value as user_avatar from #{table_name 'us
           mapped[:raw] = mapped[:raw].gsub("<pre><code>", "```\n").gsub("</code></pre>", "\n```")
         end
         mapped[:created_at] = post["post_date"]
-        mapped[:custom_fields] = {import_id: post["id"], import_slug: post["post_name"]}
+        mapped[:custom_fields] = {import_id: post["id"]}
 
         if post["post_type"] == "topic"
           mapped[:category] = category_id_from_imported_category_id(post["post_parent"])
           mapped[:title] = CGI.unescapeHTML post["post_title"]
-          mapped[:slug] = post["post_name"]
         else
           parent = topic_lookup_from_imported_post_id(post["post_parent"])
           if parent
@@ -245,6 +244,15 @@ LEFT OUTER JOIN (select user_id, meta_value as user_avatar from #{table_name 'us
 
         # Do not subscribe post authors to any topics by default
         mapped[:auto_track] = false
+
+        # Create permalinks for the bbPress topics' URLs
+        mapped[:post_create_action] = proc do |topic|
+          next unless post["post_type"] == "topic"
+          next if post["post_name"].blank?
+          next if Permalink.where(url: post["post_name"], topic_id: topic.topic_id).exists?
+
+          Permalink.create(url: post["post_name"], topic_id: topic.topic_id)
+        end
 
         skip ? nil : mapped
       end

@@ -7,6 +7,7 @@ require File.expand_path(File.dirname(__FILE__) + "/base.rb")
 
 BB_PRESS_DB = ENV['BBPRESS_DB'] || "bbpress"
 DB_TABLE_PREFIX = "wp_"
+AVATARS_BASE_PATH = "/vagrant/bbpress_avatars/"
 
 class ImportScripts::Bbpress < ImportScripts::Base
 
@@ -44,12 +45,15 @@ class ImportScripts::Bbpress < ImportScripts::Base
               user_email email,
               user_registered created_at,
               topic_subscriptions,
-              forum_subscriptions
+              forum_subscriptions,
+              user_avatar
          FROM #{table_name 'users'} u
 LEFT OUTER JOIN (select user_id, meta_value as topic_subscriptions from #{table_name 'usermeta'} where meta_key like'%_bbp_subscriptions') um
              ON u.id = um.user_id
 LEFT OUTER JOIN (select user_id, meta_value as forum_subscriptions from #{table_name 'usermeta'} where meta_key like'%_bbp_forum_subscriptions') um1
-             ON u.id = um1.user_id",
+             ON u.id = um1.user_id
+LEFT OUTER JOIN (select user_id, meta_value as user_avatar from #{table_name 'usermeta'} where meta_key = 'basic_user_avatar') um2
+             ON u.id = um2.user_id
                                   cache_rows: false)
 
     puts '', "creating users"
@@ -64,6 +68,7 @@ LEFT OUTER JOIN (select user_id, meta_value as forum_subscriptions from #{table_
       @topic_subscriptions_map[new_user_data[:id]] = topic_subscriptions if topic_subscriptions
 
       forum_subscriptions = new_user_data.delete(:forum_subscriptions)
+      user_avatar = new_user_data.delete(:user_avatar)
 
       new_user_data.merge(
         {
@@ -76,6 +81,30 @@ LEFT OUTER JOIN (select user_id, meta_value as forum_subscriptions from #{table_
                                               email_private_messages: false)
             else
               # Do nothing, let the site-wide default email settings be applied
+            end
+
+            if user_avatar
+              # We do not use the specific value (url) of user_avatar stored in the Wordpress database. We simply
+              # assume that the avatar file name is <user_numeric_id>.jpg, which is the case when using the
+              # Basic User Avatars Wordpress plugin.
+              begin
+                filename = new_user_data[:id].to_s + '.jpg'
+                path = AVATARS_BASE_PATH + filename
+                upload = @uploader.create_upload(user.id, path, filename)
+
+                if upload.present? && upload.persisted?
+                  user.import_mode = false
+                  user.create_user_avatar
+                  user.import_mode = true
+                  user.user_avatar.update(custom_upload_id: upload.id)
+                  user.update(uploaded_avatar_id: upload.id)
+                else
+                  puts "Failed to upload avatar for user #{user.username}: #{path}"
+                  puts upload.errors.inspect if upload
+                end
+              rescue SystemCallError => err
+                Rails.logger.error("Could not import avatar for user #{user.username}: #{err.message}")
+              end
             end
           end
         }

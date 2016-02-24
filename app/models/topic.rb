@@ -158,6 +158,10 @@ class Topic < ActiveRecord::Base
     )
   }
 
+  def stealth?
+    stealth_post_map
+  end
+
   def cloak_last_post_user_id(guardian)
     posts.by_newest.cloak_stealth(guardian).first.user_id
   end

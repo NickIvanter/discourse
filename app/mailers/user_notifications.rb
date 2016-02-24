@@ -186,7 +186,9 @@ class UserNotifications < ActionMailer::Base
   end
 
   def self.get_context_posts(post, topic_user)
+    guardian = Guardian.new(topic_user)
     context_posts = Post.where(topic_id: post.topic_id)
+                        .cloak_stealth(guardian)
                         .where("post_number < ?", post.post_number)
                         .where(user_deleted: false)
                         .where(hidden: false)

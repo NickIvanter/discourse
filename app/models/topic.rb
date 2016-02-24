@@ -166,6 +166,14 @@ class Topic < ActiveRecord::Base
     User.find(cloak_last_post_user_id(guardian))
   end
 
+  def cloak_posts_count(guardian)
+    posts.cloak_stealth(guardian).count
+  end
+
+  def cloak_last_posted_at(guardian)
+    posts.by_newest.cloak_stealth(guardian).first.created_at
+  end
+
   attr_accessor :ignore_category_auto_close
   attr_accessor :skip_callbacks
 

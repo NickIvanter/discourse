@@ -186,7 +186,7 @@ class TopicUser < ActiveRecord::Base
                                     topic_users.notification_level, tu.notification_level old_level, tu.last_read_post_number
                                 ",
                         args).values
-      else
+      else # Mabe FIXME for continuous post approval
         rows = exec_sql("UPDATE topic_users
                                     SET
                                       last_read_post_number = t.highest_post_number,

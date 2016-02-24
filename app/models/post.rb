@@ -107,6 +107,10 @@ class Post < ActiveRecord::Base
     stealth_post_map
   end
 
+  def find_cloak_reply_count(guardian)
+    topic.posts.cloak_stealth(guardian).where(reply_to_post_number: post_number).count
+  end
+
   def whisper?
     post_type == Post.types[:whisper]
   end
@@ -569,7 +573,7 @@ class Post < ActiveRecord::Base
     # [1,2,3][-10,-1] => nil
     post_ids = (post_ids[(0-max_replies)..-1] || post_ids)
 
-    Post.secured(guardian).where(id: post_ids).includes(:user, :topic).order(:id).to_a
+    Post.cloak_stealth(guardian).secured(guardian).where(id: post_ids).includes(:user, :topic).order(:id).to_a
   end
 
   def revert_to(number)

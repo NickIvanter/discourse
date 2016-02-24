@@ -300,6 +300,15 @@ class TopicQuery
       t.allowed_user_ids = filter == :private_messages ? t.allowed_users.map{|u| u.id} : []
     end
 
+    # Cloak some feilds
+    if NewPostManager.stealth_enabled?
+      topics.each do |t|
+        t.posts_count = t.cloak_posts_count(@guardian)
+        t.last_posted_at = t.cloak_last_posted_at(@guardian)
+        t.bumped_at = t.last_posted_at
+      end
+    end
+
     list = TopicList.new(filter, @user, topics, options.merge(@options))
     list.per_page = per_page_setting
     list

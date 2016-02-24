@@ -240,7 +240,7 @@ class PostsController < ApplicationController
   # Direct replies to this post
   def replies
     post = find_post_from_params
-    replies = post.replies.secured(guardian)
+    replies = post.replies.cloak_stealth(guardian).secured(guardian)
     render_serialized(replies, PostSerializer)
   end
 

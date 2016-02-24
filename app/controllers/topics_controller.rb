@@ -66,7 +66,7 @@ class TopicsController < ApplicationController
     end
 
     page = params[:page].to_i
-    if (page < 0) || ((page - 1) * @topic_view.chunk_size > @topic_view.topic.highest_post_number)
+    if (page < 0) || ((page - 1) * @topic_view.chunk_size > @topic_view.topic.cloak_highest_post_number(guardian))
       raise Discourse::NotFound
     end
 

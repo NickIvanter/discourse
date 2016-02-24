@@ -174,6 +174,10 @@ class Topic < ActiveRecord::Base
     posts.by_newest.cloak_stealth(guardian).first.created_at
   end
 
+  def cloak_highest_post_number(guardian)
+    posts.order('post_number DESC').cloak_stealth(guardian).first.post_number
+  end
+
   attr_accessor :ignore_category_auto_close
   attr_accessor :skip_callbacks
 

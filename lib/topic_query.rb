@@ -306,6 +306,7 @@ class TopicQuery
         t.posts_count = t.cloak_posts_count(@guardian)
         t.last_posted_at = t.cloak_last_posted_at(@guardian)
         t.bumped_at = t.last_posted_at
+        t.highest_post_number = t.cloak_highest_post_number(@guardian)
       end
     end
 

@@ -94,13 +94,24 @@ class QueuedPost < ActiveRecord::Base
         user.update_columns(blocked: false)
       end
 
-      cleanup_cloaking!
-
       unless NewPostManager.stealth_enabled?
         creator = PostCreator.new(user, create_options.merge(skip_validations: true))
         created_post = creator.create
         unless created_post && creator.errors.blank?
           raise StandardError, "Failed to create post #{raw[0..100]} #{creator.errors.full_messages.inspect}"
+        end
+      else
+        transaction do
+          post = stealth_post_map.post
+          topic = post.topic
+
+          if post.post_number > 1 # Only remap if its not a topic starter
+            post.post_number = Topic.next_post_number(topic_id)
+            topic.highest_post_number = post.post_number
+            post.save
+            topic.save
+          end
+          cleanup_cloaking!
         end
       end
 

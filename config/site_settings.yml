@@ -508,7 +508,9 @@ email:
     client: true
   email_custom_headers: 'Auto-Submitted: auto-generated'
   email_subject: '[%{site_name}] %{optional_pm}%{optional_cat}%{topic_title}'
-  reply_by_email_enabled: false
+  reply_by_email_enabled:
+    default: false
+    validator: "ReplyByEmailEnabledValidator"
   reply_by_email_address:
     default: ''
     validator: "ReplyByEmailAddressValidator"
@@ -1064,6 +1066,9 @@ user_preferences:
   default_email_direct: true
   default_email_mailing_list_mode: false
   default_email_always: false
+  default_email_previous_replies:
+    enum: 'PreviousRepliesSiteSetting'
+    default: 1
 
   default_other_new_topic_duration_minutes:
     enum: 'NewTopicDurationSiteSetting'

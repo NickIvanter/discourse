@@ -172,7 +172,7 @@ aside.quote {
   }
   &.wiki {
     cursor: pointer;
-    color: $wiki;
+    color: #408040;
   }
   &.via-email {
     color: dark-light-choose(scale-color($primary, $lightness: 70%), scale-color($secondary, $lightness: 30%));

@@ -43,7 +43,7 @@ class CategoryList
       category_featured_topics = CategoryFeaturedTopic.select([:category_id, :topic_id]).order(:rank)
       @topics_by_id = {}
 
-      @all_topics = Topic.where(id: category_featured_topics.map(&:topic_id))
+      @all_topics = Topic.cloak_stealth(@guardian).where(id: category_featured_topics.map(&:topic_id))
       @all_topics = @all_topics.includes(:last_poster) if include_latest_posts?
       @all_topics.each do |t|
         t.include_last_poster = true if include_latest_posts? # hint for serialization
@@ -124,6 +124,13 @@ class CategoryList
             @all_topics << topic
           end
         end
+      end
+
+      # Cloak stealth post data
+      @all_topics.each do |t|
+        t.highest_post_number = t.cloak_highest_post_number(@guardian)
+        t.last_posted_at = t.cloak_last_posted_at(@guardian)
+        t.last_post_user_id = t.cloak_last_post_user_id(@guardian)
       end
 
       if @topics_by_category_id

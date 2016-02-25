@@ -241,8 +241,13 @@ class TopicQuery
         .where("COALESCE(tu.notification_level, :tracking) >= :tracking", tracking: TopicUser.notification_levels[:tracking])
   end
 
-  def self.unread_filter(list)
-    list.where("tu.last_read_post_number < topics.highest_post_number")
+  def self.unread_filter(list, guardian = nil)
+    if NewPostManager.stealth_enabled? && guardian && !guardian.can_see_stealth?
+      highest_post_number = Topic.cloak_highest_post_number_query(guardian)
+    else
+      highest_post_number = "topics.highest_post_number"
+    end
+    list.where("tu.last_read_post_number < #{highest_post_number}")
         .where("COALESCE(tu.notification_level, :regular) >= :tracking", regular: TopicUser.notification_levels[:regular], tracking: TopicUser.notification_levels[:tracking])
   end
 
@@ -329,7 +334,7 @@ class TopicQuery
   end
 
   def unread_results(options={})
-    result = TopicQuery.unread_filter(default_results(options.reverse_merge(:unordered => true)))
+    result = TopicQuery.unread_filter(default_results(options.reverse_merge(:unordered => true)), @guardian)
     .order('CASE WHEN topics.user_id = tu.user_id THEN 1 ELSE 2 END')
 
     self.class.results_filter_callbacks.each do |filter_callback|

@@ -182,6 +182,13 @@ class Topic < ActiveRecord::Base
     posts.order('post_number DESC').cloak_stealth(guardian).first.post_number
   end
 
+  def self.cloak_highest_post_number_query(guardian)
+    guardian.stealth_actions(
+      user_action: -> {"(SELECT MAX(pst.post_number) FROM posts AS pst LEFT OUTER JOIN stealth_post_maps AS spm ON pst.id=spm.post_id WHERE pst.topic_id=topics.id AND (spm.post_id is null OR (pst.user_id=#{guardian.user.id} AND spm.post_id is not null)))"},
+      anon_action: -> {"(SELECT MAX(pst.post_number) FROM posts AS pst LEFT OUTER JOIN stealth_post_maps AS spm ON pst.id=spm.post_id WHERE pst.topic_id=topics.id AND spm.post_id is null)"}
+    )
+  end
+
   attr_accessor :ignore_category_auto_close
   attr_accessor :skip_callbacks
 

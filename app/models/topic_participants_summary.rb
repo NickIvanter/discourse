@@ -6,6 +6,10 @@ class TopicParticipantsSummary
     @options = options
     @user = options[:user]
     @guardian = Guardian.new(@user)
+
+    if NewPostManager.stealth_enabled?
+      @post_ids = topic.posts.cloak_stealth(@guardian).pluck(:user_id) # Only show not cloaked ids
+    end
   end
 
   def summary
@@ -31,17 +35,11 @@ class TopicParticipantsSummary
     return [] unless @user
     ids = [topic.user_id] + topic.allowed_user_ids - [@user.id]
 
-    return ids if !NewPostManager.stealth_enabled? || (@guardian.authenticated? && (@guardian.is_admin? || @guardian.is_moderator?))
-
-    filter_cloaked(ids)
-  end
-
-  def filter_cloaked(ids)
-    post_ids = topic.posts.cloak_stealth(@guardian).map { |p| p.user.id } # Only shown not cloaked ids
-
-    result = post_ids & ids
-    File.open('/tmp/ids.log','a').write "#{ids} & #{post_ids} = #{result}\n#{topic.inspect}\n"
-    result
+    if !NewPostManager.stealth_enabled? || @guardian.can_see_stealth?
+      ids
+    else
+      @post_ids & ids
+    end
   end
 
   def avatar_lookup

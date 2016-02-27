@@ -8,7 +8,7 @@ class QueuedPost < ActiveRecord::Base
   belongs_to :rejected_by, class_name: "User"
 
   has_one :stealth_post_map, foreign_key: :queued_id
-  scope :with_stealth_map, -> { includes(:stealth_post_map) }
+  scope :with_stealth_map, -> { eager_load(:stealth_post_map) }
 
   def create_pending_action
     UserAction.log_action!(action_type: UserAction::PENDING,
@@ -94,21 +94,30 @@ class QueuedPost < ActiveRecord::Base
         user.update_columns(blocked: false)
       end
 
-      transaction do
-        unless NewPostManager.stealth_enabled?
-          creator = PostCreator.new(user, create_options.merge(skip_validations: true))
-          created_post = creator.create
-          unless created_post && creator.errors.blank?
-            raise StandardError, "Failed to create post #{raw[0..100]} #{creator.errors.full_messages.inspect}"
-          end
+      unless NewPostManager.stealth_enabled?
+        creator = PostCreator.new(user, create_options.merge(skip_validations: true))
+        created_post = creator.create
+        unless created_post && creator.errors.blank?
+          raise StandardError, "Failed to create post #{raw[0..100]} #{creator.errors.full_messages.inspect}"
         end
-
-        cleanup_cloaking!
       end
+    end
 
+    if NewPostManager.stealth_enabled? && stealth_post_map.present? && stealth_post_map.post_id.present?
+      post = Post.find(stealth_post_map.post_id)
+      new_topic = stealth_post_map.new_topic?
+      cleanup_cloaking!
+
+      # Reapply events and jobs
+      File.write('/tmp/r.log', 'reapply')
+      PostJobsEnqueuer.new(post, post.topic, new_topic, {stealth_approving: true}).enqueue_jobs
+      opts = create_options
+      DiscourseEvent.trigger(:topic_created, post.topic, opts, user) if new_topic
+      DiscourseEvent.trigger(:post_created, post, opts, user)
     end
 
     DiscourseEvent.trigger(:approved_post, self)
+
     created_post
   end
 

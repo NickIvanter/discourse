@@ -163,7 +163,7 @@ class Topic < ActiveRecord::Base
   end
 
   def cloak_last_post_user_id(guardian)
-    posts.by_newest.cloak_stealth(guardian).first.user_id
+    posts.by_newest.cloak_stealth(guardian).pluck(:user_id).first
   end
 
   def cloak_last_poster(guardian)
@@ -175,11 +175,11 @@ class Topic < ActiveRecord::Base
   end
 
   def cloak_last_posted_at(guardian)
-    posts.by_newest.cloak_stealth(guardian).first.created_at
+    posts.by_newest.cloak_stealth(guardian).pluck(:created_at).first
   end
 
   def cloak_highest_post_number(guardian)
-    posts.order('post_number DESC').cloak_stealth(guardian).first.post_number
+    posts.order('post_number DESC').cloak_stealth(guardian).pluck(:post_number).first
   end
 
   def self.cloak_highest_post_number_query(guardian)

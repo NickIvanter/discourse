@@ -134,7 +134,6 @@ class TopicTrackingState
     sql << "\nUNION ALL\n\n"
     sql << report_raw_sql(topic_id: topic_id, skip_new: true, skip_order: true, guardian: guardian)
 
-    File.write '/tmp/q.log', sql
     SqlBuilder.new(sql)
       .map_exec(TopicTrackingState, user_id: user_id, topic_id: topic_id)
 

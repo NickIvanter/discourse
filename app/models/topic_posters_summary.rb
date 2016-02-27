@@ -5,6 +5,12 @@ class TopicPostersSummary
     @topic = topic
     @options = options
     @guardian = Guardian.new(@options[:user])
+
+    # Cache stealth ids
+    if NewPostManager.stealth_enabled?
+      @last_post_user_id = @topic.cloak_last_post_user_id(@guardian)
+      @post_ids = @topic.posts.cloak_stealth(@guardian).pluck(:user_id)
+    end
   end
 
   def summary
@@ -58,7 +64,7 @@ class TopicPostersSummary
   end
 
   def last_poster_is_topic_creator?
-    topic.user_id == topic.cloak_last_post_user_id(@guardian)
+    topic.user_id == @last_post_user_id
   end
 
   def sorted_top_posters
@@ -70,17 +76,13 @@ class TopicPostersSummary
   end
 
   def user_ids
-    ids = [ topic.user_id, topic.cloak_last_post_user_id(@guardian), *topic.featured_user_ids ]
-    return ids if !NewPostManager.stealth_enabled? || (@guardian.authenticated? && (@guardian.is_admin? || @guardian.is_moderator?))
+    ids = [ topic.user_id, @last_post_user_id, *topic.featured_user_ids ]
 
-    filter_cloaked(ids)
-  end
-
-  def filter_cloaked(ids)
-    post_ids = topic.posts.cloak_stealth(@guardian).map { |p| p.user.id } # Only shown not cloaked ids
-    result = Array.new
-
-    post_ids & ids
+    if !NewPostManager.stealth_enabled? || @guardian.can_see_stealth?
+      ids
+    else
+      @post_ids & ids # Only show not cloaked ids
+    end
   end
 
   def avatar_lookup

@@ -109,7 +109,6 @@ class QueuedPost < ActiveRecord::Base
       cleanup_cloaking!
 
       # Reapply events and jobs
-      File.write('/tmp/r.log', 'reapply')
       PostJobsEnqueuer.new(post, post.topic, new_topic, {stealth_approving: true}).enqueue_jobs
       opts = create_options
       DiscourseEvent.trigger(:topic_created, post.topic, opts, user) if new_topic

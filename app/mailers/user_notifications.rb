@@ -201,14 +201,14 @@ class UserNotifications < ActionMailer::Base
     allowed_post_types = [Post.types[:regular]]
     allowed_post_types << Post.types[:whisper] if topic_user.try(:user).try(:staff?)
 
-    guardian = Guardian.new(topic_user)
-    context_posts = Post.where(topic_id: post.topic_id)
-                        .cloak_stealth(guardian)
-                        .where("post_number < ?", post.post_number)
+    guardian = Guardian.new(topic_user.user)
+    context_posts = Post.cloak_stealth(guardian)
+                        .where(topic_id: post.topic_id)
+                        .where("posts.post_number < ?", post.post_number)
                         .where(user_deleted: false)
                         .where(hidden: false)
                         .where(post_type: allowed_post_types)
-                        .order('created_at desc')
+                        .order('posts.created_at desc')
                         .limit(SiteSetting.email_posts_context)
 
     if topic_user && topic_user.last_emailed_post_number && user_option.try(:email_previous_replies) == UserOption.previous_replies_type[:unless_emailed]

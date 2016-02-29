@@ -126,6 +126,10 @@ class NewPostManager
 
     # Create post if nothing happened or approve_stealth mode is on
     create_result = perform_create_post if self.class.stealth_enabled? || !handled
+    if create_result.failed?
+      handled_result.queued_post.destroy
+      return NewPostResult.new(nil, false)
+    end
 
     # Do mapping from posts to queued_posts if approve_stealth mode is on
     if self.class.stealth_enabled? && create_result && handled_result
@@ -138,6 +142,7 @@ class NewPostManager
     else
       create_result
     end
+
   end
 
   # Enqueue this post in a queue
@@ -177,10 +182,7 @@ class NewPostManager
 
   # Create hiding mapping from posts to queued_posts
   def stealth(enqueue_result, post_result)
-    stealth_mapper = PostStealthMapper.new(enqueue_result, post_result)
-    mapping = stealth_mapper.cloak
-
-    mapping
+    PostStealthMapper.new(enqueue_result, post_result).cloak
   end
 
 end

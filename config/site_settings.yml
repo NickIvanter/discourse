@@ -57,7 +57,7 @@ required:
 
 basic:
   default_locale:
-    default: 'ru'
+    default: 'en'
     enum: 'LocaleSiteSetting'
     refresh: true
     shadowed_by_global: true
@@ -204,7 +204,7 @@ login:
     default: false
   login_required:
     client: true
-    default: true
+    default: false
   must_approve_users:
     client: true
     default: false
@@ -402,7 +402,7 @@ posting:
     client: true
     default: 15
   enable_private_messages:
-    default: false
+    default: true
     client: true
   editing_grace_period: 300
   post_edit_time_limit: 86400
@@ -449,7 +449,7 @@ posting:
   post_excerpt_maxlength: 300
   display_name_on_posts:
     client: true
-    default: true
+    default: false
   show_time_gap_days:
     default: 7
     client: true
@@ -597,7 +597,7 @@ files:
     regex: '^https?:\/\/.+[^\/]$'
   allow_profile_backgrounds:
     client: true
-    default: false
+    default: true
   automatically_download_gravatars: true
   allow_uploaded_avatars:
     client: true
@@ -907,7 +907,7 @@ uncategorized:
     default: true
 
   slug_generation_method:
-    default: 'encoded'
+    default: 'ascii'
     enum: 'SlugSetting'
 
   permalink_normalizations:

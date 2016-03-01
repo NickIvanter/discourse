@@ -259,6 +259,12 @@ LEFT OUTER JOIN (select user_id, meta_value as user_avatar from #{table_name 'us
         mapped[:post_create_action] = proc do |topic|
           next unless post["post_type"] == "topic"
           next if post["post_name"].blank?
+
+          # If the topic slug is percent-encoded, we need to make sure it is uppercase
+          if post["post_name"].include? "%"
+            post["post_name"] = post["post_name"].upcase
+          end
+
           next if Permalink.where(url: post["post_name"], topic_id: topic.topic_id).exists?
 
           Permalink.create(url: post["post_name"], topic_id: topic.topic_id)

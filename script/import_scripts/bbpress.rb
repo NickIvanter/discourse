@@ -74,14 +74,22 @@ LEFT OUTER JOIN (select user_id, meta_value as user_avatar from #{table_name 'us
       new_user_data.merge(
         {
           post_create_action: proc do |user|
-            # Do not ever send any emails unless the user was subscribed to a bbPress forum
+            # Do not ever send any emails unless the user was subscribed to a bbPress forum or topic
             if forum_subscriptions.nil?
-              user.user_option.update_columns(email_always: false,
-                                              email_digests: false,
-                                              email_direct: false,
-                                              email_private_messages: false)
+              if topic_subscriptions.nil?
+                # This user had no subscriptions whatsoever. Let's not bother him.
+                user.user_option.update_columns(email_always: false,
+                                                email_digests: false,
+                                                email_direct: false,
+                                                email_private_messages: false)
+              else
+                # This user was not subscribed to forum notifications but he was subscribed to one or more topics.
+                # He shouldn't mind receiving weekly digests and otherwise using default notification settings.
+                user.user_option.update_columns(email_digests: true, digest_after_days: 7)
+              end
             else
-              # Do nothing, let the site-wide default email settings be applied
+              # This user had explicitly subscribed to the forum, so let's be sending him daily digests.
+              user.user_option.update_columns(email_digests: true, digest_after_days: 1)
             end
 
             if user_avatar

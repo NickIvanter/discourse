@@ -125,6 +125,7 @@ LEFT OUTER JOIN (select user_id, meta_value as user_avatar from #{table_name 'us
 
     import_posts
     migrate_subscriptions
+    import_likes
   end
 
   def migrate_subscriptions
@@ -259,6 +260,23 @@ LEFT OUTER JOIN (select user_id, meta_value as user_avatar from #{table_name 'us
     end
   end
 
+  def import_likes
+    puts '', 'importing Likes'
+
+    # The condition "user_id < 10000" effectively ensures that we do not import anonymous likes.
+    # Anonymous likes have the 'ip2long' value of the visitor's IP address as the user_id.
+    results = @client.query("
+       SELECT topic_id post_id,
+              date_time created_at,
+              user_id
+         FROM #{table_name 'ulike_forums'}
+        WHERE status='like' and user_id < 10000",
+                            cache_rows: false)
+
+    create_likes(results) do |row|
+      ActiveSupport::HashWithIndifferentAccess.new(row)
+    end
+  end
 end
 
 ImportScripts::Bbpress.new.perform

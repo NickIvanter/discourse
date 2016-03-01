@@ -53,7 +53,7 @@ LEFT OUTER JOIN (select user_id, meta_value as topic_subscriptions from #{table_
 LEFT OUTER JOIN (select user_id, meta_value as forum_subscriptions from #{table_name 'usermeta'} where meta_key like'%_bbp_forum_subscriptions') um1
              ON u.id = um1.user_id
 LEFT OUTER JOIN (select user_id, meta_value as user_avatar from #{table_name 'usermeta'} where meta_key = 'basic_user_avatar') um2
-             ON u.id = um2.user_id
+             ON u.id = um2.user_id",
                                   cache_rows: false)
 
     puts '', "creating users"
@@ -152,7 +152,7 @@ LEFT OUTER JOIN (select user_id, meta_value as user_avatar from #{table_name 'us
     total_count = @client.query("
       SELECT count(*) count
         FROM #{table_name 'posts'}
-       WHERE post_status <> 'spam'
+       WHERE post_status = 'publish'
          AND post_type IN ('topic', 'reply')").first['count']
 
     batch_size = 1000

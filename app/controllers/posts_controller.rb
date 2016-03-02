@@ -547,6 +547,7 @@ class PostsController < ApplicationController
     # load deleted topic
     post.topic = Topic.with_deleted.find(post.topic_id) if current_user.try(:staff?)
     guardian.ensure_can_see!(post)
+    post.reply_count = post.find_cloak_reply_count(guardian)
     post
   end
 

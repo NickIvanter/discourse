@@ -23,7 +23,7 @@ class TopicPostersSummary
     TopicPoster.new.tap do |topic_poster|
       topic_poster.user = user
       topic_poster.description = descriptions_for(user)
-      if topic.cloak_last_post_user_id(@guardian) == user.id
+      if @last_post_user_id == user.id
         topic_poster.extras = 'latest'
         topic_poster.extras << ' single' if user_ids.uniq.size == 1
       end
@@ -45,9 +45,8 @@ class TopicPostersSummary
 
   def shuffle_last_poster_to_back_in(summary)
     unless last_poster_is_topic_creator?
-      last_id = topic.cloak_last_post_user_id(@guardian)
-      summary.reject!{ |u| u.id == last_id }
-      summary << avatar_lookup[last_id]
+      summary.reject!{ |u| u.id == @last_post_user_id }
+      summary << avatar_lookup[@last_post_user_id]
     end
     summary
   end
@@ -76,13 +75,13 @@ class TopicPostersSummary
   end
 
   def user_ids
-    ids = [ topic.user_id, @last_post_user_id, *topic.featured_user_ids ]
-
     if !NewPostManager.stealth_enabled? || @guardian.can_see_stealth?
-      ids
+      featured_ids = topic.featured_user_ids & @post_ids
     else
-      @post_ids & ids # Only show not cloaked ids
+      featured_ids = topic.featured_user_ids
     end
+
+    [ topic.user_id, @last_post_user_id, *featured_ids ]
   end
 
   def avatar_lookup

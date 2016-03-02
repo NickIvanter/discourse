@@ -22,7 +22,7 @@ class PostMover
   def to_new_topic(title, category_id=nil)
     @move_type = PostMover.move_types[:new_topic]
 
-    post = Post.find_by(id: post_ids.first)
+    post = Post.with_sfind_by(id: post_ids.first)
     raise Discourse::InvalidParameters unless post
 
     Topic.transaction do
@@ -31,19 +31,19 @@ class PostMover
         title: title,
         category_id: category_id,
         created_at: post.created_at
-      )
+      ), true
     end
   end
 
   private
 
-  def move_posts_to(topic)
+  def move_posts_to(topic, is_new_topic = false)
     Guardian.new(user).ensure_can_see! topic
     @destination_topic = topic
 
     moving_all_posts = (@original_topic.posts.pluck(:id).sort == @post_ids.sort)
 
-    move_each_post
+    move_each_post is_new_topic
     notify_users_that_posts_have_moved
     update_statistics
     update_user_actions
@@ -57,7 +57,7 @@ class PostMover
     destination_topic
   end
 
-  def move_each_post
+  def move_each_post(is_new_topic = false)
     max_post_number = destination_topic.max_post_number + 1
 
     @move_map = {}
@@ -76,7 +76,28 @@ class PostMover
     posts.each do |post|
       post.is_first_post? ? create_first_post(post) : move(post)
     end
+
+    if NewPostManager.stealth_enabled?
+      posts.each do |post|
+        update_queued_post(post) if post.stealth?
+        update_stealth_map(post) if is_new_topic && post.stealth_post_map.new_topic?
+      end
+    end
+
   end
+
+  def update_queued_post(post)
+    queued_post = post.stealth_post_map.queued_post
+    if queued_post.present?
+      queued_post.topic_id = post.topic_id
+      queued_post.save
+    end
+  end
+
+  def update_stealth_map(post)
+    post.stealth_post_map.topic_id = post.topic_id
+  end
+
 
   def create_first_post(post)
     p = PostCreator.create(

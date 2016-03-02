@@ -164,7 +164,7 @@ const User = RestModel.extend({
             'enable_quoting',
             'disable_jump_reply',
             'automatically_unpin_topics',
-            'digest_after_days',
+            'digest_after_minutes',
             'new_topic_duration_minutes',
             'auto_track_topics_after_msecs'
     ].forEach(s => {

@@ -13,7 +13,7 @@ class UserBlocker
   end
 
   def block
-    hide_posts unless @opts[:keep_posts]
+    hide_posts unless @opts[:keep_posts] || hellban?
     unless @user.blocked?
       @user.blocked = true
       if @user.save
@@ -37,6 +37,14 @@ class UserBlocker
       SystemMessage.create(@user, :unblocked)
       StaffActionLogger.new(@by_user).log_unblock_user(@user) if @by_user
     end
+  end
+
+  def self.hellban?
+    SiteSetting.hellban_mode
+  end
+
+  def hellban?
+    self.class.hellban?
   end
 
 end

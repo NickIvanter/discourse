@@ -113,6 +113,7 @@ class QueuedPost < ActiveRecord::Base
       opts = create_options
       DiscourseEvent.trigger(:topic_created, post.topic, opts, user) if new_topic
       DiscourseEvent.trigger(:post_created, post, opts, user)
+      BadgeGranter.queue_badge_grant(Badge::Trigger::PostRevision, post: post)
       post.publish_change_to_clients! :created
     end
 

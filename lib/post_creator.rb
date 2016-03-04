@@ -145,7 +145,7 @@ class PostCreator
 
       track_latest_on_category
       enqueue_jobs if stealth_approving?
-      BadgeGranter.queue_badge_grant(Badge::Trigger::PostRevision, post: @post)
+      BadgeGranter.queue_badge_grant(Badge::Trigger::PostRevision, post: @post) if stealth_approving?
 
       trigger_after_events(@post)
     end

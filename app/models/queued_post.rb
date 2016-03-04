@@ -95,7 +95,7 @@ class QueuedPost < ActiveRecord::Base
       end
 
       unless NewPostManager.stealth_enabled?
-        creator = PostCreator.new(user, create_options.merge(skip_validations: true))
+        creator = PostCreator.new(user, create_options.merge(skip_validations: true, stealth_approving: true))
         created_post = creator.create
         unless created_post && creator.errors.blank?
           raise StandardError, "Failed to create post #{raw[0..100]} #{creator.errors.full_messages.inspect}"
@@ -113,6 +113,7 @@ class QueuedPost < ActiveRecord::Base
       opts = create_options
       DiscourseEvent.trigger(:topic_created, post.topic, opts, user) if new_topic
       DiscourseEvent.trigger(:post_created, post, opts, user)
+      post.publish_change_to_clients! :created
     end
 
     DiscourseEvent.trigger(:approved_post, self)

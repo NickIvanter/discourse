@@ -75,7 +75,7 @@ class TopicPostersSummary
   end
 
   def user_ids
-    if !NewPostManager.stealth_enabled? || @guardian.can_see_stealth?
+    if NewPostManager.stealth_enabled? && !@guardian.can_see_stealth?
       featured_ids = topic.featured_user_ids & @post_ids
     else
       featured_ids = topic.featured_user_ids

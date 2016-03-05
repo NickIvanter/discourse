@@ -187,6 +187,9 @@ class User < ActiveRecord::Base
     find_by(username_lower: username.downcase)
   end
 
+  def hellbanned?
+    UserHellbanner.enabled? && blocked?
+  end
 
   def enqueue_welcome_message(message_type)
     return unless SiteSetting.send_welcome_message?

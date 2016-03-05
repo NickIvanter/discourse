@@ -7,6 +7,7 @@ class PostAlerter
   end
 
   def not_allowed?(user, post)
+    user.hellbanned?
     user.blank? ||
     user.id == Discourse::SYSTEM_USER_ID ||
     user.id == post.user_id
@@ -195,7 +196,7 @@ class PostAlerter
   end
 
   def create_notification(user, type, post, opts=nil)
-    return if user.blank?
+    return if user.blank? || user.hellbanned?
     return if user.id == Discourse::SYSTEM_USER_ID
 
     opts ||= {}

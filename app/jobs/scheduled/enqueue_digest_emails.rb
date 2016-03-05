@@ -15,6 +15,7 @@ module Jobs
     def target_user_ids
       # Users who want to receive emails and haven't been emailed in the last day
       query = User.real
+                  .not_blocked
                   .where(active: true, staged: false)
                   .joins(:user_option)
                   .not_suspended

@@ -4,9 +4,9 @@ module UserNameSuggester
 
   def self.suggest(name, allow_username = nil)
     return unless name.present?
-    #name = parse_name_from_email(name)
+    name = parse_name_from_email(name)
     name = Translit.convert(name, :english)
-    find_available_username_based_on(name.downcase.partition(" ").first, allow_username)
+    find_available_username_based_on(name.partition(" ").first, allow_username)
   end
 
   def self.parse_name_from_email(name)
@@ -40,13 +40,13 @@ module UserNameSuggester
     name = ActiveSupport::Inflector.transliterate(name)
     # 1. remove characters that aren't allowed
     name.gsub!(UsernameValidator::CONFUSING_EXTENSIONS, "")
-    name.gsub!(/[^\w.-]/, "")
+    name.gsub!(/[^\w.-]/, "_")
     # 2. removes unallowed leading characters
     name.gsub!(/^\W+/, "")
     # 3. removes unallowed trailing characters
     name.gsub!(/[^A-Za-z0-9]+$/, "")
     # 4. remove special characters
-    name.gsub!(/[-_.]{2,}/, "")
+    name.gsub!(/[-_.]{2,}/, "_")
     name
   end
 

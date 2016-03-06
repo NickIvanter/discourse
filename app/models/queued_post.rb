@@ -69,8 +69,10 @@ class QueuedPost < ActiveRecord::Base
   def reject!(rejected_by)
     QueuedPost.transaction do
       change_to!(:rejected, rejected_by)
-      destroy_cloaked!
-      cleanup_cloaking!
+      if NewPostManager.stealth_enabled?
+        destroy_cloaked!
+        cleanup_cloaking!
+      end
     end
 
     DiscourseEvent.trigger(:rejected_post, self)

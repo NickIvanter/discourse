@@ -193,7 +193,8 @@ class UserNotifications < ActionMailer::Base
   end
 
   def self.get_context_posts(post, topic_user)
-    user_option = topic_user.try(:user).try(:user_option)
+    tu = topic_user.try(:user)
+    user_option = tu.try(:user_option)
     if user_option && (user_option.email_previous_replies == UserOption.previous_replies_type[:never])
       return []
     end
@@ -201,7 +202,8 @@ class UserNotifications < ActionMailer::Base
     allowed_post_types = [Post.types[:regular]]
     allowed_post_types << Post.types[:whisper] if topic_user.try(:user).try(:staff?)
 
-    guardian = Guardian.new(topic_user.user)
+
+    guardian = Guardian.new(tu.user) if NewPostManager.stealth_enabled? && tu.present?
     context_posts = Post.cloak_stealth(guardian)
                         .where(topic_id: post.topic_id)
                         .where("posts.post_number < ?", post.post_number)

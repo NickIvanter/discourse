@@ -80,7 +80,11 @@ class TopicViewSerializer < ApplicationSerializer
       auto_close_hours: object.topic.auto_close_hours,
       auto_close_based_on_last_post: object.topic.auto_close_based_on_last_post,
       created_by: BasicUserSerializer.new(object.topic.user, scope: scope, root: false),
-      last_poster: BasicUserSerializer.new(object.topic.cloak_last_poster(scope), scope: scope, root: false)
+      last_poster: if NewPostManager.stealth_enabled?
+        BasicUserSerializer.new(object.topic.cloak_last_poster(scope), scope: scope, root: false)
+      else
+        BasicUserSerializer.new(object.topic.last_poster, scope: scope, root: false)
+      end
     }
 
     if object.topic.private_message?

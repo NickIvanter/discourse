@@ -27,11 +27,12 @@ module Slug
 
   def self.encoded_generator(string)
     string.strip
+          .gsub("'", "")
           .gsub(/\s+/, '-')
           .gsub(/\P{Alnum}/, '-') # replace any non-alphanumeric with a dash
           .gsub(/\A-+|-+\z/, '') # remove possible trailing and preceding dashes
           .squeeze('-') # squeeze continuous dashes to prettify slug
-          .mb_chars.downcase.to_s
+          .mb_chars.to_s
   end
 
   def self.none_generator(string)

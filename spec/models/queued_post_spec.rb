@@ -157,13 +157,12 @@ describe QueuedPost do
   context "approve/reject a stealth post" do
 
     let(:author) { Fabricate(:user) }
-    let(:user) { Fabricate(:user) }
     let(:admin) { Fabricate(:admin) }
 
     let(:topic) { Fabricate(:topic) }
     let(:post) { Fabricate(:post, topic: topic, user: author) }
 
-    let(:qp) { Fabricate(:queued_post, topic: topic, user: user) }
+    let(:qp) { Fabricate(:queued_post, topic: topic, user: author) }
     let(:spm) { Fabricate(:stealth_post_map, post: post, queued_post: qp) }
 
     before(:each) do
@@ -215,6 +214,71 @@ describe QueuedPost do
 
       # We can't reject twice
       expect(-> { qp.reject!(admin) }).to raise_error(QueuedPost::InvalidStateTransition)
+    end
+  end
+
+  context "approve/reject a stealth topic" do
+    let(:author) { Fabricate(:user) }
+    let(:admin) { Fabricate(:admin) }
+
+    context "with a valid topic" do
+      let!(:category) { Fabricate(:category) }
+
+      let(:qp) { QueuedPost.create(queue: 'eviltrout',
+                                   state: QueuedPost.states[:new],
+                                   user_id: author.id,
+                                   raw: 'This post should be queued up',
+                                   post_options: {
+                                     title: 'This is the topic title to queue up',
+                                     archetype: 'regular',
+                                     category: category.id,
+                                     meta_data: {evil: 'trout'}
+                                   }) }
+
+      let(:topic) { Fabricate(:topic, category: category) }
+      let(:post) { Fabricate(:post, topic: topic, user: author) }
+
+      let(:spm) { Fabricate(:stealth_post_map, topic: topic, post: post, queued_post: qp) }
+
+      before(:each) do
+        SiteSetting.stubs(:approve_stealth_mode).returns(true)
+        qp.stealth_post_map = spm
+      end
+
+      it "it approves the post and topic" do
+        topic_count, post_count = Topic.count, Post.count
+        apost = qp.approve!(admin)
+
+        # No new topic or post created
+        expect(Topic.count).to eq(topic_count)
+        expect(Post.count).to eq(post_count)
+
+        expect(apost).to be_present
+        expect(apost).to be_valid
+
+        topic = apost.topic
+        expect(topic).to be_present
+        expect(topic.category).to eq(category)
+
+        # It clears stealth mapping
+        expect(spm.destroyed?).to be true
+      end
+
+      it "rejecting doesn't create the post and topic" do
+        topic_count, post_count = Topic.count, Post.count
+
+        qp.reject!(admin)
+
+        expect(Topic.count).to eq(topic_count - 1)
+        expect(Post.count).to eq(post_count - 1)
+
+        # It clears stealth mapping
+        expect(spm.destroyed?).to be true
+
+        # It deletes stealth post and topic
+        expect(post.destroyed?).to be true
+        expect(topic.destroyed?).to be true
+      end
     end
   end
 

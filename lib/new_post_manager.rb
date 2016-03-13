@@ -71,6 +71,7 @@ class NewPostManager
     user = manager.user
 
     return false if user.staff? || user.staged
+    return true if stealth_enabled?
 
     (user.post_count < SiteSetting.approve_post_count) ||
     (user.trust_level < SiteSetting.approve_unless_trust_level.to_i) ||
@@ -97,7 +98,8 @@ class NewPostManager
   def self.queue_enabled?
     SiteSetting.approve_post_count > 0 ||
     SiteSetting.approve_unless_trust_level.to_i > 0 ||
-    handlers.size > 1
+    handlers.size > 1 ||
+    stealth_enabled?
   end
 
   def self.stealth_enabled?
@@ -116,7 +118,7 @@ class NewPostManager
       return perform_create_post
     end
 
-    # Perform handlers until one returns a result
+    # Perform handlers until one returns true result
     # and remember that result
     handled_result = nil
 
@@ -125,7 +127,9 @@ class NewPostManager
     end
 
     if self.class.stealth_enabled?
-      return handled_result if handled && handled_result.present? && handled_result.failed?
+      if handled && handled_result
+        return handled_result if handled_result.failed? || handled_result.action != :enqueued
+      end
 
       create_result = perform_create_post
 

@@ -154,4 +154,68 @@ describe QueuedPost do
     end
   end
 
+  context "approve/reject a stealth post" do
+
+    let(:author) { Fabricate(:user) }
+    let(:user) { Fabricate(:user) }
+    let(:admin) { Fabricate(:admin) }
+
+    let(:topic) { Fabricate(:topic) }
+    let(:post) { Fabricate(:post, topic: topic, user: author) }
+
+    let(:qp) { Fabricate(:queued_post, topic: topic, user: user) }
+    let(:spm) { Fabricate(:stealth_post_map, post: post, queued_post: qp) }
+
+    before(:each) do
+      SiteSetting.stubs(:approve_stealth_mode).returns(true)
+      qp.stealth_post_map = spm
+    end
+
+    it "follows the correct workflow for stealth approval" do
+      qp.create_pending_action
+      apost = qp.approve!(admin)
+
+      # Updates the QP record
+      expect(qp.approved_by).to eq(admin)
+      expect(qp.state).to eq(QueuedPost.states[:approved])
+      expect(qp.approved_at).to be_present
+
+      # Creates the post with the attributes
+      expect(apost).to be_present
+      expect(apost).to be_valid
+      expect(apost).to eq(post)
+
+      # It removes the pending action
+      expect(UserAction.where(queued_post_id: qp.id).count).to eq(0)
+
+      # It clears stealth mapping
+      expect(spm.destroyed?).to be true
+
+      # We can't approve twice
+      expect(-> { qp.approve!(admin) }).to raise_error(QueuedPost::InvalidStateTransition)
+    end
+
+    it "follows the correct workflow for stealth rejection" do
+      qp.create_pending_action
+      qp.reject!(admin)
+
+      # Updates the QP record
+      expect(qp.rejected_by).to eq(admin)
+      expect(qp.state).to eq(QueuedPost.states[:rejected])
+      expect(qp.rejected_at).to be_present
+
+      # It clears stealth mapping
+      expect(spm.destroyed?).to be true
+
+      # It deletes stealth post
+      expect(post.destroyed?).to be true
+
+      # It removes the pending action
+      expect(UserAction.where(queued_post_id: qp.id).count).to eq(0)
+
+      # We can't reject twice
+      expect(-> { qp.reject!(admin) }).to raise_error(QueuedPost::InvalidStateTransition)
+    end
+  end
+
 end

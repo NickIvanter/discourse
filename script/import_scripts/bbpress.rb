@@ -158,6 +158,15 @@ LEFT OUTER JOIN (select user_id, meta_value as user_avatar from #{table_name 'us
   def import_posts
     puts '', "creating topics and posts"
 
+    # Discourse import scripts require that each imported user have an ID from the external system. This is fine
+    # when we are importing "regular" Wordpress users, but presents a small issue when we want to create new user
+    # in the middle of the import process, which we want to do when importing "anonymous" posts. We want to create
+    # Discourse users for the authors of those posts.
+    # So, we are going to assign "fake" import IDs to those users. We begin with the arbitrary ID of 65535 and
+    # go down from there, HOPING that it will not intersect with the IDs of the existing Wordpress users, which
+    # are numbered from 1 upward.
+    anonymous_user_fake_import_id = 65535
+
     total_count = @client.query("
       SELECT count(*) count
         FROM #{table_name 'posts'}
@@ -198,15 +207,6 @@ LEFT OUTER JOIN (select user_id, meta_value as user_avatar from #{table_name 'us
       break if results.size < 1
 
       next if all_records_exist? :posts, results.map {|p| p["id"].to_i}
-
-      # Discourse import scripts require that each imported user have an ID from the external system. This is fine
-      # when we are importing "regular" Wordpress users, but presents a small issue when we want to create new user
-      # in the middle of the import process, which we want to do when importing "anonymous" posts. We want to create
-      # Discourse users for the authors of those posts.
-      # So, we are going to assign "fake" import IDs to those users. We begin with the arbitrary ID of 65535 and
-      # go down from there, HOPING that it will not intersect with the IDs of the existing Wordpress users, which
-      # are numbered from 1 upward.
-      anonymous_user_fake_import_id = 65535
 
       create_posts(results, total: total_count, offset: offset) do |post|
         skip = false

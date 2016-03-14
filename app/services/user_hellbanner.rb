@@ -9,7 +9,7 @@ class UserHellbanner
   end
 
   def enabled?
-    self.class.hellban?
+    self.class.enabled?
   end
 
   def user_banned?

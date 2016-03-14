@@ -7,7 +7,7 @@ class PostAlerter
   end
 
   def not_allowed?(user, post)
-    user.hellbanned?
+    user.hellbanned? ||
     user.blank? ||
     user.id == Discourse::SYSTEM_USER_ID ||
     user.id == post.user_id

@@ -6,7 +6,9 @@ module UserNameSuggester
     I18n.locale = :ru
     name = name.parameterize
     name = parse_name_from_email(name)
-    find_available_username_based_on(name.downcase.partition(/ |-/).first, allow_username)
+    # If name is John Doe, this will create the username john_d
+    name_parts = name.downcase.partition(/ |-/)
+    find_available_username_based_on("#{name_parts[0]}_#{name_parts[2][0]}", allow_username)
   end
 
   def self.parse_name_from_email(name)

@@ -226,7 +226,14 @@ LEFT OUTER JOIN (select id as first_post_id, post_author from #{table_name 'post
             name: post["anonymous_name"],
             email: post["anonymous_email"],
             created_at: post["post_date"],
-            id: anonymous_user_fake_import_id
+            id: anonymous_user_fake_import_id,
+            post_create_action: proc do |user|
+              # Do not send any emails to this user
+              user.user_option.update_columns(email_always: false,
+                                              email_digests: false,
+                                              email_direct: false,
+                                              email_private_messages: false)
+            end
           }
           create_users(anonymous_users) do |u|
             ActiveSupport::HashWithIndifferentAccess.new(u)

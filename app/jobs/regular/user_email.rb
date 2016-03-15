@@ -58,6 +58,7 @@ module Jobs
 
       return skip_message(I18n.t("email_log.anonymous_user"))   if user.anonymous?
       return skip_message(I18n.t("email_log.suspended_not_pm")) if user.suspended? && type != :user_private_message
+      return skip_message(I18n.t("email_log.hellbanned_user"))  if user.hellbanned?
 
       return if user.staged && type == :digest
 

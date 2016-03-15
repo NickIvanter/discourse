@@ -13,11 +13,11 @@ class UserBlocker
   end
 
   def block
-    hide_posts unless @opts[:keep_posts]
+    hide_posts unless @opts[:keep_posts] || UserHellbanner.enabled?
     unless @user.blocked?
       @user.blocked = true
       if @user.save
-        SystemMessage.create(@user, @opts[:message] || :blocked_by_staff)
+        SystemMessage.create(@user, @opts[:message] || :blocked_by_staff) unless UserHellbanner.enabled?
         StaffActionLogger.new(@by_user).log_block_user(@user) if @by_user
       end
     else

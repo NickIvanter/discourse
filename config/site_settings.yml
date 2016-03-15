@@ -276,6 +276,8 @@ login:
   pending_users_reminder_delay:
     min: -1
     default: 8
+  hellban_mode:
+    default: false
 
 users:
   min_username_length:

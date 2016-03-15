@@ -63,7 +63,13 @@ class Post < ActiveRecord::Base
   scope :public_posts, -> { joins(:topic).where('topics.archetype <> ?', Archetype.private_message) }
   scope :private_posts, -> { joins(:topic).where('topics.archetype = ?', Archetype.private_message) }
   scope :with_topic_subtype, ->(subtype) { joins(:topic).where('topics.subtype = ?', subtype) }
-  scope :visible, -> { joins(:topic).where('topics.visible = true').where(hidden: false) }
+  scope :visible, -> (guardian=nil) {
+    if UserBlocker.hellban? && guardian.present? && UserHellbanner.new(guardian.user).user_banned?
+      joins(:topic).where('topics.visible = true').where('posts.user_id = ? OR posts.hidden = false', guardian.user.id)
+    else
+      joins(:topic).where('topics.visible = true').where(hidden: false)
+    end
+  }
   scope :secured, lambda { |guardian| where('posts.post_type in (?)', Topic.visible_post_types(guardian && guardian.user))}
   scope :with_stealth_map, -> { eager_load(:stealth_post_map) }
   scope :cloak_stealth, -> (guardian) {

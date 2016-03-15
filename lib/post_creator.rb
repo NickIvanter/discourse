@@ -141,11 +141,11 @@ class PostCreator
     end
 
     if @post && errors.blank?
-      publish
+      publish if stealth_approving?
 
       track_latest_on_category
-      enqueue_jobs
-      BadgeGranter.queue_badge_grant(Badge::Trigger::PostRevision, post: @post)
+      enqueue_jobs if stealth_approving?
+      BadgeGranter.queue_badge_grant(Badge::Trigger::PostRevision, post: @post) if stealth_approving?
 
       trigger_after_events(@post)
     end
@@ -155,6 +155,11 @@ class PostCreator
     end
 
     @post
+  end
+
+  # For actions on approving or when stealth posts disabled
+  def stealth_approving?
+    !NewPostManager.stealth_enabled? || @opts[:stealth_approving]
   end
 
   def self.track_post_stats

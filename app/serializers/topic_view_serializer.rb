@@ -16,13 +16,11 @@ class TopicViewSerializer < ApplicationSerializer
   attributes_from_topic :id,
                         :title,
                         :fancy_title,
-                        :posts_count,
                         :created_at,
                         :views,
                         :reply_count,
                         :participant_count,
                         :like_count,
-                        :last_posted_at,
                         :visible,
                         :closed,
                         :archived,
@@ -54,7 +52,26 @@ class TopicViewSerializer < ApplicationSerializer
              :is_warning,
              :chunk_size,
              :bookmarked,
-             :message_archived
+             :message_archived,
+             :last_posted_at,
+             :posts_count
+
+  # Cloak some stats
+  def last_posted_at
+    if NewPostManager.stealth_enabled?
+      object.topic.posts.find_cloak_last_post(scope).created_at
+    else
+      object.topic.last_posted_at
+    end
+  end
+
+  def posts_count
+    if NewPostManager.stealth_enabled?
+      object.topic.posts.cloak_stealth(scope).count
+    else
+      object.topic.posts_count
+    end
+  end
 
   # TODO: Split off into proper object / serializer
   def details
@@ -63,7 +80,7 @@ class TopicViewSerializer < ApplicationSerializer
       auto_close_hours: object.topic.auto_close_hours,
       auto_close_based_on_last_post: object.topic.auto_close_based_on_last_post,
       created_by: BasicUserSerializer.new(object.topic.user, scope: scope, root: false),
-      last_poster: BasicUserSerializer.new(object.topic.last_poster, scope: scope, root: false)
+      last_poster: BasicUserSerializer.new(object.topic.cloak_last_poster(scope), scope: scope, root: false)
     }
 
     if object.topic.private_message?

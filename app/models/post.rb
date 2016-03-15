@@ -47,6 +47,8 @@ class Post < ActiveRecord::Base
 
   has_many :user_actions, foreign_key: :target_post_id
 
+  has_one :stealth_post_map, foreign_key: :post_id
+
   validates_with ::Validators::PostValidator
 
   # We can pass several creating options to a post via attributes
@@ -54,7 +56,7 @@ class Post < ActiveRecord::Base
 
   SHORT_POST_CHARS = 1200
 
-  scope :by_newest, -> { order('created_at desc, id desc') }
+  scope :by_newest, -> { order('posts.created_at desc, posts.id desc') }
   scope :by_post_number, -> { order('post_number ASC') }
   scope :with_user, -> { includes(:user) }
   scope :created_since, lambda { |time_ago| where('posts.created_at > ?', time_ago) }
@@ -63,6 +65,17 @@ class Post < ActiveRecord::Base
   scope :with_topic_subtype, ->(subtype) { joins(:topic).where('topics.subtype = ?', subtype) }
   scope :visible, -> { joins(:topic).where('topics.visible = true').where(hidden: false) }
   scope :secured, lambda { |guardian| where('posts.post_type in (?)', Topic.visible_post_types(guardian && guardian.user))}
+  scope :with_stealth_map, -> { eager_load(:stealth_post_map) }
+  scope :cloak_stealth, -> (guardian) {
+    guardian.stealth_actions(
+        user_action: ->{with_stealth_map.where("stealth_post_maps.post_id is null OR (posts.user_id = ? AND stealth_post_maps.post_id is not null)", guardian.user.id)},
+        anon_action: ->{with_stealth_map.where("stealth_post_maps.post_id is null")}
+    )
+  }
+
+  def self.find_cloak_last_post(guardian)
+    cloak_stealth(guardian).by_newest.first
+  end
 
   delegate :username, to: :user
 
@@ -88,6 +101,14 @@ class Post < ActiveRecord::Base
 
   def self.find_by_detail(key, value)
     includes(:post_details).find_by(post_details: { key: key, value: value })
+  end
+
+  def stealth?
+    stealth_post_map
+  end
+
+  def find_cloak_reply_count(guardian)
+    topic.posts.cloak_stealth(guardian).where(reply_to_post_number: post_number).count
   end
 
   def whisper?
@@ -552,7 +573,7 @@ class Post < ActiveRecord::Base
     # [1,2,3][-10,-1] => nil
     post_ids = (post_ids[(0-max_replies)..-1] || post_ids)
 
-    Post.secured(guardian).where(id: post_ids).includes(:user, :topic).order(:id).to_a
+    Post.cloak_stealth(guardian).secured(guardian).where(id: post_ids).includes(:user, :topic).order(:id).to_a
   end
 
   def revert_to(number)

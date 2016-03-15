@@ -5,6 +5,11 @@ class TopicParticipantsSummary
     @topic = topic
     @options = options
     @user = options[:user]
+    @guardian = Guardian.new(@user)
+
+    if NewPostManager.stealth_enabled?
+      @post_ids = topic.posts.cloak_stealth(@guardian).pluck(:user_id) # Only show not cloaked ids
+    end
   end
 
   def summary
@@ -28,7 +33,13 @@ class TopicParticipantsSummary
 
   def user_ids
     return [] unless @user
-    [topic.user_id] + topic.allowed_user_ids - [@user.id]
+    ids = [topic.user_id] + topic.allowed_user_ids - [@user.id]
+
+    if !NewPostManager.stealth_enabled? || @guardian.can_see_stealth?
+      ids
+    else
+      @post_ids & ids
+    end
   end
 
   def avatar_lookup

@@ -70,6 +70,24 @@ class Guardian
     )
   end
 
+  def can_see_stealth?
+    authenticated? && (is_admin? || is_staff? || is_moderator?)
+  end
+
+  def can_cloak?
+    authenticated? && (is_admin? || is_staff? || is_moderator?)
+  end
+
+  def stealth_actions(user_action:, anon_action:)
+    if NewPostManager.stealth_enabled?
+      if authenticated?
+        user_action.call unless can_see_stealth?
+      else
+        anon_action.call
+      end
+    end
+  end
+
   # Can the user see the object?
   def can_see?(obj)
     if obj

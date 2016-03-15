@@ -22,7 +22,7 @@ class PostMover
   def to_new_topic(title, category_id=nil)
     @move_type = PostMover.move_types[:new_topic]
 
-    post = Post.with_sfind_by(id: post_ids.first)
+    post = Post.find_by(id: post_ids.first)
     raise Discourse::InvalidParameters unless post
 
     Topic.transaction do

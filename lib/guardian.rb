@@ -78,7 +78,7 @@ class Guardian
     authenticated? && (is_admin? || is_staff? || is_moderator?)
   end
 
-  def stealth_actions(user_action:, anon_action:)
+  def stealth_actions(user_action: nil, anon_action: nil)
     if NewPostManager.stealth_enabled?
       if authenticated?
         user_action.call unless can_see_stealth?

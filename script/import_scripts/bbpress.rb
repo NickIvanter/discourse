@@ -47,7 +47,8 @@ class ImportScripts::Bbpress < ImportScripts::Base
               topic_subscriptions,
               forum_subscriptions,
               user_avatar,
-              first_post_id
+              first_post_id,
+              first_liked_post_id
          FROM #{table_name 'users'} u
 LEFT OUTER JOIN (select user_id, meta_value as topic_subscriptions from #{table_name 'usermeta'} where meta_key like'%_bbp_subscriptions') um
              ON u.id = um.user_id
@@ -57,8 +58,10 @@ LEFT OUTER JOIN (select user_id, meta_value as user_avatar from #{table_name 'us
              ON u.id = um2.user_id
 LEFT OUTER JOIN (select id as first_post_id, post_author from #{table_name 'posts'} where post_status = 'publish' and post_type in ('topic', 'reply')) p
              ON u.id = p.post_author
+LEFT OUTER JOIN (select topic_id as first_liked_post_id, user_id from #{table_name 'ulike_forums'}) l
+             ON u.id = l.user_id
        GROUP BY id
-         HAVING topic_subscriptions IS NOT NULL OR forum_subscriptions IS NOT NULL OR first_post_id IS NOT NULL",
+         HAVING topic_subscriptions IS NOT NULL OR forum_subscriptions IS NOT NULL OR first_post_id IS NOT NULL or first_liked_post_id IS NOT NULL",
                                   cache_rows: false)
 
     puts '', "creating users"
@@ -68,6 +71,7 @@ LEFT OUTER JOIN (select id as first_post_id, post_author from #{table_name 'post
       new_user_data = ActiveSupport::HashWithIndifferentAccess.new(u)
 
       new_user_data.delete(:first_post_id)
+      new_user_data.delete(:first_liked_post_id)
 
       # Save topic subscriptions into a temporary hash, because we can't subscribe the newly created user
       # to any topics yet because no topics have been imported at this point. So we'll subscribe him later.

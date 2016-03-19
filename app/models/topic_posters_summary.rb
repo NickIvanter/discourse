@@ -10,7 +10,9 @@ class TopicPostersSummary
     if NewPostManager.stealth_enabled?
       @last_post_user_id = @topic.cloak_last_post_user_id(@guardian)
       @post_ids = @topic.posts.cloak_stealth(@guardian).pluck(:user_id)
+      @topic_user_id = (@post_ids & [ topic.user_id ]).first
     else
+      @topic_user_id = topic.user_id
       @last_post_user_id = @topic.last_post_user_id
     end
   end
@@ -65,7 +67,7 @@ class TopicPostersSummary
   end
 
   def last_poster_is_topic_creator?
-    topic.user_id == @last_post_user_id
+    @topic_user_id == @last_post_user_id
   end
 
   def sorted_top_posters
@@ -83,7 +85,7 @@ class TopicPostersSummary
       featured_ids = topic.featured_user_ids
     end
 
-    [ topic.user_id, @last_post_user_id, *featured_ids ]
+    [ @topic_user_id, @last_post_user_id, *featured_ids ]
   end
 
   def avatar_lookup

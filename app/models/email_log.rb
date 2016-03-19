@@ -10,7 +10,7 @@ class EmailLog < ActiveRecord::Base
 
   after_create do
     # Update last_emailed_at if the user_id is present and email was sent
-    User.where(id: user_id).update_all("last_emailed_at = CURRENT_TIMESTAMP") if user_id.present? && !skipped
+    User.where(id: user_id).update_all("last_emailed_at = CURRENT_TIMESTAMP") if user_id.present? && !skipped && email_type == 'digest'
   end
 
   def self.count_per_day(start_date, end_date)

@@ -159,7 +159,9 @@ class PostCreator
 
   # For actions on approving or when stealth posts disabled
   def stealth_approving?
-    !NewPostManager.stealth_enabled? || @opts[:stealth_approving]
+    !NewPostManager.stealth_enabled? || @opts[:stealth_approving] || guardian.is_staff? ||
+      (opts[:archetype] && opts[:archetype] == Archetype.private_message) ||
+      (@topic && @topic.private_message?)
   end
 
   def self.track_post_stats

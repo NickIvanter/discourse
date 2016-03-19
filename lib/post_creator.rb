@@ -159,7 +159,7 @@ class PostCreator
 
   # For actions on approving or when stealth posts disabled
   def stealth_approving?
-    !NewPostManager.stealth_enabled? || @opts[:stealth_approving]
+    !NewPostManager.stealth_enabled? || @opts[:stealth_approving] || guardian.is_staff?
   end
 
   def self.track_post_stats

@@ -344,7 +344,7 @@ class UserNotifications < ActionMailer::Base
     }
 
     # If we have a display name, change the from address
-    email_opts[:from_alias] = from_alias if from_alias.present?
+    #email_opts[:from_alias] = from_alias if from_alias.present?
 
     TopicUser.change(user.id, post.topic_id, last_emailed_post_number: post.post_number)
 

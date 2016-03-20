@@ -115,6 +115,7 @@ class QueuedPost < ActiveRecord::Base
       DiscourseEvent.trigger(:post_created, post, opts, user)
       BadgeGranter.queue_badge_grant(Badge::Trigger::PostRevision, post: post)
       post.publish_change_to_clients! :created
+      user.publish_notifications_state
     end
 
     DiscourseEvent.trigger(:approved_post, self)

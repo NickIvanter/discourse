@@ -67,10 +67,12 @@ class Post < ActiveRecord::Base
   scope :secured, lambda { |guardian| where('posts.post_type in (?)', Topic.visible_post_types(guardian && guardian.user))}
   scope :with_stealth_map, -> { eager_load(:stealth_post_map) }
   scope :cloak_stealth, -> (guardian) {
-    guardian.stealth_actions(
+    if guardian.present?
+      guardian.stealth_actions(
         user_action: ->{with_stealth_map.where("stealth_post_maps.post_id is null OR (posts.user_id = ? AND stealth_post_maps.post_id is not null)", guardian.user.id)},
         anon_action: ->{with_stealth_map.where("stealth_post_maps.post_id is null")}
-    )
+      )
+    end
   }
 
   def self.find_cloak_last_post(guardian)

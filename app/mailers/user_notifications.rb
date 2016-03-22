@@ -202,7 +202,7 @@ class UserNotifications < ActionMailer::Base
     allowed_post_types = [Post.types[:regular]]
     allowed_post_types << Post.types[:whisper] if topic_user.try(:user).try(:staff?)
 
-    guardian = Guardian.new(topic_user.user)
+    guardian = Guardian.new(topic_user.try(:user))
     context_posts = Post.cloak_stealth(guardian)
                         .where(topic_id: post.topic_id)
                         .where("posts.post_number < ?", post.post_number)

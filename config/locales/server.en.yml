@@ -1236,7 +1236,7 @@ en:
 
     approve_post_count: "The amount of posts from a new user that must be approved"
     approve_unless_trust_level: "Posts for users below this trust level must be approved"
-    notify_about_queued_posts_after: "If there are posts that have been waiting to be reviewed for more than this many hours, an email will be sent to the contact email. Set to 0 to disable these emails."
+    notify_about_queued_posts_after: "If there are posts that have been waiting to be reviewed for more than this many minutes, an email will be sent to the contact email. Set to 0 to disable these emails."
 
     default_email_digest_frequency: "How often users receive digest emails by default."
     default_email_private_messages: "Send an email when someone messages the user by default."

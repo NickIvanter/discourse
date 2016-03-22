@@ -16,7 +16,7 @@ module Jobs
     end
 
     def should_notify_ids
-      @_should_notify_ids ||= QueuedPost.new_posts.visible.where('created_at < ?', SiteSetting.notify_about_queued_posts_after.hours.ago).pluck(:id)
+      @_should_notify_ids ||= QueuedPost.new_posts.visible.where('created_at < ?', SiteSetting.notify_about_queued_posts_after.minutes.ago).pluck(:id)
     end
 
     def last_notified_id

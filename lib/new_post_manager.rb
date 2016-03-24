@@ -135,10 +135,9 @@ class NewPostManager
         return create_result
       end
 
-
       # Do mapping from posts to queued_posts to hide it
       # if approve_stealth mode is on
-      if create_result.success? && handled_result.success?
+      if create_result.success? && handled_result.present? && handled_result.queued_post.present? && handled_result.success?
         stealth(handled_result, create_result)
       end
 

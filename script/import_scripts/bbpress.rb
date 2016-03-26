@@ -7,6 +7,7 @@ require File.expand_path(File.dirname(__FILE__) + "/base.rb")
 
 BB_PRESS_DB = ENV['BBPRESS_DB'] || "bbpress"
 DB_TABLE_PREFIX = "wp_"
+AVATARS_BASE_PATH = "/vagrant/bbpress_avatars/"
 
 class ImportScripts::Bbpress < ImportScripts::Base
 
@@ -24,6 +25,8 @@ class ImportScripts::Bbpress < ImportScripts::Base
     Post.pluck(:id, :post_number).each do |post_id, post_number|
       @post_number_map[post_id] = post_number
     end
+
+    @topic_subscriptions_map = {}
   end
 
   def created_post(post)
@@ -40,13 +43,91 @@ class ImportScripts::Bbpress < ImportScripts::Base
        SELECT id,
               display_name name,
               user_email email,
-              user_registered created_at
-         FROM #{table_name 'users'}", cache_rows: false)
+              user_registered created_at,
+              topic_subscriptions,
+              forum_subscriptions,
+              user_avatar,
+              first_post_id,
+              first_liked_post_id
+         FROM #{table_name 'users'} u
+LEFT OUTER JOIN (select user_id, meta_value as topic_subscriptions from #{table_name 'usermeta'} where meta_key like'%_bbp_subscriptions') um
+             ON u.id = um.user_id
+LEFT OUTER JOIN (select user_id, meta_value as forum_subscriptions from #{table_name 'usermeta'} where meta_key like'%_bbp_forum_subscriptions') um1
+             ON u.id = um1.user_id
+LEFT OUTER JOIN (select user_id, meta_value as user_avatar from #{table_name 'usermeta'} where meta_key = 'basic_user_avatar') um2
+             ON u.id = um2.user_id
+LEFT OUTER JOIN (select id as first_post_id, post_author from #{table_name 'posts'} where post_status = 'publish' and post_type in ('topic', 'reply')) p
+             ON u.id = p.post_author
+LEFT OUTER JOIN (select topic_id as first_liked_post_id, user_id from #{table_name 'ulike_forums'}) l
+             ON u.id = l.user_id
+       GROUP BY id
+         HAVING topic_subscriptions IS NOT NULL OR forum_subscriptions IS NOT NULL OR first_post_id IS NOT NULL or first_liked_post_id IS NOT NULL",
+                                  cache_rows: false)
 
     puts '', "creating users"
 
     create_users(users_results) do |u|
-      ActiveSupport::HashWithIndifferentAccess.new(u)
+
+      new_user_data = ActiveSupport::HashWithIndifferentAccess.new(u)
+
+      new_user_data.delete(:first_post_id)
+      new_user_data.delete(:first_liked_post_id)
+
+      # Save topic subscriptions into a temporary hash, because we can't subscribe the newly created user
+      # to any topics yet because no topics have been imported at this point. So we'll subscribe him later.
+      topic_subscriptions = new_user_data.delete(:topic_subscriptions)
+      @topic_subscriptions_map[new_user_data[:id]] = topic_subscriptions if topic_subscriptions
+
+      forum_subscriptions = new_user_data.delete(:forum_subscriptions)
+      user_avatar = new_user_data.delete(:user_avatar)
+
+      new_user_data.merge(
+        {
+          post_create_action: proc do |user|
+            # Do not ever send any emails unless the user was subscribed to a bbPress forum or topic
+            if forum_subscriptions.nil?
+              if topic_subscriptions.nil?
+                # This user had no subscriptions whatsoever. Let's not bother him.
+                user.user_option.update_columns(email_always: false,
+                                                email_digests: false,
+                                                email_direct: false,
+                                                email_private_messages: false)
+              else
+                # This user was not subscribed to forum notifications but he was subscribed to one or more topics.
+                # He shouldn't mind receiving weekly digests and otherwise using default notification settings.
+                user.user_option.update_columns(email_digests: true, digest_after_days: 7)
+              end
+            else
+              # This user had explicitly subscribed to the forum, so let's be sending him daily digests.
+              user.user_option.update_columns(email_digests: true, digest_after_days: 1)
+            end
+
+            if user_avatar
+              # We do not use the specific value (url) of user_avatar stored in the Wordpress database. We simply
+              # assume that the avatar file name is <user_numeric_id>.jpg, which is the case when using the
+              # Basic User Avatars Wordpress plugin.
+              begin
+                filename = new_user_data[:id].to_s + '.jpg'
+                path = AVATARS_BASE_PATH + filename
+                upload = @uploader.create_upload(user.id, path, filename)
+
+                if upload.present? && upload.persisted?
+                  user.import_mode = false
+                  user.create_user_avatar
+                  user.import_mode = true
+                  user.user_avatar.update(custom_upload_id: upload.id)
+                  user.update(uploaded_avatar_id: upload.id)
+                else
+                  puts "Failed to upload avatar for user #{user.username}: #{path}"
+                  puts upload.errors.inspect if upload
+                end
+              rescue SystemCallError => err
+                Rails.logger.error("Could not import avatar for user #{user.username}: #{err.message}")
+              end
+            end
+          end
+        }
+      )
     end
 
 
@@ -62,15 +143,44 @@ class ImportScripts::Bbpress < ImportScripts::Base
     end
 
     import_posts
+    migrate_subscriptions
+    import_likes
+  end
+
+  def migrate_subscriptions
+    puts "", "migrating topic subscriptions"
+
+    total_count = @topic_subscriptions_map.count
+    progress_count = 0
+
+    @topic_subscriptions_map.each do |imported_user_id, list_of_topics|
+      user_id = user_id_from_imported_user_id(imported_user_id)
+      list_of_topics.to_s.split(",").each do |imported_topic_id|
+        topic = topic_lookup_from_imported_post_id(imported_topic_id.to_i)
+        next if topic.nil?
+        TopicUser.change(user_id, topic[:topic_id], notification_level: TopicUser.notification_levels[:watching])
+      end
+      progress_count += 1
+      print_status(progress_count, total_count)
+    end
   end
 
   def import_posts
     puts '', "creating topics and posts"
 
+    # Discourse import scripts require that each imported user have an ID from the external system. This is fine
+    # when we are importing "regular" Wordpress users, but presents a small issue when we want to create new user
+    # in the middle of the import process, which we want to do when importing "anonymous" posts. We want to create
+    # Discourse users for the authors of those posts.
+    # So, we are going to assign "fake" import IDs to those users. We begin with the arbitrary ID of 65535 and
+    # go down from there, HOPING that it will not intersect with the IDs of the existing Wordpress users, which
+    # are numbered from 1 upward.
+    anonymous_user_fake_import_id = 65535
+
     total_count = @client.query("
       SELECT count(*) count
         FROM #{table_name 'posts'}
-       WHERE post_status <> 'spam'
+       WHERE post_status = 'publish'
          AND post_type IN ('topic', 'reply')").first['count']
 
     batch_size = 1000
@@ -84,11 +194,20 @@ class ImportScripts::Bbpress < ImportScripts::Base
                           post_title,
                           post_type,
                           post_name,
-                          meta_value as reply_to,
-                          post_parent
+                          reply_to,
+                          post_parent,
+                          author_ip,
+                          anonymous_name,
+                          anonymous_email
                      FROM #{table_name 'posts'} p
-          LEFT OUTER JOIN (select * from #{table_name 'postmeta'} where meta_key='_bbp_reply_to') pm
+          LEFT OUTER JOIN (select post_id, meta_value as reply_to from #{table_name 'postmeta'} where meta_key='_bbp_reply_to') pm
                        ON p.ID = pm.post_id
+          LEFT OUTER JOIN (select post_id, meta_value as author_ip from #{table_name 'postmeta'} where meta_key='_bbp_author_ip') pm1
+                       ON p.ID = pm1.post_id
+          LEFT OUTER JOIN (select post_id, meta_value as anonymous_name from #{table_name 'postmeta'} where meta_key='_bbp_anonymous_name') pm2
+                       ON p.ID = pm2.post_id
+          LEFT OUTER JOIN (select post_id, meta_value as anonymous_email from #{table_name 'postmeta'} where meta_key='_bbp_anonymous_email') pm3
+                       ON p.ID = pm3.post_id
                     WHERE post_status = 'publish'
                       AND post_type IN ('topic', 'reply')
                  ORDER BY id
@@ -104,18 +223,40 @@ class ImportScripts::Bbpress < ImportScripts::Base
         mapped = {}
 
         mapped[:id] = post["id"]
+
+        if post["post_author"] == 0
+          anonymous_users = Array.new
+          anonymous_users[0] = {
+            name: post["anonymous_name"],
+            email: post["anonymous_email"],
+            created_at: post["post_date"],
+            id: anonymous_user_fake_import_id,
+            post_create_action: proc do |user|
+              # Do not send any emails to this user
+              user.user_option.update_columns(email_always: false,
+                                              email_digests: false,
+                                              email_direct: false,
+                                              email_private_messages: false)
+            end
+          }
+          create_users(anonymous_users) do |u|
+            ActiveSupport::HashWithIndifferentAccess.new(u)
+          end
+          post["post_author"] = anonymous_user_fake_import_id
+          anonymous_user_fake_import_id -= 1
+        end
+
         mapped[:user_id] = user_id_from_imported_user_id(post["post_author"]) || find_user_by_import_id(post["post_author"]).try(:id) || -1
         mapped[:raw] = post["post_content"]
         if mapped[:raw]
           mapped[:raw] = mapped[:raw].gsub("<pre><code>", "```\n").gsub("</code></pre>", "\n```")
         end
         mapped[:created_at] = post["post_date"]
-        mapped[:custom_fields] = {import_id: post["id"], import_slug: post["post_name"]}
+        mapped[:custom_fields] = {import_id: post["id"]}
 
         if post["post_type"] == "topic"
           mapped[:category] = category_id_from_imported_category_id(post["post_parent"])
           mapped[:title] = CGI.unescapeHTML post["post_title"]
-          mapped[:slug] = post["post_name"]
         else
           parent = topic_lookup_from_imported_post_id(post["post_parent"])
           if parent
@@ -128,11 +269,46 @@ class ImportScripts::Bbpress < ImportScripts::Base
           end
         end
 
+        # Do not subscribe post authors to any topics by default
+        mapped[:auto_track] = false
+
+        # Create permalinks for the bbPress topics' URLs
+        mapped[:post_create_action] = proc do |topic|
+          next unless post["post_type"] == "topic"
+          next if post["post_name"].blank?
+
+          # If the topic slug is percent-encoded, we need to make sure it is uppercase
+          if post["post_name"].include? "%"
+            post["post_name"] = post["post_name"].upcase
+          end
+
+          next if Permalink.where(url: post["post_name"], topic_id: topic.topic_id).exists?
+
+          Permalink.create(url: post["post_name"], topic_id: topic.topic_id)
+        end
+
         skip ? nil : mapped
       end
     end
   end
 
+  def import_likes
+    puts '', 'importing Likes'
+
+    # The condition "user_id < 10000" effectively ensures that we do not import anonymous likes.
+    # Anonymous likes have the 'ip2long' value of the visitor's IP address as the user_id.
+    results = @client.query("
+       SELECT topic_id post_id,
+              date_time created_at,
+              user_id
+         FROM #{table_name 'ulike_forums'}
+        WHERE status='like' and user_id < 10000",
+                            cache_rows: false)
+
+    create_likes(results) do |row|
+      ActiveSupport::HashWithIndifferentAccess.new(row)
+    end
+  end
 end
 
 ImportScripts::Bbpress.new.perform

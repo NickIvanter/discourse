@@ -1,12 +1,14 @@
-require 'translit'
 module UserNameSuggester
   GENERIC_NAMES = ['i', 'me', 'info', 'support', 'admin', 'webmaster', 'hello', 'mail', 'office', 'contact', 'team']
 
   def self.suggest(name, allow_username = nil)
     return unless name.present?
+    I18n.locale = :ru
+    name = name.parameterize
     name = parse_name_from_email(name)
-    name = Translit.convert(name, :english)
-    find_available_username_based_on(name.partition(" ").first, allow_username)
+    # If name is John Doe, this will create the username john_d
+    name_parts = name.downcase.partition(/ |-/)
+    find_available_username_based_on("#{name_parts[0]}_#{name_parts[2][0]}", allow_username)
   end
 
   def self.parse_name_from_email(name)
@@ -40,18 +42,25 @@ module UserNameSuggester
     name = ActiveSupport::Inflector.transliterate(name)
     # 1. remove characters that aren't allowed
     name.gsub!(UsernameValidator::CONFUSING_EXTENSIONS, "")
-    name.gsub!(/[^\w.-]/, "_")
+    name.gsub!(/[^\w.-]/, "")
     # 2. removes unallowed leading characters
     name.gsub!(/^\W+/, "")
     # 3. removes unallowed trailing characters
-    name.gsub!(/[^A-Za-z0-9]+$/, "")
+    name = remove_unallowed_trailing_characters(name)
     # 4. remove special characters
-    name.gsub!(/[-_.]{2,}/, "_")
+    name.gsub!(/[-_.]{2,}/, "")
+    name
+  end
+
+  def self.remove_unallowed_trailing_characters(name)
+    name.gsub!(/[^A-Za-z0-9]+$/, "")
     name
   end
 
   def self.rightsize_username(name)
-    name.ljust(User.username_length.begin, '1')[0, User.username_length.end]
+    name = name[0, User.username_length.end]
+    name = remove_unallowed_trailing_characters(name)
+    name.ljust(User.username_length.begin, '1')
   end
 
 end

@@ -193,6 +193,8 @@ en:
     more: "More"
     less: "Less"
     never: "never"
+    every_30_minutes: "every 30 minutes"
+    every_hour: "every hour"
     daily: "daily"
     weekly: "weekly"
     every_two_weeks: "every two weeks"
@@ -634,6 +636,8 @@ en:
         never: "never"
       email_digests:
         title: "When I don't visit here, send an email digest of what's new:"
+        every_30_minutes: "every 30 minutes"
+        every_hour: "hourly"
         daily: "daily"
         every_three_days: "every three days"
         weekly: "weekly"
@@ -1231,6 +1235,7 @@ en:
         reasons:
           "3_6": 'You will receive notifications because you are watching this category.'
           "3_5": 'You will receive notifications because you started watching this topic automatically.'
+          "3_4": 'You will receive notifications because you posted a reply to this topic.'
           "3_2": 'You will receive notifications because you are watching this topic.'
           "3_1": 'You will receive notifications because you created this topic.'
           "3": 'You will receive notifications because you are watching this topic.'
@@ -2119,11 +2124,11 @@ en:
             is_disabled: "Restore is disabled in the site settings."
             label: "Restore"
             title: "Restore the backup"
-            confirm: "Are your sure you want to restore this backup?"
+            confirm: "Are you sure you want to restore this backup?"
           rollback:
             label: "Rollback"
             title: "Rollback the database to previous working state"
-            confirm: "Are your sure you want to rollback the database to the previous working state?"
+            confirm: "Are you sure you want to rollback the database to the previous working state?"
 
       export_csv:
         user_archive_confirm: "Are you sure you want to download your posts?"

@@ -62,6 +62,7 @@ class UserNotifications < ActionMailer::Base
     @site_name = SiteSetting.email_prefix.presence || SiteSetting.title
 
     @header_color = ColorScheme.hex_for_name('header_background')
+    @anchor_color = ColorScheme.hex_for_name('tertiary')
     @last_seen_at = short_date(@user.last_seen_at || @user.created_at)
 
     # A list of topics to show the user
@@ -203,7 +204,7 @@ class UserNotifications < ActionMailer::Base
     allowed_post_types << Post.types[:whisper] if topic_user.try(:user).try(:staff?)
 
 
-    guardian = Guardian.new(tu.user) if NewPostManager.stealth_enabled? && tu.present?
+    guardian = Guardian.new(tu) if NewPostManager.stealth_enabled? && tu.present?
     context_posts = Post.cloak_stealth(guardian)
                         .where(topic_id: post.topic_id)
                         .where("posts.post_number < ?", post.post_number)
@@ -346,7 +347,7 @@ class UserNotifications < ActionMailer::Base
     }
 
     # If we have a display name, change the from address
-    email_opts[:from_alias] = from_alias if from_alias.present?
+    #email_opts[:from_alias] = from_alias if from_alias.present?
 
     TopicUser.change(user.id, post.topic_id, last_emailed_post_number: post.post_number)
 

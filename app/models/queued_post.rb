@@ -92,7 +92,7 @@ class QueuedPost < ActiveRecord::Base
     QueuedPost.transaction do
       change_to!(:approved, approved_by)
 
-      if user.blocked?
+      if user.blocked? && !UserHellbanner.enabled?
         user.update_columns(blocked: false)
       end
 
@@ -118,6 +118,7 @@ class QueuedPost < ActiveRecord::Base
         DiscourseEvent.trigger(:post_created, post, opts, user)
         BadgeGranter.queue_badge_grant(Badge::Trigger::PostRevision, post: post)
         post.publish_change_to_clients! :created
+        user.publish_notifications_state
       end
     end
 
@@ -170,7 +171,7 @@ end
 # Table name: queued_posts
 #
 #  id             :integer          not null, primary key
-#  queue          :string(255)      not null
+#  queue          :string           not null
 #  state          :integer          not null
 #  user_id        :integer          not null
 #  raw            :text             not null

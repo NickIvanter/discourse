@@ -276,6 +276,8 @@ login:
   pending_users_reminder_delay:
     min: -1
     default: 8
+  hellban_mode:
+    default: false
 
 users:
   min_username_length:
@@ -873,7 +875,7 @@ backups:
     default: false
   maximum_backups:
     client: true
-    default: 7
+    default: 5
     shadowed_by_global: true
   automatic_backups_enabled:
     default: true
@@ -1061,7 +1063,7 @@ uncategorized:
 user_preferences:
   default_email_digest_frequency:
     enum: 'DigestEmailSiteSetting'
-    default: 7
+    default: 10080
   default_email_private_messages: true
   default_email_direct: true
   default_email_mailing_list_mode: false

@@ -154,7 +154,10 @@ class ApplicationController < ActionController::Base
 
       if notifications.present?
         notification_ids = notifications.split(",").map(&:to_i)
-        Notification.where(user_id: current_user.id, id: notification_ids).update_all(read: true)
+        count = Notification.where(user_id: current_user.id, id: notification_ids, read: false).update_all(read: true)
+        if count > 0
+          current_user.publish_notifications_state
+        end
         cookies.delete('cn')
       end
     end
@@ -451,8 +454,13 @@ class ApplicationController < ActionController::Base
     def build_not_found_page(status=404, layout=false)
       category_topic_ids = Category.pluck(:topic_id).compact
       @container_class = "wrap not-found-container"
-      @top_viewed = Topic.where.not(id: category_topic_ids).top_viewed(10)
-      @recent = Topic.where.not(id: category_topic_ids).recent(10)
+      if NewPostManager.stealth_enabled?
+        @top_viewed = Topic.cloak_stealth(guardian).where.not(id: category_topic_ids).top_viewed(10)
+        @recent = Topic.cloak_stealth(guardian).where.not(id: category_topic_ids).recent(10)
+      else
+        @top_viewed = Topic.where.not(id: category_topic_ids).top_viewed(10)
+        @recent = Topic.where.not(id: category_topic_ids).recent(10)
+      end
       @slug =  params[:slug].class == String ? params[:slug] : ''
       @slug =  (params[:id].class == String ? params[:id] : '') if @slug.blank?
       @slug.gsub!('-',' ')

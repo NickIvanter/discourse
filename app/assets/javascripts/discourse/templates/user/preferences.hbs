@@ -151,7 +151,7 @@
         {{preference-checkbox labelKey="user.email_digests.title" checked=model.user_option.email_digests}}
         {{#if model.user_option.email_digests}}
           <div class='controls controls-dropdown'>
-            {{combo-box valueAttribute="value" content=digestFrequencies value=model.user_option.digest_after_days}}
+            {{combo-box valueAttribute="value" content=digestFrequencies value=model.user_option.digest_after_minutes}}
           </div>
         {{/if}}
       {{/if}}
@@ -163,17 +163,6 @@
       {{preference-checkbox labelKey="user.email_direct" checked=model.user_option.email_direct}}
       <span class="pref-mailing-list-mode">{{preference-checkbox labelKey="user.mailing_list_mode" checked=model.user_option.mailing_list_mode}}</span>
       {{preference-checkbox labelKey="user.email_always" checked=model.user_option.email_always}}
-
-      <div class='instructions'>
-        {{#if siteSettings.email_time_window_mins}}
-          {{i18n 'user.email.frequency' count=siteSettings.email_time_window_mins}}
-        {{else}}
-          {{i18n 'user.email.frequency_immediately'}}
-        {{/if}}
-      </div>
-
-
-
     </div>
 
     <div class="control-group notifications">

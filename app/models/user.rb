@@ -187,6 +187,9 @@ class User < ActiveRecord::Base
     find_by(username_lower: username.downcase)
   end
 
+  def hellbanned?
+    UserHellbanner.enabled? && blocked?
+  end
 
   def enqueue_welcome_message(message_type)
     return unless SiteSetting.send_welcome_message?
@@ -265,10 +268,11 @@ class User < ActiveRecord::Base
   end
 
   def unread_notifications
-    @unread_notifications ||=
-      begin
-        # perf critical, much more efficient than AR
-        sql = "
+    unless NewPostManager.stealth_enabled?
+      @unread_notifications ||=
+        begin
+          # perf critical, much more efficient than AR
+          sql = "
            SELECT COUNT(*) FROM notifications n
            LEFT JOIN topics t ON n.topic_id = t.id
            WHERE
@@ -278,15 +282,37 @@ class User < ActiveRecord::Base
             NOT read AND
             n.id > :seen_notification_id"
 
-        User.exec_sql(sql, user_id: id,
-                           seen_notification_id: seen_notification_id,
-                           pm:  Notification.types[:private_message])
+          User.exec_sql(sql, user_id: id,
+                        seen_notification_id: seen_notification_id,
+                        pm:  Notification.types[:private_message])
             .getvalue(0,0).to_i
-      end
+        end
+    else
+      @unread_notifications ||=
+        begin
+          # perf critical, much more efficient than AR
+          sql = "
+           SELECT COUNT(*) FROM notifications n
+           LEFT JOIN topics t ON n.topic_id = t.id
+           LEFT JOIN stealth_post_maps spm ON n.topic_id = spm.topic_id
+           WHERE
+            (spm.topic_id IS NULL OR (t.user_id = :user_id AND spm.topic_id is not null)) AND
+            t.deleted_at IS NULL AND
+            n.notification_type <> :pm AND
+            n.user_id = :user_id AND
+            NOT read AND
+            n.id > :seen_notification_id"
+
+          User.exec_sql(sql, user_id: id,
+                        seen_notification_id: seen_notification_id,
+                        pm:  Notification.types[:private_message])
+            .getvalue(0,0).to_i
+        end
+    end
   end
 
   def total_unread_notifications
-    @unread_total_notifications ||= notifications.where("read = false").count
+    @unread_total_notifications ||= notifications.eager_load(:topic).cloak_stealth(Guardian.new(self)).where("read = false").count
   end
 
   def saw_notification_id(notification_id)
@@ -297,11 +323,11 @@ class User < ActiveRecord::Base
   def publish_notifications_state
     # publish last notification json with the message so we
     # can apply an update
-    notification = notifications.visible.order('notifications.id desc').first
-    json = NotificationSerializer.new(notification).as_json if notification
 
+    unless NewPostManager.stealth_enabled?
+      notification = notifications.visible.order('notifications.id desc').first
 
-    sql = "
+      sql = "
        SELECT * FROM (
          SELECT n.id, n.read FROM notifications n
          LEFT JOIN topics t ON n.topic_id = t.id
@@ -325,9 +351,42 @@ class User < ActiveRecord::Base
        LIMIT 20
       ) AS y
     "
+    else
+      notification = notifications.visible.cloak_stealth(Guardian.new(self)).order('notifications.id desc').first
 
+      sql = "
+       SELECT * FROM (
+         SELECT n.id, n.read FROM notifications n
+         LEFT JOIN topics t ON n.topic_id = t.id
+         LEFT JOIN stealth_post_maps spm ON n.topic_id = spm.topic_id
+         WHERE
+          (spm.topic_id IS NULL OR (t.user_id = :user_id AND spm.topic_id IS NOT NULL)) AND
+          t.deleted_at IS NULL AND
+          n.notification_type = :type AND
+          n.user_id = :user_id AND
+          NOT read
+        ORDER BY n.id DESC
+        LIMIT 20
+      ) AS x
+      UNION ALL
+      SELECT * FROM (
+       SELECT n.id, n.read FROM notifications n
+       LEFT JOIN topics t ON n.topic_id = t.id
+       LEFT JOIN stealth_post_maps spm ON n.topic_id = spm.topic_id
+       WHERE
+        (spm.topic_id IS NULL OR (t.user_id = :user_id AND spm.topic_id IS NOT NULL)) AND
+        t.deleted_at IS NULL AND
+        (n.notification_type <> :type OR read) AND
+        n.user_id = :user_id
+       ORDER BY n.id DESC
+       LIMIT 20
+      ) AS y
+    "
+    end
+
+    json = NotificationSerializer.new(notification).as_json if notification
     recent = User.exec_sql(sql, user_id: id,
-                       type:  Notification.types[:private_message]).values.map do |id, read|
+                           type:  Notification.types[:private_message]).values.map do |id, read|
       [id.to_i, read == 't'.freeze]
     end
 
@@ -956,42 +1015,42 @@ end
 #
 # Table name: users
 #
-#  id                            :integer          not null, primary key
-#  username                      :string(60)       not null
-#  created_at                    :datetime         not null
-#  updated_at                    :datetime         not null
-#  name                          :string(255)
-#  seen_notification_id          :integer          default(0), not null
-#  last_posted_at                :datetime
-#  email                         :string(513)      not null
-#  password_hash                 :string(64)
-#  salt                          :string(32)
-#  active                        :boolean          default(FALSE), not null
-#  username_lower                :string(60)       not null
-#  auth_token                    :string(32)
-#  last_seen_at                  :datetime
-#  admin                         :boolean          default(FALSE), not null
-#  last_emailed_at               :datetime
-#  trust_level                   :integer          not null
-#  approved                      :boolean          default(FALSE), not null
-#  approved_by_id                :integer
-#  approved_at                   :datetime
-#  previous_visit_at             :datetime
-#  suspended_at                  :datetime
-#  suspended_till                :datetime
-#  date_of_birth                 :date
-#  views                         :integer          default(0), not null
-#  flag_level                    :integer          default(0), not null
-#  ip_address                    :inet
-#  moderator                     :boolean          default(FALSE)
-#  blocked                       :boolean          default(FALSE)
-#  title                         :string(255)
-#  uploaded_avatar_id            :integer
-#  primary_group_id              :integer
-#  locale                        :string(10)
-#  registration_ip_address       :inet
-#  trust_level_locked            :boolean          default(FALSE), not null
-#  staged                        :boolean          default(FALSE), not null
+#  id                      :integer          not null, primary key
+#  username                :string(60)       not null
+#  created_at              :datetime         not null
+#  updated_at              :datetime         not null
+#  name                    :string
+#  seen_notification_id    :integer          default(0), not null
+#  last_posted_at          :datetime
+#  email                   :string(513)      not null
+#  password_hash           :string(64)
+#  salt                    :string(32)
+#  active                  :boolean          default(FALSE), not null
+#  username_lower          :string(60)       not null
+#  auth_token              :string(32)
+#  last_seen_at            :datetime
+#  admin                   :boolean          default(FALSE), not null
+#  last_emailed_at         :datetime
+#  trust_level             :integer          not null
+#  approved                :boolean          default(FALSE), not null
+#  approved_by_id          :integer
+#  approved_at             :datetime
+#  previous_visit_at       :datetime
+#  suspended_at            :datetime
+#  suspended_till          :datetime
+#  date_of_birth           :date
+#  views                   :integer          default(0), not null
+#  flag_level              :integer          default(0), not null
+#  ip_address              :inet
+#  moderator               :boolean          default(FALSE)
+#  blocked                 :boolean          default(FALSE)
+#  title                   :string
+#  uploaded_avatar_id      :integer
+#  locale                  :string(10)
+#  primary_group_id        :integer
+#  registration_ip_address :inet
+#  trust_level_locked      :boolean          default(FALSE), not null
+#  staged                  :boolean          default(FALSE), not null
 #
 # Indexes
 #

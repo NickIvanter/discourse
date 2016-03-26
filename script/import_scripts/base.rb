@@ -278,7 +278,6 @@ class ImportScripts::Base
     avatar_url = opts.delete(:avatar_url)
 
     # Allow the || operations to work with empty strings ''
-    opts[:name] = nil if opts[:name].blank?
     opts[:username] = nil if opts[:username].blank?
 
     opts[:name] = User.suggest_name(opts[:email]) unless opts[:name]
@@ -287,7 +286,8 @@ class ImportScripts::Base
       opts[:username].length > User.username_length.end ||
       !User.username_available?(opts[:username]) ||
       !UsernameValidator.new(opts[:username]).valid_format?
-      opts[:username] = UserNameSuggester.suggest(opts[:username] || opts[:name] || opts[:email])
+
+      opts[:username] = UserNameSuggester.suggest(opts[:username] || opts[:name].presence || opts[:email])
     end
     opts[:email] = opts[:email].downcase
     opts[:trust_level] = TrustLevel[1] unless opts[:trust_level]
@@ -306,8 +306,8 @@ class ImportScripts::Base
       User.transaction do
         u.save!
         if bio_raw.present? || website.present? || location.present?
-          u.user_profile.bio_raw = bio_raw if bio_raw.present?
-          u.user_profile.website = website if website.present?
+          u.user_profile.bio_raw = bio_raw[0..2999] if bio_raw.present?
+          u.user_profile.website = website unless website.blank? || website !~ UserProfile::WEBSITE_REGEXP
           u.user_profile.location = location if location.present?
           u.user_profile.save!
         end
@@ -516,6 +516,52 @@ class ImportScripts::Base
           begin
             PostAction.act(user, post, PostActionType.types[:bookmark])
             created += 1
+          rescue PostAction::AlreadyActed
+            skipped += 1
+          end
+        end
+      end
+
+      print_status created + skipped + (opts[:offset] || 0), total
+    end
+
+    [created, skipped]
+  end
+
+  # Iterate through a list of "like" records to be imported.
+  # Takes a collection, and yields to the block for each element.
+  # Block should return a hash with the attributes for the "like".
+  # Required fields are :user_id and :post_id, where both ids are
+  # the values in the original datasource.
+  def create_likes(results, opts={})
+    created = 0
+    skipped = 0
+    total = opts[:total] || results.size
+
+    user = User.new
+    post = Post.new
+
+    results.each do |result|
+      params = yield(result)
+
+      # only the IDs are needed, so this should be enough
+      if params.nil?
+        skipped += 1
+      else
+        user.id = @lookup.user_id_from_imported_user_id(params[:user_id])
+        post.id = @lookup.post_id_from_imported_post_id(params[:post_id])
+
+        if user.id.nil? || post.id.nil?
+          skipped += 1
+          puts "Skipping 'Like' for user id #{params[:user_id]} and post id #{params[:post_id]}"
+        else
+          begin
+            like = PostAction.act(user, post, PostActionType.types[:like])
+            created += 1
+            unless params[:created_at].nil?
+              like.created_at = params[:created_at]
+              like.save!
+            end
           rescue PostAction::AlreadyActed
             skipped += 1
           end

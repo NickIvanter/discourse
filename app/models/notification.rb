@@ -12,6 +12,14 @@ class Notification < ActiveRecord::Base
   scope :visible , lambda { joins('LEFT JOIN topics ON notifications.topic_id = topics.id')
                             .where('topics.id IS NULL OR topics.deleted_at IS NULL') }
 
+  scope :with_stealth_map, -> { joins('LEFT JOIN stealth_post_maps ON notifications.topic_id = stealth_post_maps.topic_id') }
+  scope :cloak_stealth, -> (guardian) {
+    guardian.stealth_actions(
+      user_action: ->{with_stealth_map.where("stealth_post_maps.topic_id is null OR (topics.user_id = ? AND stealth_post_maps.topic_id is not null)", guardian.user.id)},
+      anon_action: ->{with_stealth_map.where("stealth_post_maps.topic_id is null")}
+    )
+  }
+
   after_save :refresh_notification_count
   after_destroy :refresh_notification_count
 
@@ -123,7 +131,9 @@ class Notification < ActiveRecord::Base
 
   def self.recent_report(user, count = nil)
     count ||= 10
+    guardian = Guardian.new(user)
     notifications = user.notifications
+                        .cloak_stealth(guardian)
                         .visible
                         .recent(count)
                         .includes(:topic)
@@ -203,5 +213,6 @@ end
 #  idx_notifications_speedup_unread_count                       (user_id,notification_type)
 #  index_notifications_on_post_action_id                        (post_action_id)
 #  index_notifications_on_user_id_and_created_at                (user_id,created_at)
+#  index_notifications_on_user_id_and_id                        (user_id,id) UNIQUE
 #  index_notifications_on_user_id_and_topic_id_and_post_number  (user_id,topic_id,post_number)
 #

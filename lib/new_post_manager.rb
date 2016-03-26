@@ -124,25 +124,34 @@ class NewPostManager
       handled_result = handler.call(self)
     end
 
-    # Create post if nothing happened or approve_stealth mode is on
-    create_result = perform_create_post if self.class.stealth_enabled? || !handled
-    if create_result.failed?
-      handled_result.queued_post.destroy
-      return NewPostResult.new(nil, false)
-    end
+    if self.class.stealth_enabled?
+      return handled_result if handled && handled_result.present? && handled_result.failed?
 
-    # Do mapping from posts to queued_posts if approve_stealth mode is on
-    if self.class.stealth_enabled? && create_result && handled_result
-      stealth(handled_result, create_result)
-    end
+      create_result = perform_create_post
 
-    # Return a result
-    if handled && !self.class.stealth_enabled?
-      handled_result
-    else
+      if !create_result.present? || create_result.failed?
+        # If there is some queued_post - destroy it
+        handled_result.queued_post.destroy if handled_result.present? && handled_result.queued_post.present?
+        return create_result
+      end
+
+      # Do mapping from posts to queued_posts to hide it
+      # if approve_stealth mode is on
+      if create_result.success? && handled_result.present? && handled_result.queued_post.present? && handled_result.success?
+        stealth(handled_result, create_result)
+      end
+
       create_result
-    end
 
+    else
+
+      if handled
+        handled_result
+      else
+        perform_create_post
+      end
+
+    end
   end
 
   # Enqueue this post in a queue

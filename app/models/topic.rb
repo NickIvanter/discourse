@@ -152,10 +152,12 @@ class Topic < ActiveRecord::Base
 
   scope :with_stealth_map, -> { eager_load(:stealth_post_map) }
   scope :cloak_stealth, -> (guardian) {
-    guardian.stealth_actions(
-      user_action: ->{with_stealth_map.where("stealth_post_maps.topic_id is null OR (topics.user_id = ? AND stealth_post_maps.topic_id is not null)", guardian.user.id)},
-      anon_action: ->{with_stealth_map.where("stealth_post_maps.topic_id is null")}
-    )
+    if guardian.present?
+      guardian.stealth_actions(
+        user_action: ->{with_stealth_map.where("stealth_post_maps.topic_id is null OR (topics.user_id = ? AND stealth_post_maps.topic_id is not null)", guardian.user.id)},
+        anon_action: ->{with_stealth_map.where("stealth_post_maps.topic_id is null")}
+      )
+    end
   }
 
   def stealth?

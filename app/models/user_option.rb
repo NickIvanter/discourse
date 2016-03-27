@@ -5,8 +5,20 @@ class UserOption < ActiveRecord::Base
 
   after_save :update_tracked_topics
 
+  def self.ensure_consistency!
+    exec_sql("SELECT u.id FROM users u
+              LEFT JOIN user_options o ON o.user_id = u.id
+              WHERE o.user_id IS NULL").values.each do |id,_|
+      UserOption.create(user_id: id.to_i)
+    end
+  end
+
   def self.previous_replies_type
     @previous_replies_type ||= Enum.new(always: 0, unless_emailed: 1, never: 2)
+  end
+
+  def self.like_notification_frequency_type
+    @like_notification_frequency_type ||= Enum.new(always: 0, first_time_and_daily: 1, first_time: 2, never: 3)
   end
 
   def set_defaults
@@ -16,6 +28,7 @@ class UserOption < ActiveRecord::Base
     self.automatically_unpin_topics = SiteSetting.default_topics_automatic_unpin
     self.email_private_messages = SiteSetting.default_email_private_messages
     self.email_previous_replies = SiteSetting.default_email_previous_replies
+    self.email_in_reply_to = SiteSetting.default_email_in_reply_to
 
     self.enable_quoting = SiteSetting.default_other_enable_quoting
     self.external_links_in_new_tab = SiteSetting.default_other_external_links_in_new_tab
@@ -26,6 +39,8 @@ class UserOption < ActiveRecord::Base
     self.new_topic_duration_minutes = SiteSetting.default_other_new_topic_duration_minutes
     self.auto_track_topics_after_msecs = SiteSetting.default_other_auto_track_topics_after_msecs
 
+    self.like_notification_frequency = SiteSetting.default_other_like_notification_frequency
+
 
     if SiteSetting.default_email_digest_frequency.to_i <= 0
       self.email_digests = false
@@ -34,7 +49,14 @@ class UserOption < ActiveRecord::Base
       self.digest_after_minutes ||= SiteSetting.default_email_digest_frequency.to_i
     end
 
+    self.include_tl0_in_digests = SiteSetting.default_include_tl0_in_digests
+
     true
+  end
+
+  def mailing_list_mode
+    return false if SiteSetting.disable_mailing_list_mode
+    super
   end
 
   def update_tracked_topics

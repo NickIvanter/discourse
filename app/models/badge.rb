@@ -20,12 +20,26 @@ class Badge < ActiveRecord::Base
   GoodShare = 22
   GreatShare = 23
   OneYearAnniversary = 24
+
   Promoter = 25
   Campaigner = 26
   Champion = 27
+
   PopularLink = 28
   HotLink = 29
   FamousLink = 30
+
+  Appreciated = 36
+  Respected = 37
+  Admired = 31
+
+  OutOfLove = 33
+  HigherLove = 34
+  CrazyInLove = 35
+
+  ThankYou = 38
+  GivesBack = 32
+  Empathetic = 39
 
   # other consts
   AutobiographerMinBioLength = 10
@@ -233,7 +247,7 @@ SQL
 
     def self.sharing_badge(count)
 <<SQL
-    SELECT views.user_id, i2.post_id, i2.created_at granted_at
+    SELECT views.user_id, i2.post_id, current_timestamp granted_at
     FROM
     (
       SELECT i.user_id, MIN(i.id) i_id
@@ -249,7 +263,7 @@ SQL
 
     def self.linking_badge(count)
       <<-SQL
-          SELECT tl.user_id, post_id, MIN(tl.created_at) granted_at
+          SELECT tl.user_id, post_id, current_timestamp granted_at
             FROM topic_links tl
             JOIN posts p  ON p.id = post_id    AND p.deleted_at IS NULL
             JOIN topics t ON t.id = p.topic_id AND t.deleted_at IS NULL AND t.archetype <> 'private_message'
@@ -259,6 +273,37 @@ SQL
       SQL
     end
 
+    def self.liked_posts(post_count, like_count)
+      <<-SQL
+        SELECT p.user_id, current_timestamp AS granted_at
+        FROM posts AS p
+        WHERE p.like_count >= #{like_count}
+          AND (:backfill OR p.user_id IN (:user_ids))
+        GROUP BY p.user_id
+        HAVING count(*) > #{post_count}
+      SQL
+    end
+
+    def self.like_rate_limit(count)
+      <<-SQL
+        SELECT gdl.user_id, current_timestamp AS granted_at
+        FROM given_daily_likes AS gdl
+        WHERE gdl.limit_reached
+          AND (:backfill OR gdl.user_id IN (:user_ids))
+        GROUP BY gdl.user_id
+        HAVING COUNT(*) >= #{count}
+      SQL
+    end
+
+    def self.liked_back(likes_received, likes_given)
+      <<-SQL
+        SELECT us.user_id, current_timestamp AS granted_at
+        FROM user_stats AS us
+        WHERE us.likes_received >= #{likes_received}
+          AND us.likes_given >= #{likes_given}
+          AND (:backfill OR us.user_id IN (:user_ids))
+      SQL
+    end
   end
 
   belongs_to :badge_type
@@ -279,7 +324,6 @@ SQL
   def self.protected_system_fields
     [:badge_type_id, :multiple_grant, :target_posts, :show_posts, :query, :trigger, :auto_revoke, :listable]
   end
-
 
   def self.trust_level_badge_ids
     (1..4).to_a

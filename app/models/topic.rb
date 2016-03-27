@@ -359,10 +359,13 @@ class Topic < ActiveRecord::Base
               .joins("LEFT OUTER JOIN users ON users.id = topics.user_id")
               .where(closed: false, archived: false)
               .where("COALESCE(topic_users.notification_level, 1) <> ?", TopicUser.notification_levels[:muted])
-              .where("COALESCE(users.trust_level, 0) > 0")
               .created_since(since)
               .listable_topics
               .includes(:category)
+
+    unless user.user_option.try(:include_tl0_in_digests)
+      topics = topics.where("COALESCE(users.trust_level, 0) > 0")
+    end
 
     if !!opts[:top_order]
       topics = topics.joins("LEFT OUTER JOIN top_topics ON top_topics.topic_id = topics.id")
@@ -381,6 +384,10 @@ class Topic < ActiveRecord::Base
 
     # Remove muted categories
     muted_category_ids = CategoryUser.where(user_id: user.id, notification_level: CategoryUser.notification_levels[:muted]).pluck(:category_id)
+    if SiteSetting.digest_suppress_categories.present?
+      muted_category_ids += SiteSetting.digest_suppress_categories.split("|").map(&:to_i)
+      muted_category_ids = muted_category_ids.uniq
+    end
     if muted_category_ids.present?
       topics = topics.where("topics.category_id NOT IN (?)", muted_category_ids)
     end
@@ -481,6 +488,7 @@ class Topic < ActiveRecord::Base
 
   def update_status(status, enabled, user, opts={})
     TopicStatusUpdate.new(self, user).update!(status, enabled, opts)
+    DiscourseEvent.trigger(:topic_status_updated, self.id, status, enabled)
   end
 
   # Atomically creates the next post number
@@ -629,6 +637,8 @@ class Topic < ActiveRecord::Base
     if private_message?
       # If the user exists, add them to the message.
       user = User.find_by_username_or_email(username_or_email)
+      raise StandardError.new I18n.t("topic_invite.user_exists") if user.present? && topic_allowed_users.where(user_id: user.id).exists?
+
       if user && topic_allowed_users.create!(user_id: user.id)
         # Create a small action message
         add_small_action(invited_by, "invited_user", user.username)
@@ -652,6 +662,8 @@ class Topic < ActiveRecord::Base
     else
       # invite existing member to a topic
       user = User.find_by_username(username_or_email)
+      raise StandardError.new I18n.t("topic_invite.user_exists") if user.present? && topic_allowed_users.where(user_id: user.id).exists?
+
       if user && topic_allowed_users.create!(user_id: user.id)
         # rate limit topic invite
         RateLimiter.new(invited_by, "topic-invitations-per-day", SiteSetting.max_topic_invitations_per_day, 1.day.to_i).performed!

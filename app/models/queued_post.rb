@@ -92,9 +92,7 @@ class QueuedPost < ActiveRecord::Base
     QueuedPost.transaction do
       change_to!(:approved, approved_by)
 
-      if user.blocked? && !UserHellbanner.enabled?
-        user.update_columns(blocked: false)
-      end
+      UserBlocker.unblock(user, approved_by) if user.blocked? && !UserHellbanner.enabled?
 
       unless NewPostManager.stealth_enabled?
         creator = PostCreator.new(user, create_options.merge(skip_validations: true, stealth_approving: true))

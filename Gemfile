@@ -45,12 +45,14 @@ gem 'active_model_serializers', '~> 0.8.3'
 
 gem 'onebox'
 
+gem 'http_accept_language', '~>2.0.5', require: false
+
 gem 'ember-rails'
 gem 'ember-source', '1.12.2'
 gem 'barber'
 gem 'babel-transpiler'
 
-gem 'message_bus', '2.0.0.beta.2'
+gem 'message_bus', '2.0.0.beta.5'
 
 gem 'rails_multisite'
 
@@ -64,7 +66,7 @@ gem 'aws-sdk', require: false
 gem 'excon', require: false
 gem 'unf', require: false
 
-gem 'email_reply_trimmer', '0.0.8'
+gem 'email_reply_trimmer', '0.1.1'
 
 # note: for image_optim to correctly work you need to follow
 # https://github.com/toy/image_optim
@@ -78,6 +80,7 @@ gem 'omniauth-openid'
 gem 'openid-redis-store'
 gem 'omniauth-facebook'
 gem 'omniauth-twitter'
+gem 'omniauth-instagram'
 
 # forked while https://github.com/intridea/omniauth-github/pull/41 is being upstreamd
 gem 'omniauth-github-discourse', require: 'omniauth-github'

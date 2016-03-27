@@ -153,15 +153,20 @@
           <div class='controls controls-dropdown'>
             {{combo-box valueAttribute="value" content=digestFrequencies value=model.user_option.digest_after_minutes}}
           </div>
+          {{preference-checkbox labelKey="user.include_tl0_in_digests" checked=model.user_option.include_tl0_in_digests}}
         {{/if}}
       {{/if}}
+      <br/>
       <div class='controls controls-dropdown'>
         <label>{{i18n 'user.email_previous_replies.title'}}</label>
         {{combo-box valueAttribute="value" content=previousRepliesOptions value=model.user_option.email_previous_replies}}
       </div>
+      {{preference-checkbox labelKey="user.email_in_reply_to" checked=model.user_option.email_in_reply_to}}
       {{preference-checkbox labelKey="user.email_private_messages" checked=model.user_option.email_private_messages}}
       {{preference-checkbox labelKey="user.email_direct" checked=model.user_option.email_direct}}
-      <span class="pref-mailing-list-mode">{{preference-checkbox labelKey="user.mailing_list_mode" checked=model.user_option.mailing_list_mode}}</span>
+      {{#unless siteSettings.disable_mailing_list_mode}}
+        {{preference-checkbox labelKey="user.mailing_list_mode" checked=model.user_option.mailing_list_mode}}
+      {{/unless}}
       {{preference-checkbox labelKey="user.email_always" checked=model.user_option.email_always}}
     </div>
 
@@ -182,6 +187,11 @@
       <div class="controls controls-dropdown">
         <label>{{i18n 'user.auto_track_topics'}}</label>
         {{combo-box valueAttribute="value" content=autoTrackDurations value=model.user_option.auto_track_topics_after_msecs}}
+      </div>
+
+      <div class="controls controls-dropdown">
+        <label>{{i18n 'user.like_notification_frequency.title'}}</label>
+        {{combo-box valueAttribute="value" content=likeNotificationFrequencies value=model.user_option.like_notification_frequency}}
       </div>
 
       {{preference-checkbox labelKey="user.external_links_in_new_tab" checked=model.user_option.external_links_in_new_tab}}
@@ -235,7 +245,7 @@
 
     {{plugin-outlet "user-custom-controls"}}
 
-    <div class="control-group">
+    <div class="control-group save-button">
       <div class="controls">
         {{partial 'user/preferences/save-button'}}
       </div>

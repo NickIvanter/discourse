@@ -631,7 +631,6 @@ ja:
     suppress_reply_directly_above: "ポストに回答が１つしかない場合、ポストのin-reply-toを表示しない"
     suppress_reply_when_quoting: "ポストが引用返信だった場合、ポストのin-reply-toを表示しない"
     max_reply_history: "回答のin-reply-toを展開する最大数"
-    experimental_reply_expansion: "回答を展開するときに、その間にある回答を非表示にする(実験)"
     topics_per_period_in_top_summary: "デフォルトのトピックサマリに表示されるトップトピックの数"
     topics_per_period_in_top_page: "'もっと見る'を展開したときに表示するトップトピックの数"
     redirect_users_to_top_page: "新規ユーザーと長く不在のユーザーをトップページに自動的にリダイレクトさせる"
@@ -989,6 +988,9 @@ ja:
     ip_address:
       blocked: "あなたのIPアドレスからの新規登録は許可されていません"
       max_new_accounts_per_registration_ip: "あなたのIPアドレスからの新規登録は許可されていません(最大数に達しました)。スタッフメンバーに連絡してください"
+  flags_reminder:
+    subject_template:
+      other: "%{count} 個のフラグが判断待ちです"
   invite_mailer:
     subject_template: "%{invitee_name} があなたを %{site_domain_name}の'%{topic_title}'に招待しました"
     text_body_template: |
@@ -1320,7 +1322,7 @@ ja:
 
         以下のリンクをクリックしてパスワードを設定してください:
         %{base_url}/users/password-reset/%{email_token}
-    authorize_email:
+    confirm_new_email:
       subject_template: "[%{site_name}] メールアドレスの確認"
       text_body_template: |
         次のリンクをクリックして %{site_name} 用のメールアドレスを確認してください:

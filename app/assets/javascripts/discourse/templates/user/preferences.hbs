@@ -153,15 +153,9 @@
           <div class='controls controls-dropdown'>
             {{combo-box valueAttribute="value" content=digestFrequencies value=model.user_option.digest_after_minutes}}
           </div>
-          {{preference-checkbox labelKey="user.include_tl0_in_digests" checked=model.user_option.include_tl0_in_digests}}
         {{/if}}
       {{/if}}
       <br/>
-      <div class='controls controls-dropdown'>
-        <label>{{i18n 'user.email_previous_replies.title'}}</label>
-        {{combo-box valueAttribute="value" content=previousRepliesOptions value=model.user_option.email_previous_replies}}
-      </div>
-      {{preference-checkbox labelKey="user.email_in_reply_to" checked=model.user_option.email_in_reply_to}}
       {{preference-checkbox labelKey="user.email_private_messages" checked=model.user_option.email_private_messages}}
       {{preference-checkbox labelKey="user.email_direct" checked=model.user_option.email_direct}}
       {{#unless siteSettings.disable_mailing_list_mode}}
@@ -189,18 +183,10 @@
         {{combo-box valueAttribute="value" content=autoTrackDurations value=model.user_option.auto_track_topics_after_msecs}}
       </div>
 
-      <div class="controls controls-dropdown">
-        <label>{{i18n 'user.like_notification_frequency.title'}}</label>
-        {{combo-box valueAttribute="value" content=likeNotificationFrequencies value=model.user_option.like_notification_frequency}}
-      </div>
-
       {{preference-checkbox labelKey="user.external_links_in_new_tab" checked=model.user_option.external_links_in_new_tab}}
       {{preference-checkbox labelKey="user.enable_quoting" checked=model.user_option.enable_quoting}}
       {{preference-checkbox labelKey="user.dynamic_favicon" checked=model.user_option.dynamic_favicon}}
       {{preference-checkbox labelKey="user.disable_jump_reply" checked=model.user_option.disable_jump_reply}}
-      {{#unless siteSettings.edit_history_visible_to_public}}
-        {{preference-checkbox labelKey="user.edit_history_public" checked=model.user_option.edit_history_public}}
-      {{/unless}}
 
       {{plugin-outlet "user-custom-preferences"}}
     </div>

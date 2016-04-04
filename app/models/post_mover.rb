@@ -79,7 +79,8 @@ class PostMover
 
     if NewPostManager.stealth_enabled?
       posts.each do |post|
-        update_queued_post(post) if post.stealth?
+        next unless post.stealth?
+        update_queued_post(post)
         update_stealth_map(post) if is_new_topic && post.stealth_post_map.new_topic?
       end
     end

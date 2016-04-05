@@ -560,6 +560,8 @@ class Post < ActiveRecord::Base
   end
 
   def reply_history(max_replies=100, guardian=nil)
+    return [] if guardian && !guardian.can_see?(self)
+
     post_ids = Post.exec_sql("WITH RECURSIVE breadcrumb(id, reply_to_post_number) AS (
                               SELECT p.id, p.reply_to_post_number FROM posts AS p
                                 WHERE p.id = :post_id

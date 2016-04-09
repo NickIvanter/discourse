@@ -75,9 +75,13 @@ class ApplicationController < ActionController::Base
     render 'default/empty'
   end
 
+  def render_rate_limit_error(e)
+    render_json_error e.description, type: :rate_limit, status: 429
+  end
+
   # If they hit the rate limiter
   rescue_from RateLimiter::LimitExceeded do |e|
-    render_json_error e.description, type: :rate_limit, status: 429
+    render_rate_limit_error(e)
   end
 
   rescue_from PG::ReadOnlySqlTransaction do |e|
@@ -94,7 +98,18 @@ class ApplicationController < ActionController::Base
     end
   end
 
-  rescue_from Discourse::NotFound do
+  class PluginDisabled < StandardError; end
+
+  # Handles requests for giant IDs that throw pg exceptions
+  rescue_from RangeError do |e|
+    if e.message =~ /ActiveRecord::ConnectionAdapters::PostgreSQL::OID::Integer/
+      rescue_discourse_actions(:not_found, 404)
+    else
+      raise e
+    end
+  end
+
+  rescue_from Discourse::NotFound, PluginDisabled  do
     rescue_discourse_actions(:not_found, 404)
   end
 
@@ -119,8 +134,6 @@ class ApplicationController < ActionController::Base
       render text: build_not_found_page(status_code, include_ember ? 'application' : 'no_ember')
     end
   end
-
-  class PluginDisabled < StandardError; end
 
   # If a controller requires a plugin, it will raise an exception if that plugin is
   # disabled. This allows plugins to be disabled programatically.
@@ -164,7 +177,15 @@ class ApplicationController < ActionController::Base
   end
 
   def set_locale
-    I18n.locale = current_user.try(:effective_locale) || SiteSetting.default_locale
+    if !current_user
+      if SiteSetting.set_locale_from_accept_language_header
+        I18n.locale = locale_from_header
+      else
+        I18n.locale = SiteSetting.default_locale
+      end
+    else
+      I18n.locale = current_user.effective_locale
+    end
     I18n.ensure_all_loaded!
   end
 
@@ -308,6 +329,20 @@ class ApplicationController < ActionController::Base
   end
 
   private
+
+    def locale_from_header
+      begin
+        # Rails I18n uses underscores between the locale and the region; the request
+        # headers use hyphens.
+        require 'http_accept_language' unless defined? HttpAcceptLanguage
+        available_locales = I18n.available_locales.map { |locale| locale.to_s.gsub(/_/, '-') }
+        parser = HttpAcceptLanguage::Parser.new(request.env["HTTP_ACCEPT_LANGUAGE"])
+        parser.language_region_compatible_from(available_locales).gsub(/-/, '_')
+      rescue
+        # If Accept-Language headers are not set.
+        I18n.default_locale
+      end
+    end
 
     def preload_anonymous_data
       store_preloaded("site", Site.json_for(guardian))
@@ -454,13 +489,16 @@ class ApplicationController < ActionController::Base
     def build_not_found_page(status=404, layout=false)
       category_topic_ids = Category.pluck(:topic_id).compact
       @container_class = "wrap not-found-container"
+      @top_viewed = TopicQuery.new(nil, {except_topic_ids: category_topic_ids}).list_top_for("monthly").topics.first(10)
+
       if NewPostManager.stealth_enabled?
-        @top_viewed = Topic.cloak_stealth(guardian).where.not(id: category_topic_ids).top_viewed(10)
+        # Any unapproved topic is unlikely to appear among the top viewed, so we only
+        # care about protecting the recent view here.
         @recent = Topic.cloak_stealth(guardian).where.not(id: category_topic_ids).recent(10)
       else
-        @top_viewed = Topic.where.not(id: category_topic_ids).top_viewed(10)
         @recent = Topic.where.not(id: category_topic_ids).recent(10)
       end
+
       @slug =  params[:slug].class == String ? params[:slug] : ''
       @slug =  (params[:id].class == String ? params[:id] : '') if @slug.blank?
       @slug.gsub!('-',' ')

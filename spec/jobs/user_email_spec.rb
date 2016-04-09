@@ -38,9 +38,9 @@ describe Jobs::UserEmail do
 
   context 'to_address' do
     it 'overwrites a to_address when present' do
-      UserNotifications.expects(:authorize_email).returns(mailer)
+      UserNotifications.expects(:confirm_new_email).returns(mailer)
       Email::Sender.any_instance.expects(:send)
-      Jobs::UserEmail.new.execute(type: :authorize_email, user_id: user.id, to_address: 'jake@adventuretime.ooo')
+      Jobs::UserEmail.new.execute(type: :confirm_new_email, user_id: user.id, to_address: 'jake@adventuretime.ooo')
       expect(mailer.to).to eq(['jake@adventuretime.ooo'])
     end
   end
@@ -193,12 +193,29 @@ describe Jobs::UserEmail do
         Jobs::UserEmail.new.execute(type: :user_mentioned, user_id: user.id, notification_id: notification.id)
       end
 
+      it "does not send notification if limit is reached" do
+        SiteSetting.max_emails_per_day_per_user = 2
+
+        user.email_logs.create(email_type: 'blah', to_address: user.email, user_id: user.id)
+        user.email_logs.create(email_type: 'blah', to_address: user.email, user_id: user.id)
+
+        Jobs::UserEmail.new.execute(type: :user_mentioned, user_id: user.id, notification_id: notification.id, post_id: post.id)
+
+        expect(EmailLog.where(user_id: user.id, skipped: true).count).to eq(1)
+      end
+
       it "doesn't send the mail if the user is using mailing list mode" do
         Email::Sender.any_instance.expects(:send).never
         user.user_option.update_column(:mailing_list_mode, true)
         # sometimes, we pass the notification_id
         Jobs::UserEmail.new.execute(type: :user_mentioned, user_id: user.id, notification_id: notification.id, post_id: post.id)
         # other times, we only pass the type of notification
+        Jobs::UserEmail.new.execute(type: :user_mentioned, user_id: user.id, notification_type: "posted", post_id: post.id)
+        # When post is nil
+        Jobs::UserEmail.new.execute(type: :user_mentioned, user_id: user.id, notification_type: "posted")
+        # When post does not have a topic
+        post = Fabricate(:post)
+        post.topic.destroy
         Jobs::UserEmail.new.execute(type: :user_mentioned, user_id: user.id, notification_type: "posted", post_id: post.id)
       end
 

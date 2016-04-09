@@ -79,7 +79,8 @@ class PostMover
 
     if NewPostManager.stealth_enabled?
       posts.each do |post|
-        update_queued_post(post) if post.stealth?
+        next unless post.stealth?
+        update_queued_post(post)
         update_stealth_map(post) if is_new_topic && post.stealth_post_map.new_topic?
       end
     end
@@ -134,6 +135,8 @@ class PostMover
   def update_statistics
     destination_topic.update_statistics
     original_topic.update_statistics
+    TopicUser.update_post_action_cache(topic_id: original_topic.id, post_action_type: :bookmark)
+    TopicUser.update_post_action_cache(topic_id: destination_topic.id, post_action_type: :bookmark)
   end
 
   def update_user_actions

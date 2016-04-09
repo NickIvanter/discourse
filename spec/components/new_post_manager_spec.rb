@@ -88,26 +88,72 @@ describe NewPostManager do
     end
 
     context "without stealth posting" do
-      context 'with the settings zeroed out' do
-        before do
-          SiteSetting.approve_post_count = 0
-          SiteSetting.approve_unless_trust_level = 0
-        end
-        include_examples "enqueue_negative"
-      end
-
-      context 'with a high approval post count' do
+      context 'with a high approval post count and TL0' do
         before do
           SiteSetting.approve_post_count = 100
+          topic.user.trust_level = 0
+        end
+
+        context 'with a high approval post count' do
+          before do
+            SiteSetting.approve_post_count = 100
+          end
+          include_examples "enqueue_positive"
+        end
+
+        context 'with a high trust level setting' do
+          before do
+            SiteSetting.approve_unless_trust_level = 4
+          end
+          include_examples "enqueue_positive"
+        end
+      end
+
+      context 'with a high approval post count and TL1' do
+        before do
+          SiteSetting.approve_post_count = 100
+          topic.user.trust_level = 1
         end
         include_examples "enqueue_positive"
+      end
+
+      context 'with a high approval post count, but TL2' do
+        before do
+          SiteSetting.approve_post_count = 100
+          topic.user.trust_level = 2
+        end
+        it "will return an enqueue result" do
+          result = NewPostManager.default_handler(manager)
+          expect(result).to be_nil
+        end
       end
 
       context 'with a high trust level setting' do
         before do
           SiteSetting.approve_unless_trust_level = 4
         end
-        include_examples "enqueue_positive"
+
+        context 'with the settings zeroed out' do
+          before do
+            SiteSetting.approve_post_count = 0
+            SiteSetting.approve_unless_trust_level = 0
+          end
+          include_examples "enqueue_negative"
+        end
+
+        context 'with a high approval post count' do
+          before do
+            SiteSetting.approve_post_count = 100
+          end
+          include_examples "enqueue_positive"
+        end
+
+        context 'with a high trust level setting' do
+          before do
+            SiteSetting.approve_unless_trust_level = 4
+          end
+          include_examples "enqueue_positive"
+        end
       end
     end
 
@@ -116,17 +162,39 @@ describe NewPostManager do
         SiteSetting.stubs(:approve_stealth_mode).returns(true)
       end
 
-      context 'with the settings zeroed out' do
+      context 'with a high approval post count and TL0' do
         before do
-          SiteSetting.approve_post_count = 0
-          SiteSetting.approve_unless_trust_level = 0
+          SiteSetting.approve_post_count = 100
+          topic.user.trust_level = 0
+        end
+
+        context 'with a high approval post count' do
+          before do
+            SiteSetting.approve_post_count = 100
+          end
+          include_examples "enqueue_positive"
+        end
+
+        context 'with a high trust level setting' do
+          before do
+            SiteSetting.approve_unless_trust_level = 4
+          end
+          include_examples "enqueue_positive"
+        end
+      end
+
+      context 'with a high approval post count and TL1' do
+        before do
+          SiteSetting.approve_post_count = 100
+          topic.user.trust_level = 1
         end
         include_examples "enqueue_positive"
       end
 
-      context 'with a high approval post count' do
+      context 'with a high approval post count, but TL2' do
         before do
           SiteSetting.approve_post_count = 100
+          topic.user.trust_level = 2
         end
         include_examples "enqueue_positive"
       end
@@ -135,10 +203,30 @@ describe NewPostManager do
         before do
           SiteSetting.approve_unless_trust_level = 4
         end
-        include_examples "enqueue_positive"
+
+        context 'with the settings zeroed out' do
+          before do
+            SiteSetting.approve_post_count = 0
+            SiteSetting.approve_unless_trust_level = 0
+          end
+          include_examples "enqueue_positive"
+        end
+
+        context 'with a high approval post count' do
+          before do
+            SiteSetting.approve_post_count = 100
+          end
+          include_examples "enqueue_positive"
+        end
+
+        context 'with a high trust level setting' do
+          before do
+            SiteSetting.approve_unless_trust_level = 4
+          end
+          include_examples "enqueue_positive"
+        end
       end
     end
-
   end
 
   context "extensibility priority" do

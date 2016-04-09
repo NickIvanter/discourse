@@ -155,13 +155,12 @@
           </div>
         {{/if}}
       {{/if}}
-      <div class='controls controls-dropdown'>
-        <label>{{i18n 'user.email_previous_replies.title'}}</label>
-        {{combo-box valueAttribute="value" content=previousRepliesOptions value=model.user_option.email_previous_replies}}
-      </div>
+      <br/>
       {{preference-checkbox labelKey="user.email_private_messages" checked=model.user_option.email_private_messages}}
       {{preference-checkbox labelKey="user.email_direct" checked=model.user_option.email_direct}}
-      <span class="pref-mailing-list-mode">{{preference-checkbox labelKey="user.mailing_list_mode" checked=model.user_option.mailing_list_mode}}</span>
+      {{#unless siteSettings.disable_mailing_list_mode}}
+        {{preference-checkbox labelKey="user.mailing_list_mode" checked=model.user_option.mailing_list_mode}}
+      {{/unless}}
       {{preference-checkbox labelKey="user.email_always" checked=model.user_option.email_always}}
     </div>
 
@@ -184,13 +183,7 @@
         {{combo-box valueAttribute="value" content=autoTrackDurations value=model.user_option.auto_track_topics_after_msecs}}
       </div>
 
-      {{preference-checkbox labelKey="user.external_links_in_new_tab" checked=model.user_option.external_links_in_new_tab}}
-      {{preference-checkbox labelKey="user.enable_quoting" checked=model.user_option.enable_quoting}}
-      {{preference-checkbox labelKey="user.dynamic_favicon" checked=model.user_option.dynamic_favicon}}
       {{preference-checkbox labelKey="user.disable_jump_reply" checked=model.user_option.disable_jump_reply}}
-      {{#unless siteSettings.edit_history_visible_to_public}}
-        {{preference-checkbox labelKey="user.edit_history_public" checked=model.user_option.edit_history_public}}
-      {{/unless}}
 
       {{plugin-outlet "user-custom-preferences"}}
     </div>
@@ -235,7 +228,7 @@
 
     {{plugin-outlet "user-custom-controls"}}
 
-    <div class="control-group">
+    <div class="control-group save-button">
       <div class="controls">
         {{partial 'user/preferences/save-button'}}
       </div>

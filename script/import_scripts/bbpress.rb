@@ -1,15 +1,10 @@
-# `dropdb bbpress`
-# `createdb bbpress`
-# `bundle exec rake db:migrate`
-
 require 'mysql2'
 require File.expand_path(File.dirname(__FILE__) + "/base.rb")
 
-BB_PRESS_DB = ENV['BBPRESS_DB'] || "bbpress"
-DB_TABLE_PREFIX = "wp_"
-AVATARS_BASE_PATH = "/vagrant/bbpress_avatars/"
-
 class ImportScripts::Bbpress < ImportScripts::Base
+
+  BB_PRESS_DB ||= ENV['BBPRESS_DB'] || "bbpress"
+  BATCH_SIZE  ||= 1000
 
   def initialize
     super
@@ -17,298 +12,182 @@ class ImportScripts::Bbpress < ImportScripts::Base
     @client = Mysql2::Client.new(
       host: "localhost",
       username: "root",
-      #password: "password",
-      database: BB_PRESS_DB
+      database: BB_PRESS_DB,
     )
-    puts "loading post mappings..."
-    @post_number_map = {}
-    Post.pluck(:id, :post_number).each do |post_id, post_number|
-      @post_number_map[post_id] = post_number
-    end
-
-    @topic_subscriptions_map = {}
-  end
-
-  def created_post(post)
-    @post_number_map[post.id] = post.post_number
-    super
-  end
-
-  def table_name(name)
-    DB_TABLE_PREFIX + name
   end
 
   def execute
-    users_results = @client.query("
-       SELECT id,
-              display_name name,
-              user_email email,
-              user_registered created_at,
-              topic_subscriptions,
-              forum_subscriptions,
-              user_avatar,
-              first_post_id,
-              first_liked_post_id
-         FROM #{table_name 'users'} u
-LEFT OUTER JOIN (select user_id, meta_value as topic_subscriptions from #{table_name 'usermeta'} where meta_key like'%_bbp_subscriptions') um
-             ON u.id = um.user_id
-LEFT OUTER JOIN (select user_id, meta_value as forum_subscriptions from #{table_name 'usermeta'} where meta_key like'%_bbp_forum_subscriptions') um1
-             ON u.id = um1.user_id
-LEFT OUTER JOIN (select user_id, meta_value as user_avatar from #{table_name 'usermeta'} where meta_key = 'basic_user_avatar') um2
-             ON u.id = um2.user_id
-LEFT OUTER JOIN (select id as first_post_id, post_author from #{table_name 'posts'} where post_status = 'publish' and post_type in ('topic', 'reply')) p
-             ON u.id = p.post_author
-LEFT OUTER JOIN (select topic_id as first_liked_post_id, user_id from #{table_name 'ulike_forums'}) l
-             ON u.id = l.user_id
-       GROUP BY id
-         HAVING topic_subscriptions IS NOT NULL OR forum_subscriptions IS NOT NULL OR first_post_id IS NOT NULL or first_liked_post_id IS NOT NULL",
-                                  cache_rows: false)
+    import_users
+    import_categories
+    import_topics_and_posts
+  end
 
-    puts '', "creating users"
+  def import_users
+    puts "", "importing users..."
 
-    create_users(users_results) do |u|
+    last_user_id = -1
+    total_users = bbpress_query("SELECT COUNT(*) count FROM wp_users WHERE user_email LIKE '%@%'").first["count"]
 
-      new_user_data = ActiveSupport::HashWithIndifferentAccess.new(u)
+    batches(BATCH_SIZE) do |offset|
+      users = bbpress_query(<<-SQL
+        SELECT id, user_nicename, display_name, user_email, user_registered, user_url
+          FROM wp_users
+         WHERE user_email LIKE '%@%'
+           AND id > #{last_user_id}
+      ORDER BY id
+         LIMIT #{BATCH_SIZE}
+      SQL
+      ).to_a
 
-      new_user_data.delete(:first_post_id)
-      new_user_data.delete(:first_liked_post_id)
+      break if users.empty?
 
-      # Save topic subscriptions into a temporary hash, because we can't subscribe the newly created user
-      # to any topics yet because no topics have been imported at this point. So we'll subscribe him later.
-      topic_subscriptions = new_user_data.delete(:topic_subscriptions)
-      @topic_subscriptions_map[new_user_data[:id]] = topic_subscriptions if topic_subscriptions
+      last_user_id = users[-1]["id"]
+      user_ids = users.map { |u| u["id"].to_i }
 
-      forum_subscriptions = new_user_data.delete(:forum_subscriptions)
-      user_avatar = new_user_data.delete(:user_avatar)
+      next if all_records_exist?(:users, user_ids)
 
-      new_user_data.merge(
+      user_ids_sql = user_ids.join(",")
+
+      users_description = {}
+      bbpress_query(<<-SQL
+        SELECT user_id, meta_value description
+          FROM wp_usermeta
+         WHERE user_id IN (#{user_ids_sql})
+           AND meta_key = 'description'
+      SQL
+      ).each { |um| users_description[um["user_id"]] = um["description"] }
+
+      users_last_activity = {}
+      bbpress_query(<<-SQL
+        SELECT user_id, meta_value last_activity
+          FROM wp_usermeta
+         WHERE user_id IN (#{user_ids_sql})
+           AND meta_key = 'last_activity'
+      SQL
+      ).each { |um| users_last_activity[um["user_id"]] = um["last_activity"] }
+
+      create_users(users, total: total_users, offset: offset) do |u|
         {
-          post_create_action: proc do |user|
-            # Do not ever send any emails unless the user was subscribed to a bbPress forum or topic
-            if forum_subscriptions.nil?
-              if topic_subscriptions.nil?
-                # This user had no subscriptions whatsoever. Let's not bother him.
-                user.user_option.update_columns(email_always: false,
-                                                email_digests: false,
-                                                email_direct: false,
-                                                email_private_messages: false)
-              else
-                # This user was not subscribed to forum notifications but he was subscribed to one or more topics.
-                # He shouldn't mind receiving weekly digests and otherwise using default notification settings.
-                user.user_option.update_columns(email_digests: true, digest_after_days: 7)
-              end
-            else
-              # This user had explicitly subscribed to the forum, so let's be sending him daily digests.
-              user.user_option.update_columns(email_digests: true, digest_after_days: 1)
-            end
-
-            if user_avatar
-              # We do not use the specific value (url) of user_avatar stored in the Wordpress database. We simply
-              # assume that the avatar file name is <user_numeric_id>.jpg, which is the case when using the
-              # Basic User Avatars Wordpress plugin.
-              begin
-                filename = new_user_data[:id].to_s + '.jpg'
-                path = AVATARS_BASE_PATH + filename
-                upload = @uploader.create_upload(user.id, path, filename)
-
-                if upload.present? && upload.persisted?
-                  user.import_mode = false
-                  user.create_user_avatar
-                  user.import_mode = true
-                  user.user_avatar.update(custom_upload_id: upload.id)
-                  user.update(uploaded_avatar_id: upload.id)
-                else
-                  puts "Failed to upload avatar for user #{user.username}: #{path}"
-                  puts upload.errors.inspect if upload
-                end
-              rescue SystemCallError => err
-                Rails.logger.error("Could not import avatar for user #{user.username}: #{err.message}")
-              end
-            end
-          end
+          id: u["id"].to_i,
+          username: u["user_nicename"],
+          email: u["user_email"].downcase,
+          name: u["display_name"],
+          created_at: u["user_registered"],
+          website: u["user_url"],
+          bio_raw: users_description[u["id"]],
+          last_seen_at: users_last_activity[u["id"]],
         }
-      )
-    end
-
-
-    puts '', '', "creating categories"
-
-    create_categories(@client.query("SELECT id, post_title, post_parent from #{table_name 'posts'} WHERE post_type = 'forum' AND post_title != '' ORDER BY post_parent")) do |c|
-      result = {id: c['id'], name: c['post_title']}
-      parent_id = c['post_parent'].to_i
-      if parent_id > 0
-        result[:parent_category_id] = category_id_from_imported_category_id(parent_id)
       end
-      result
-    end
-
-    import_posts
-    migrate_subscriptions
-    import_likes
-  end
-
-  def migrate_subscriptions
-    puts "", "migrating topic subscriptions"
-
-    total_count = @topic_subscriptions_map.count
-    progress_count = 0
-
-    @topic_subscriptions_map.each do |imported_user_id, list_of_topics|
-      user_id = user_id_from_imported_user_id(imported_user_id)
-      list_of_topics.to_s.split(",").each do |imported_topic_id|
-        topic = topic_lookup_from_imported_post_id(imported_topic_id.to_i)
-        next if topic.nil?
-        TopicUser.change(user_id, topic[:topic_id], notification_level: TopicUser.notification_levels[:watching])
-      end
-      progress_count += 1
-      print_status(progress_count, total_count)
     end
   end
 
-  def import_posts
-    puts '', "creating topics and posts"
+  def import_categories
+    puts "", "importing categories..."
 
-    # Discourse import scripts require that each imported user have an ID from the external system. This is fine
-    # when we are importing "regular" Wordpress users, but presents a small issue when we want to create new user
-    # in the middle of the import process, which we want to do when importing "anonymous" posts. We want to create
-    # Discourse users for the authors of those posts.
-    # So, we are going to assign "fake" import IDs to those users. We begin with the arbitrary ID of 65535 and
-    # go down from there, HOPING that it will not intersect with the IDs of the existing Wordpress users, which
-    # are numbered from 1 upward.
-    anonymous_user_fake_import_id = 65535
+    categories = bbpress_query(<<-SQL
+      SELECT id, post_name, post_parent
+        FROM wp_posts
+       WHERE post_type = 'forum'
+         AND LENGTH(COALESCE(post_name, '')) > 0
+    ORDER BY post_parent, id
+    SQL
+    )
 
-    total_count = @client.query("
-      SELECT count(*) count
-        FROM #{table_name 'posts'}
-       WHERE post_status = 'publish'
-         AND post_type IN ('topic', 'reply')").first['count']
+    create_categories(categories) do |c|
+      category = { id: c['id'], name: c['post_name'] }
+      if (parent_id = c['post_parent'].to_i) > 0
+        category[:parent_category_id] = category_id_from_imported_category_id(parent_id)
+      end
+      category
+    end
+  end
 
-    batch_size = 1000
+  def import_topics_and_posts
+    puts "", "importing topics and posts..."
 
-    batches(batch_size) do |offset|
-      results = @client.query("
-                   SELECT id,
-                          post_author,
-                          post_date,
-                          post_content,
-                          post_title,
-                          post_type,
-                          post_name,
-                          reply_to,
-                          post_parent,
-                          author_ip,
-                          anonymous_name,
-                          anonymous_email
-                     FROM #{table_name 'posts'} p
-          LEFT OUTER JOIN (select post_id, meta_value as reply_to from #{table_name 'postmeta'} where meta_key='_bbp_reply_to') pm
-                       ON p.ID = pm.post_id
-          LEFT OUTER JOIN (select post_id, meta_value as author_ip from #{table_name 'postmeta'} where meta_key='_bbp_author_ip') pm1
-                       ON p.ID = pm1.post_id
-          LEFT OUTER JOIN (select post_id, meta_value as anonymous_name from #{table_name 'postmeta'} where meta_key='_bbp_anonymous_name') pm2
-                       ON p.ID = pm2.post_id
-          LEFT OUTER JOIN (select post_id, meta_value as anonymous_email from #{table_name 'postmeta'} where meta_key='_bbp_anonymous_email') pm3
-                       ON p.ID = pm3.post_id
-                    WHERE post_status = 'publish'
-                      AND post_type IN ('topic', 'reply')
-                 ORDER BY id
-                    LIMIT #{batch_size}
-                   OFFSET #{offset}", cache_rows: true)
+    last_post_id = -1
+    total_posts = bbpress_query(<<-SQL
+      SELECT COUNT(*) count
+        FROM wp_posts
+       WHERE post_status <> 'spam'
+         AND post_type IN ('topic', 'reply')
+    SQL
+    ).first["count"]
 
-      break if results.size < 1
+    batches(BATCH_SIZE) do |offset|
+      posts = bbpress_query(<<-SQL
+        SELECT id,
+               post_author,
+               post_date,
+               post_content,
+               post_title,
+               post_type,
+               post_parent
+          FROM wp_posts
+         WHERE post_status <> 'spam'
+           AND post_type IN ('topic', 'reply')
+           AND id > #{last_post_id}
+      ORDER BY id
+         LIMIT #{BATCH_SIZE}
+      SQL
+      ).to_a
 
-      next if all_records_exist? :posts, results.map {|p| p["id"].to_i}
+      break if posts.empty?
 
-      create_posts(results, total: total_count, offset: offset) do |post|
+      last_post_id = posts[-1]["id"].to_i
+      post_ids = posts.map { |p| p["id"].to_i }
+
+      next if all_records_exist?(:posts, post_ids)
+
+      post_ids_sql = post_ids.join(",")
+
+      posts_likes = {}
+      bbpress_query(<<-SQL
+        SELECT post_id, meta_value likes
+          FROM wp_postmeta
+         WHERE post_id IN (#{post_ids_sql})
+           AND meta_key = 'Likes'
+      SQL
+      ).each { |pm| posts_likes[pm["post_id"]] = pm["likes"].to_i }
+
+      create_posts(posts, total: total_posts, offset: offset) do |p|
         skip = false
-        mapped = {}
 
-        mapped[:id] = post["id"]
+        post = {
+          id: p["id"],
+          user_id: user_id_from_imported_user_id(p["post_author"]) || find_user_by_import_id(p["post_author"]).try(:id) || -1,
+          raw: p["post_content"],
+          created_at: p["post_date"],
+          like_count: posts_likes[p["id"]],
+        }
 
-        if post["post_author"] == 0
-          anonymous_users = Array.new
-          anonymous_users[0] = {
-            name: post["anonymous_name"],
-            email: post["anonymous_email"],
-            created_at: post["post_date"],
-            id: anonymous_user_fake_import_id,
-            post_create_action: proc do |user|
-              # Do not send any emails to this user
-              user.user_option.update_columns(email_always: false,
-                                              email_digests: false,
-                                              email_direct: false,
-                                              email_private_messages: false)
-            end
-          }
-          create_users(anonymous_users) do |u|
-            ActiveSupport::HashWithIndifferentAccess.new(u)
-          end
-          post["post_author"] = anonymous_user_fake_import_id
-          anonymous_user_fake_import_id -= 1
+        if post[:raw].present?
+          post[:raw].gsub!("<pre><code>", "```\n")
+          post[:raw].gsub!("</code></pre>", "\n```")
         end
 
-        mapped[:user_id] = user_id_from_imported_user_id(post["post_author"]) || find_user_by_import_id(post["post_author"]).try(:id) || -1
-        mapped[:raw] = post["post_content"]
-        if mapped[:raw]
-          mapped[:raw] = mapped[:raw].gsub("<pre><code>", "```\n").gsub("</code></pre>", "\n```")
-        end
-        mapped[:created_at] = post["post_date"]
-        mapped[:custom_fields] = {import_id: post["id"]}
-
-        if post["post_type"] == "topic"
-          mapped[:category] = category_id_from_imported_category_id(post["post_parent"])
-          mapped[:title] = CGI.unescapeHTML post["post_title"]
+        if p["post_type"] == "topic"
+          post[:category] = category_id_from_imported_category_id(p["post_parent"])
+          post[:title] = CGI.unescapeHTML(p["post_title"])
         else
-          parent = topic_lookup_from_imported_post_id(post["post_parent"])
-          if parent
-            mapped[:topic_id] = parent[:topic_id]
-            reply_to_post_id = post_id_from_imported_post_id(post["reply_to"]) if post["reply_to"]
-            mapped[:reply_to_post_number] = @post_number_map[reply_to_post_id] if @post_number_map[reply_to_post_id]
+          if parent = topic_lookup_from_imported_post_id(p["post_parent"])
+            post[:topic_id] = parent[:topic_id]
+            post[:reply_to_post_number] = parent[:post_number] if parent[:post_number] > 1
           else
-            puts "Skipping #{post["id"]}: #{post["post_content"][0..40]}"
+            puts "Skipping #{p["id"]}: #{p["post_content"][0..40]}"
             skip = true
           end
         end
 
-        # Do not subscribe post authors to any topics by default
-        mapped[:auto_track] = false
-
-        # Create permalinks for the bbPress topics' URLs
-        mapped[:post_create_action] = proc do |topic|
-          next unless post["post_type"] == "topic"
-          next if post["post_name"].blank?
-
-          # If the topic slug is percent-encoded, we need to make sure it is uppercase
-          if post["post_name"].include? "%"
-            post["post_name"] = post["post_name"].upcase
-          end
-
-          next if Permalink.where(url: post["post_name"], topic_id: topic.topic_id).exists?
-
-          Permalink.create(url: post["post_name"], topic_id: topic.topic_id)
-        end
-
-        skip ? nil : mapped
+        skip ? nil : post
       end
     end
   end
 
-  def import_likes
-    puts '', 'importing Likes'
-
-    # The condition "user_id < 10000" effectively ensures that we do not import anonymous likes.
-    # Anonymous likes have the 'ip2long' value of the visitor's IP address as the user_id.
-    results = @client.query("
-       SELECT topic_id post_id,
-              date_time created_at,
-              user_id
-         FROM #{table_name 'ulike_forums'}
-        WHERE status='like' and user_id < 10000",
-                            cache_rows: false)
-
-    create_likes(results) do |row|
-      ActiveSupport::HashWithIndifferentAccess.new(row)
-    end
+  def bbpress_query(sql)
+    @client.query(sql, cache_rows: false)
   end
+
 end
 
 ImportScripts::Bbpress.new.perform

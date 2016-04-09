@@ -21,7 +21,10 @@ class UserUpdater
     :digest_after_minutes,
     :new_topic_duration_minutes,
     :auto_track_topics_after_msecs,
-    :email_previous_replies
+    :email_previous_replies,
+    :email_in_reply_to,
+    :like_notification_frequency,
+    :include_tl0_in_digests
   ]
 
   def initialize(actor, user)
@@ -53,10 +56,10 @@ class UserUpdater
 
 
     save_options = false
-    OPTION_ATTR.each do |attribute|
-      if attributes[attribute].present?
-        save_options = true
 
+    OPTION_ATTR.each do |attribute|
+      if attributes.key?(attribute)
+        save_options = true
 
         if [true,false].include?(user.user_option.send(attribute))
           val = attributes[attribute].to_s == 'true'

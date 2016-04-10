@@ -1842,8 +1842,7 @@ describe Topic do
       end
 
       it 'admin can see all topics in similar' do
-        expect(Topic.by_newest.similar_to('Test topic for the good stuff', 'Teyes
-st post for the good topic', admin)).to eq([t5,t4,t3,t2,t1])
+        expect(Topic.by_newest.similar_to('Test topic for the good stuff', 'Test post for the good topic', admin)).to eq([t5,t4,t3,t2,t1])
       end
 
       it 'authors can see theirs topics in similar' do

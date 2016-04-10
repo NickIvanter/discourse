@@ -82,7 +82,7 @@ describe DiscourseSingleSignOn do
     admin.reload
 
     expect(admin.name).to eq "Bob Admin"
-    expect(admin.username).to eq "bob_the_admin"
+    expect(admin.username).to eq "bob_t"
     expect(admin.email).to eq admin.email
 
     sso.email = "TEST@bob.com"
@@ -94,7 +94,7 @@ describe DiscourseSingleSignOn do
     admin.reload
 
     expect(admin.email).to eq("test@bob.com")
-    expect(admin.username).to eq "bob_the_admin"
+    expect(admin.username).to eq "bob_t"
     expect(admin.name).to eq "Louis C.K."
   end
 

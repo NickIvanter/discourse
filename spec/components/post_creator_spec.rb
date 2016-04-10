@@ -1,3 +1,4 @@
+# coding: utf-8
 require 'rails_helper'
 require 'post_creator'
 require 'topic_subtype'
@@ -714,7 +715,7 @@ describe PostCreator do
       )
       topic_user = TopicUser.find_by(user_id: staged.id, topic_id: post.topic_id)
       expect(topic_user.notification_level).to eq(TopicUser.notification_levels[:watching])
-      expect(topic_user.notifications_reason_id).to eq(TopicUser.notification_reasons[:auto_watch])
+      expect(topic_user.notifications_reason_id).to eq(TopicUser.notification_reasons[:created_post])
     end
 
   end

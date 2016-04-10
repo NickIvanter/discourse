@@ -1299,6 +1299,8 @@ en:
     default_categories_watching: "List of categories that are watched by default."
     default_categories_tracking: "List of categories that are tracked by default."
     default_categories_muted: "List of categories that are muted by default."
+    hellban_mode: "Use soft bloking for users"
+    approve_stealth_mode: "Stealth post approving"
 
     errors:
       invalid_email: "Invalid email address."

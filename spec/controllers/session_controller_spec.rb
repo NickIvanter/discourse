@@ -183,7 +183,7 @@ describe SessionController do
       expect(logged_on_user.admin).to eq(false)
       expect(logged_on_user.email).to eq('bob@bob.com')
       expect(logged_on_user.name).to eq('Sam Saffron')
-      expect(logged_on_user.username).to eq('sam')
+      expect(logged_on_user.username).to eq('sam_s')
 
       expect(logged_on_user.single_sign_on_record.external_id).to eq("666")
       expect(logged_on_user.single_sign_on_record.external_username).to eq('sam')

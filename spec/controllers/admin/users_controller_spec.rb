@@ -543,7 +543,7 @@ describe Admin::UsersController do
       user.reload
       expect(user.email).to eq("bob2@bob.com")
       expect(user.name).to eq("Bill")
-      expect(user.username).to eq("Hokli")
+      expect(user.username).to eq("hokli")
     end
 
     it 'should create new users' do

@@ -50,8 +50,8 @@ class QueuedPost < ActiveRecord::Base
 
   # Delete stealth post and topic if any
   def destroy_cloaked!
-    Post.find(stealth_post_map.post_id).destroy if stealth_post_map.present? && stealth_post_map.post_id.present?
-    Topic.find(stealth_post_map.topic_id).destroy if stealth_post_map.present? && stealth_post_map.topic_id.present?
+    stealth_post_map.post.destroy if stealth_post_map.present? && stealth_post_map.post_id.present?
+    stealth_post_map.topic.destroy if stealth_post_map.present? && stealth_post_map.topic_id.present?
   end
 
   def cleanup_cloaking!
@@ -104,23 +104,29 @@ class QueuedPost < ActiveRecord::Base
     end
 
     if NewPostManager.stealth_enabled? && stealth_post_map.present? && stealth_post_map.post_id.present?
-      post = Post.find(stealth_post_map.post_id)
-      new_topic = stealth_post_map.new_topic?
-      cleanup_cloaking!
+      post = stealth_post_map.post
+      if post.present?
+        new_topic = stealth_post_map.new_topic?
+        cleanup_cloaking!
 
-      # Reapply events and jobs
-      PostJobsEnqueuer.new(post, post.topic, new_topic, {stealth_approving: true}).enqueue_jobs
-      opts = create_options
-      DiscourseEvent.trigger(:topic_created, post.topic, opts, user) if new_topic
-      DiscourseEvent.trigger(:post_created, post, opts, user)
-      BadgeGranter.queue_badge_grant(Badge::Trigger::PostRevision, post: post)
-      post.publish_change_to_clients! :created
-      user.publish_notifications_state
+        # Reapply events and jobs
+        PostJobsEnqueuer.new(post, post.topic, new_topic, {stealth_approving: true}).enqueue_jobs
+        opts = create_options
+        DiscourseEvent.trigger(:topic_created, post.topic, opts, user) if new_topic
+        DiscourseEvent.trigger(:post_created, post, opts, user)
+        BadgeGranter.queue_badge_grant(Badge::Trigger::PostRevision, post: post)
+        post.publish_change_to_clients! :created
+        user.publish_notifications_state
+      end
     end
 
     DiscourseEvent.trigger(:approved_post, self)
 
-    created_post
+    if NewPostManager.stealth_enabled?
+      post
+    else
+      created_post
+    end
   end
 
   def edit_content!(raw)

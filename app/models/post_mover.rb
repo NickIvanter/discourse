@@ -78,10 +78,11 @@ class PostMover
     end
 
     if NewPostManager.stealth_enabled?
-      posts.each do |post|
-        next unless post.stealth?
-        update_queued_post(post)
-        update_stealth_map(post) if is_new_topic && post.stealth_post_map.new_topic?
+      destination_topic.posts.each do |post| # Somewhat suboptimal
+        if post.stealth?
+          update_queued_post post
+          update_stealth_map post
+        end
       end
     end
 
@@ -90,23 +91,43 @@ class PostMover
   def update_queued_post(post)
     queued_post = post.stealth_post_map.queued_post
     if queued_post.present?
-      queued_post.topic_id = post.topic_id
+      if post.is_first_post? # For first post
+        queued_post.post_options['title'] = post.topic.title # Setup new queued topic
+        queued_post.topic_id = nil
+      else # for other posts
+        queued_post.topic_id = post.topic_id # Update topic_id
+      end
       queued_post.save
     end
   end
 
   def update_stealth_map(post)
-    post.stealth_post_map.topic_id = post.topic_id
+    if post.is_first_post? # For first post
+      post.stealth_post_map.topic_id = post.topic_id
+    else # For other posts
+      post.stealth_post_map.topic_id = nil
+    end
+    post.stealth_post_map.save
   end
 
 
   def create_first_post(post)
-    p = PostCreator.create(
-      post.user,
-      raw: post.raw,
-      topic_id: destination_topic.id,
-      acting_user: user
-    )
+    if NewPostManager.stealth_enabled? && post.stealth?
+      pm = NewPostManager.new(
+        post.user,
+        raw: post.raw,
+        topic_id: destination_topic.id,
+        acting_user: user
+      );
+      p = pm.perform().post
+    else
+      p = PostCreator.create(
+        post.user,
+        raw: post.raw,
+        topic_id: destination_topic.id,
+        acting_user: user
+      )
+    end
     p.update_column(:reply_count, @reply_count[1] || 0)
   end
 

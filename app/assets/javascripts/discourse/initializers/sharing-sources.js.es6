@@ -16,6 +16,16 @@ export default {
     });
 
     Sharing.addSource({
+      id: 'vkontakte',
+      faIcon: 'fa-vk',
+      title: I18n.t('share.vkontakte'),
+      generateUrl: function(link, title) {
+        return "http://vk.com/share.php?url=" + encodeURIComponent(link) + '&title=' + encodeURIComponent(title);
+      },
+      shouldOpenInPopup: true
+    });
+
+    Sharing.addSource({
       id: 'facebook',
       faIcon: 'fa-facebook-square',
       title: I18n.t('share.facebook'),

@@ -117,6 +117,7 @@ en:
       close: 'close'
       twitter: 'share this link on Twitter'
       facebook: 'share this link on Facebook'
+      vkontakte: 'share this link in VKontakte'
       google+: 'share this link on Google+'
       email: 'send this link in an email'
 

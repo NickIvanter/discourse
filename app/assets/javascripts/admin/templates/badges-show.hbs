@@ -3,7 +3,7 @@
     <div>
       <label for="name">{{i18n 'admin.badges.name'}}</label>
       {{#if readOnly}}
-        {{input type="text" name="name" value=buffered.displayName disabled=true}}
+        {{input type="text" name="name" value=buffered.name disabled=true}}
       {{else}}
         {{input type="text" name="name" value=buffered.name}}
       {{/if}}
@@ -44,10 +44,19 @@
 
     <div>
       <label for="description">{{i18n 'admin.badges.description'}}</label>
-      {{#if canEditDescription}}
-        {{textarea name="description" value=buffered.description}}
+      {{#if buffered.system}}
+        {{textarea name="description" value=buffered.description disabled=true}}
       {{else}}
-        {{textarea name="description" value=buffered.displayDescription disabled=true}}
+        {{textarea name="description" value=buffered.description}}
+      {{/if}}
+    </div>
+
+    <div>
+      <label for="long_description">{{i18n 'admin.badges.long_description'}}</label>
+      {{#if buffered.system}}
+        {{textarea name="long_description" value=buffered.long_description disabled=true}}
+      {{else}}
+        {{textarea name="long_description" value=buffered.long_description}}
       {{/if}}
     </div>
 

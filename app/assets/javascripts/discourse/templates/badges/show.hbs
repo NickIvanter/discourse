@@ -2,11 +2,11 @@
   <h1>
     {{#link-to 'badges.index'}}{{i18n 'badges.title'}}{{/link-to}}
      /
-    {{model.displayName}}
+    {{model.name}}
   </h1>
 
   <div class='show-badge-details'>
-    {{badge-card badge=model size="large"}}
+    {{badge-card badge=model size="large" count=userBadges.grant_count}}
     <div class='badge-grant-info'>
       <div>
         <div class='grant-info-item'>

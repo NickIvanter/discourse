@@ -127,7 +127,7 @@ class Post < ActiveRecord::Base
     end
   end
 
-  def publish_change_to_clients!(type)
+  def publish_change_to_clients!(type, options = {})
     # special failsafe for posts missing topics consistency checks should fix, but message
     # is safe to skip
     return unless topic
@@ -140,7 +140,7 @@ class Post < ActiveRecord::Base
       user_id: user_id,
       last_editor_id: last_editor_id,
       type: type
-    }
+    }.merge(options)
 
     if Topic.visible_post_types.include?(post_type)
       MessageBus.publish(channel, msg, group_ids: topic.secure_group_ids)
@@ -379,6 +379,10 @@ class Post < ActiveRecord::Base
     post_actions.where(post_action_type_id: PostActionType.flag_types.values, deleted_at: nil).count != 0
   end
 
+  def has_active_flag?
+    post_actions.active.where(post_action_type_id: PostActionType.flag_types.values).count != 0
+  end
+
   def unhide!
     self.update_attributes(hidden: false)
     self.topic.update_attributes(visible: true) if is_first_post?
@@ -472,6 +476,16 @@ class Post < ActiveRecord::Base
 
   before_create do
     PostCreator.before_create_tasks(self)
+  end
+
+  def self.estimate_posts_per_day
+    val = $redis.get("estimated_posts_per_day")
+    return val.to_i if val
+
+    posts_per_day = Topic.listable_topics.secured.joins(:posts).merge(Post.created_since(30.days.ago)).count / 30
+    $redis.setex("estimated_posts_per_day", 1.day.to_i, posts_per_day.to_s)
+    posts_per_day
+
   end
 
   # This calculates the geometric mean of the post timings and stores it along with

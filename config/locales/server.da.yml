@@ -611,8 +611,6 @@ da:
     purge_deleted_uploads_grace_period_days: "Grace-periode (i dage) før et slettet upload bliver fjernet."
     tl2_requires_likes_received: "Hvor mange likes en bruger skal modtage inden forfremmelse til tillidsniveau 2."
     tl2_requires_likes_given: "Hvor mange likes en bruger skal give inden forfremmelse til tillidsniveau 2."
-    tl3_requires_likes_given: "Det antal likes en bruger skal have givet i de seneste 100 dage for at kvalificere sig til forfremmelse til tillidsniveau 3."
-    tl3_requires_likes_received: "Det antal likes en bruger skal have modtaget i de seneste 100 dage for at kvalificere sig til forfremmelse til tillidsniveau 3."
     min_trust_to_create_topic: "Det mindste tillidsniveau der skal til for at oprette et nyt emne."
     title_fancy_entities: "Omdan almindelige ASCII-tegn i emnetitler til fancy HTML-entities, i stil med SmartyPants http://daringfireball.net/projects/smartypants/"
     title_prettify: "Undgå hyppige tastefejl i titlen, inklusive overforbrug af store bogstaver, første bogstav med småt, gentagne ! og ?, ekstra . i slutningen, etc."
@@ -834,6 +832,47 @@ da:
     title: "FAQ/Retningslinjer"
   tos_topic:
     title: "Vilkår"
+  badges:
+    editor:
+      name: Redaktør
+      description: Rettet første indlæg
+    basic_user:
+      name: Basis
+    member:
+      name: Medlem
+    regular:
+      name: Regulær
+    leader:
+      name: Leder
+    welcome:
+      name: Velkommen
+      description: Modtog et like
+    autobiographer:
+      name: Selvbiograf
+    anniversary:
+      name: Jubilæum
+    nice_post:
+      name: Fint svar
+      description: Modtog 10 likes på et svar
+    good_post:
+      name: Godt svar
+    great_post:
+      name: Rigtigt godt svar
+    nice_topic:
+      name: Fint emne
+    good_topic:
+      name: Godt emne
+    admired:
+      name: Beundret
+    crazy_in_love:
+      name: Vildt forelsket
+    thank_you:
+      name: Tak
+    gives_back:
+      name: Giver tilbage
+    empathetic:
+      name: Empatisk
+      description: Har 500 likede indlæg og givet 1000 likes
   admin_login:
     success: "Email sendt"
     error: "Fejl!"

@@ -7,6 +7,7 @@ class DiscourseRedis
     include Singleton
 
     MASTER_LINK_STATUS = "master_link_status:up".freeze
+    CONNECTION_TYPES = %w{normal pubsub}.each(&:freeze)
 
     def initialize
       @master = true
@@ -27,9 +28,15 @@ class DiscourseRedis
     def initiate_fallback_to_master
       begin
         slave_client = ::Redis::Client.new(@slave_config)
+        logger.warn "#{log_prefix}: Checking connection to master server..."
 
         if slave_client.call([:info]).split("\r\n").include?(MASTER_LINK_STATUS)
-          slave_client.call([:client, [:kill, 'type', 'normal']])
+          logger.warn "#{log_prefix}: Master server is active, killing all connections to slave..."
+
+          CONNECTION_TYPES.each do |connection_type|
+            slave_client.call([:client, [:kill, 'type', connection_type]])
+          end
+
           Discourse.clear_readonly!
           Discourse.request_refresh!
           @master = true
@@ -61,6 +68,14 @@ class DiscourseRedis
 
     def synchronize
       @mutex.synchronize { yield }
+    end
+
+    def logger
+      Rails.logger
+    end
+
+    def log_prefix
+      "#{self.class}"
     end
   end
 

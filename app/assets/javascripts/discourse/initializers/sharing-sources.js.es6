@@ -6,7 +6,7 @@ export default {
   initialize: function() {
     Sharing.addSource({
       id: 'twitter',
-      faIcon: 'fa-twitter-square',
+      faIcon: 'fa-twitter',
       generateUrl: function(link, title) {
         return "http://twitter.com/intent/tweet?url=" + encodeURIComponent(link) + "&text=" + encodeURIComponent(title);
       },
@@ -27,7 +27,7 @@ export default {
 
     Sharing.addSource({
       id: 'facebook',
-      faIcon: 'fa-facebook-square',
+      faIcon: 'fa-facebook',
       title: I18n.t('share.facebook'),
       generateUrl: function(link, title) {
         return "http://www.facebook.com/sharer.php?u=" + encodeURIComponent(link) + '&t=' + encodeURIComponent(title);
@@ -37,7 +37,7 @@ export default {
 
     Sharing.addSource({
       id: 'google+',
-      faIcon: 'fa-google-plus-square',
+      faIcon: 'fa-google-plus',
       title: I18n.t('share.google+'),
       generateUrl: function(link) {
         return "https://plus.google.com/share?url=" + encodeURIComponent(link);
@@ -48,7 +48,7 @@ export default {
 
     Sharing.addSource({
       id: 'email',
-      faIcon: 'fa-envelope-square',
+      faIcon: 'fa-envelope',
       title: I18n.t('share.email'),
       generateUrl: function(link, title) {
         return "mailto:?to=&subject=" + encodeURIComponent('[' + Discourse.SiteSettings.title + '] ' + title) + "&body=" + encodeURIComponent(link);

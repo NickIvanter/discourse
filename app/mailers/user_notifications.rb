@@ -111,9 +111,9 @@ class UserNotifications < ActionMailer::Base
 
       build_email user.email,
                   from_alias: I18n.t('user_notifications.digest.from', site_name: SiteSetting.title),
-                  subject: I18n.t('user_notifications.digest.subject_template',
-                                  site_name: @site_name,
-                                  date: short_date(Time.now))
+                  subject: @featured_topics.length == 1 ? @featured_topics[0].title : I18n.t('user_notifications.digest.subject_template',
+                                                                                             site_name: @site_name,
+                                                                                             date: short_date(Time.now))
     end
   end
 

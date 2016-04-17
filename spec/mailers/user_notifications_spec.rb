@@ -91,7 +91,8 @@ describe UserNotifications do
     context "with new topics" do
 
       before do
-        Topic.expects(:for_digest).returns([Fabricate(:topic, user: Fabricate(:coding_horror))])
+        @featured_topics = [Fabricate(:topic, user: Fabricate(:coding_horror))]
+        Topic.expects(:for_digest).returns(@featured_topics)
         Topic.expects(:new_since_last_seen).returns(Topic.none)
       end
 
@@ -103,7 +104,17 @@ describe UserNotifications do
         expect(subject.text_part.body.to_s).to be_present
       end
 
+      it "includes topic title in email subject instead of site title for only 1 topic in digest" do
+        SiteSetting.email_prefix = "Try Discourse"
+        SiteSetting.title = "Discourse Meta"
+
+        expect(subject.subject).to match(@featured_topics[0].title)
+        expect(subject.subject).not_to match(/Discourse Meta/)
+      end
+
       it "includes email_prefix in email subject instead of site title" do
+        @featured_topics.push Fabricate(:topic, user: Fabricate(:user))
+
         SiteSetting.email_prefix = "Try Discourse"
         SiteSetting.title = "Discourse Meta"
 

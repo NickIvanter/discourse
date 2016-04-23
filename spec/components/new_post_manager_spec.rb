@@ -1,4 +1,3 @@
-require 'pp'
 require 'rails_helper'
 require 'new_post_manager'
 

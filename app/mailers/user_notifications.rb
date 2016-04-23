@@ -228,7 +228,7 @@ class UserNotifications < ActionMailer::Base
     end
 
     allowed_post_types = [Post.types[:regular]]
-    allowed_post_types << Post.types[:whisper] if user.staff?
+    allowed_post_types << Post.types[:whisper] if topic_user.try(:user).try(:staff?)
 
     guardian = Guardian.new(user) if NewPostManager.stealth_enabled? && user.present?
     context_posts = Post.cloak_stealth(guardian)

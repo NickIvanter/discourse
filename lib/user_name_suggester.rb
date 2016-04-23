@@ -3,12 +3,8 @@ module UserNameSuggester
 
   def self.suggest(name, allow_username = nil)
     return unless name.present?
-    I18n.locale = :ru
-    name = name.parameterize
     name = parse_name_from_email(name)
-    # If name is John Doe, this will create the username john_d
-    name_parts = name.downcase.partition(/ |-/)
-    find_available_username_based_on("#{name_parts[0]}_#{name_parts[2][0]}", allow_username)
+    find_available_username_based_on(name, allow_username)
   end
 
   def self.parse_name_from_email(name)
@@ -40,15 +36,15 @@ module UserNameSuggester
 
   def self.sanitize_username(name)
     name = ActiveSupport::Inflector.transliterate(name)
-    # 1. remove characters that aren't allowed
-    name.gsub!(UsernameValidator::CONFUSING_EXTENSIONS, "")
-    name.gsub!(/[^\w.-]/, "")
+    # 1. replace characters that aren't allowed with '_'
+    name.gsub!(UsernameValidator::CONFUSING_EXTENSIONS, "_")
+    name.gsub!(/[^\w.-]/, "_")
     # 2. removes unallowed leading characters
     name.gsub!(/^\W+/, "")
     # 3. removes unallowed trailing characters
     name = remove_unallowed_trailing_characters(name)
-    # 4. remove special characters
-    name.gsub!(/[-_.]{2,}/, "")
+    # 4. unify special characters
+    name.gsub!(/[-_.]{2,}/, "_")
     name
   end
 

@@ -7,7 +7,6 @@ class PostAlerter
   end
 
   def not_allowed?(user, post)
-    user.hellbanned? ||
     user.blank? ||
     user.id == Discourse::SYSTEM_USER_ID ||
     user.id == post.user_id
@@ -233,7 +232,7 @@ class PostAlerter
   ]
 
   def create_notification(user, type, post, opts=nil)
-    return if user.blank? || user.hellbanned?
+    return if user.blank?
     return if user.id == Discourse::SYSTEM_USER_ID
 
     return if type == Notification.types[:liked] && user.user_option.like_notification_frequency == UserOption.like_notification_frequency_type[:never]

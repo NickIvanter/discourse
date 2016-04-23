@@ -276,10 +276,8 @@ class Guardian
       @user == Discourse.system_user) &&
     # Can't send PMs to suspended users
     (is_staff? || target.is_a?(Group) || !target.suspended?) &&
-    # With hellban blocked can post
-    (UserHellbanner.enabled? ||
     # Blocked users can only send PM to staff
-    (!@user.blocked? || target.staff?))
+    (!@user.blocked? || target.staff?)
   end
 
   def can_see_emails?

@@ -9,6 +9,8 @@
       {{else}}
         <li class="nav-item-faq">{{#link-to 'faq'}}{{i18n 'faq'}}{{/link-to}}</li>
       {{/if}}
+      <li class="nav-item-tos">{{#link-to 'tos'}}{{i18n 'terms_of_service'}}{{/link-to}}</li>
+      <li class="nav-item-privacy">{{#link-to 'privacy'}}{{i18n 'privacy'}}{{/link-to}}</li>
     </ul>
 
     <section class='about'>
@@ -41,7 +43,6 @@
       </section>
     {{/if}}
 
-    {{#if currentUser.admin}}
     <section class='about stats'>
       <h3>{{i18n 'about.stats'}}</h3>
 
@@ -84,7 +85,6 @@
         </tr>
       </table>
     </section>
-    {{/if}}
 
     {{#if contactInfo}}
       <section class='about contact'>

@@ -431,8 +431,8 @@ class PostCreator
                              post_number: @post.post_number,
                              msecs: 5000)
 
-    if true || @user.staged
-      TopicUser.auto_watch(@user.id, @topic.id, TopicUser.notification_reasons[:created_post])
+    if @user.staged
+      TopicUser.auto_watch(@user.id, @topic.id)
     else
       TopicUser.auto_track(@user.id, @topic.id, TopicUser.notification_reasons[:created_post])
     end

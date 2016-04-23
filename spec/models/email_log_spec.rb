@@ -36,16 +36,9 @@ describe EmailLog do
 
   context 'after_create' do
     context 'with user' do
-      it 'does not updates the last_emailed_at value for the user if email type is not digest' do
+      it 'updates the last_emailed_at value for the user' do
         expect {
           user.email_logs.create(email_type: 'blah', to_address: user.email)
-          user.reload
-        }.to_not change(user, :last_emailed_at)
-      end
-
-      it 'updates the last_emailed_at value for the user if email type is digest' do
-        expect {
-          user.email_logs.create(email_type: 'digest', to_address: user.email)
           user.reload
         }.to change(user, :last_emailed_at)
       end

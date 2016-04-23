@@ -111,9 +111,9 @@ class UserNotifications < ActionMailer::Base
 
       build_email user.email,
                   from_alias: I18n.t('user_notifications.digest.from', site_name: SiteSetting.title),
-                  subject: @featured_topics.length == 1 ? @featured_topics[0].title : I18n.t('user_notifications.digest.subject_template',
-                                                                                             site_name: @site_name,
-                                                                                             date: short_date(Time.now))
+                  subject: I18n.t('user_notifications.digest.subject_template',
+                                  site_name: @site_name,
+                                  date: short_date(Time.now))
     end
   end
 
@@ -392,7 +392,7 @@ class UserNotifications < ActionMailer::Base
     }
 
     # If we have a display name, change the from address
-    #email_opts[:from_alias] = from_alias if from_alias.present?
+    email_opts[:from_alias] = from_alias if from_alias.present?
 
     TopicUser.change(user.id, post.topic_id, last_emailed_post_number: post.post_number)
 

@@ -6,7 +6,7 @@ export default {
   initialize: function() {
     Sharing.addSource({
       id: 'twitter',
-      faIcon: 'fa-twitter',
+      faIcon: 'fa-twitter-square',
       generateUrl: function(link, title) {
         return "http://twitter.com/intent/tweet?url=" + encodeURIComponent(link) + "&text=" + encodeURIComponent(title);
       },
@@ -16,18 +16,8 @@ export default {
     });
 
     Sharing.addSource({
-      id: 'vkontakte',
-      faIcon: 'fa-vk',
-      title: I18n.t('share.vkontakte'),
-      generateUrl: function(link, title) {
-        return "http://vk.com/share.php?url=" + encodeURIComponent(link) + '&title=' + encodeURIComponent(title);
-      },
-      shouldOpenInPopup: true
-    });
-
-    Sharing.addSource({
       id: 'facebook',
-      faIcon: 'fa-facebook',
+      faIcon: 'fa-facebook-square',
       title: I18n.t('share.facebook'),
       generateUrl: function(link, title) {
         return "http://www.facebook.com/sharer.php?u=" + encodeURIComponent(link) + '&t=' + encodeURIComponent(title);
@@ -37,7 +27,7 @@ export default {
 
     Sharing.addSource({
       id: 'google+',
-      faIcon: 'fa-google-plus',
+      faIcon: 'fa-google-plus-square',
       title: I18n.t('share.google+'),
       generateUrl: function(link) {
         return "https://plus.google.com/share?url=" + encodeURIComponent(link);
@@ -48,7 +38,7 @@ export default {
 
     Sharing.addSource({
       id: 'email',
-      faIcon: 'fa-envelope',
+      faIcon: 'fa-envelope-square',
       title: I18n.t('share.email'),
       generateUrl: function(link, title) {
         return "mailto:?to=&subject=" + encodeURIComponent('[' + Discourse.SiteSettings.title + '] ' + title) + "&body=" + encodeURIComponent(link);

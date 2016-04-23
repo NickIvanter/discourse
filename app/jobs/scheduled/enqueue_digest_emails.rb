@@ -15,7 +15,6 @@ module Jobs
     def target_user_ids
       # Users who want to receive digest email within their chosen digest email frequency
       query = User.real
-                  .not_blocked
                   .where(active: true, staged: false)
                   .joins(:user_option)
                   .not_suspended

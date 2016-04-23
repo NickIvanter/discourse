@@ -17,7 +17,7 @@ class SpamRule::AutoBlock
   end
 
   def block?
-    (@user.blocked? && !UserHellbanner.enabled?) or
+    @user.blocked? or
       (!@user.staged? and
        !@user.has_trust_level?(TrustLevel[1]) and
         SiteSetting.num_flags_to_block_new_user > 0 and

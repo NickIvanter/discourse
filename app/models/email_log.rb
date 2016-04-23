@@ -12,7 +12,7 @@ class EmailLog < ActiveRecord::Base
 
   after_create do
     # Update last_emailed_at if the user_id is present and email was sent
-    User.where(id: user_id).update_all("last_emailed_at = CURRENT_TIMESTAMP") if user_id.present? && !skipped && email_type == 'digest'
+    User.where(id: user_id).update_all("last_emailed_at = CURRENT_TIMESTAMP") if user_id.present? && !skipped
   end
 
   def self.unique_email_per_post(post, user)

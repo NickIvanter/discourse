@@ -91,8 +91,7 @@ describe UserNotifications do
     context "with new topics" do
 
       before do
-        @featured_topics = [Fabricate(:topic, user: Fabricate(:coding_horror))]
-        Topic.expects(:for_digest).returns(@featured_topics)
+        Topic.expects(:for_digest).returns([Fabricate(:topic, user: Fabricate(:coding_horror))])
         Topic.expects(:new_since_last_seen).returns(Topic.none)
       end
 
@@ -104,17 +103,7 @@ describe UserNotifications do
         expect(subject.text_part.body.to_s).to be_present
       end
 
-      it "includes topic title in email subject instead of site title for only 1 topic in digest" do
-        SiteSetting.email_prefix = "Try Discourse"
-        SiteSetting.title = "Discourse Meta"
-
-        expect(subject.subject).to match(@featured_topics[0].title)
-        expect(subject.subject).not_to match(/Discourse Meta/)
-      end
-
       it "includes email_prefix in email subject instead of site title" do
-        @featured_topics.push Fabricate(:topic, user: Fabricate(:user))
-
         SiteSetting.email_prefix = "Try Discourse"
         SiteSetting.title = "Discourse Meta"
 
@@ -138,15 +127,13 @@ describe UserNotifications do
       # Fabricator is not fabricating this ...
       SiteSetting.enable_names = true
       SiteSetting.display_name_on_posts = true
-      SiteSetting.notification_email = 'site@email.com'
       mail = UserNotifications.user_replied(response.user,
                                              post: response,
                                              notification_type: notification.notification_type,
                                              notification_data_hash: notification.data_hash
                                            )
       # from should include full user name
-      # expect(mail[:from].display_names).to eql(['John Doe'])
-      expect(mail[:from].value).to eql('site@email.com')
+      expect(mail[:from].display_names).to eql(['John Doe'])
 
       # subject should include category name
       expect(mail.subject).to match(/India/)
@@ -192,7 +179,6 @@ describe UserNotifications do
 
     it 'generates a correct email' do
       SiteSetting.enable_names = false
-      SiteSetting.notification_email = 'site@email.com'
       mail = UserNotifications.user_posted(response.user,
                                            post: response,
                                            notification_type: notification.notification_type,
@@ -203,8 +189,7 @@ describe UserNotifications do
       expect(mail[:from].display_names).to_not eql(['John Doe'])
 
       # from should include username if "show user full names" is disabled
-      # expect(mail[:from].display_names).to eql(['john'])
-      expect(mail[:from].value).to eql('site@email.com')
+      expect(mail[:from].display_names).to eql(['john'])
 
       # subject should not include category name
       expect(mail.subject).not_to match(/Uncategorized/)
@@ -230,7 +215,6 @@ describe UserNotifications do
 
     it 'generates a correct email' do
       SiteSetting.enable_names = true
-      SiteSetting.notification_email = 'site@email.com'
       mail = UserNotifications.user_private_message(
         response.user,
         post: response,
@@ -239,8 +223,7 @@ describe UserNotifications do
       )
 
       # from should include username if full user name is not provided
-      # expect(mail[:from].display_names).to eql(['john'])
-      expect(mail[:from].value).to eql('site@email.com')
+      expect(mail[:from].display_names).to eql(['john'])
 
       # subject should include "[PM]"
       expect(mail.subject).to match("[PM]")
@@ -365,19 +348,17 @@ describe UserNotifications do
         expects_build_with(has_key(:topic_id))
       end
 
-      # This feature is disabled - Now it always uses the site title
+      it "should have user name as from_alias" do
+        SiteSetting.enable_names = true
+        SiteSetting.display_name_on_posts = true
+        expects_build_with(has_entry(:from_alias, "#{user.name}"))
+      end
 
-      # it "should have user name as from_alias" do
-      #   SiteSetting.enable_names = true
-      #   SiteSetting.display_name_on_posts = true
-      #   expects_build_with(has_entry(:from_alias, "#{user.name}"))
-      # end
-
-      # it "should not have user name as from_alias if display_name_on_posts is disabled" do
-      #   SiteSetting.enable_names = false
-      #   SiteSetting.display_name_on_posts = false
-      #   expects_build_with(has_entry(:from_alias, "walterwhite"))
-      # end
+      it "should not have user name as from_alias if display_name_on_posts is disabled" do
+        SiteSetting.enable_names = false
+        SiteSetting.display_name_on_posts = false
+        expects_build_with(has_entry(:from_alias, "walterwhite"))
+      end
 
       it "should explain how to respond" do
         expects_build_with(Not(has_entry(:include_respond_instructions, false)))

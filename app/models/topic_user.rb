@@ -49,10 +49,10 @@ class TopicUser < ActiveRecord::Base
       end
     end
 
-    def auto_watch(user_id, topic_id, reason = notification_reasons[:auto_watch])
+    def auto_watch(user_id, topic_id)
       topic_user = TopicUser.find_or_initialize_by(user_id: user_id, topic_id: topic_id)
       topic_user.notification_level = notification_levels[:watching]
-      topic_user.notifications_reason_id = reason
+      topic_user.notifications_reason_id = notification_reasons[:auto_watch]
       topic_user.save
     end
 

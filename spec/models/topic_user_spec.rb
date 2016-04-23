@@ -205,7 +205,7 @@ describe TopicUser do
 
       it 'should automatically track topics you reply to' do
         post_creator.create
-        expect(topic_new_user.notification_level).to eq(TopicUser.notification_levels[:watching])
+        expect(topic_new_user.notification_level).to eq(TopicUser.notification_levels[:tracking])
         expect(topic_new_user.notifications_reason_id).to eq(TopicUser.notification_reasons[:created_post])
       end
 

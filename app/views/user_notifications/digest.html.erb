@@ -63,8 +63,6 @@
           </span>
         <%- end %>
       </div>
-      <%- else %>
-        <p><%= t('user_notifications.digest.more_topics', last_seen_at: @last_seen_at, new_topics_since_seen: @new_topics_since_seen) %></p>
       <%- end %>
     <%- end -%>
   </td>

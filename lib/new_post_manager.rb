@@ -166,7 +166,10 @@ class NewPostManager
 
     post = enqueuer.enqueue(queued_args)
 
-    QueuedPost.broadcast_new! if post && post.errors.empty?
+    if post && post.errors.empty?
+      post.alert_admins
+      QueuedPost.broadcast_new!
+    end
 
     result.queued_post = post
     result.reason = reason if reason

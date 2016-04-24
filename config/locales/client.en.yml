@@ -1095,6 +1095,7 @@ en:
         posted: '{{username}} posted in "{{topic}}" - {{site_title}}'
         private_message: '{{username}} sent you a private message in "{{topic}}" - {{site_title}}'
         linked: '{{username}} linked to your post from "{{topic}}" - {{site_title}}'
+        queued: '{{username}} new queued post in: "{{topic}}" - {{site_title}}'
 
     upload_selector:
       title: "Add an image"

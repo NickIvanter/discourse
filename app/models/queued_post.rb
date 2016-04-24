@@ -48,6 +48,31 @@ class QueuedPost < ActiveRecord::Base
     MessageBus.publish('/queue_counts', msg, user_ids: User.staff.pluck(:id))
   end
 
+  def alert_admins
+    admin_ids = User.staff.pluck(:id)
+
+    if post_options['title'].present?
+      title = post_options['title']
+    else
+      title = topic.title
+    end
+
+    admin_ids.each do |aid|
+      MessageBus.publish(
+        "/notification-alert/#{aid}", {
+          notification_type: Notification.types[:queued],
+          post_number: 1, # TBD for queued_previews
+          topic_title: title,
+          topic_id: topic_id,
+          excerpt: raw,
+          username: user.username,
+          post_url: post_options['referer']
+        },
+        user_ids: admin_ids
+      )
+    end
+  end
+
   # Delete stealth post and topic if any
   def destroy_cloaked!
     stealth_post_map.post.destroy if stealth_post_map.present? && stealth_post_map.post_id.present?

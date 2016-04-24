@@ -1032,6 +1032,7 @@ ru:
         posted: '{{username}} написал в "{{topic}}" - {{site_title}}'
         private_message: '{{username}} отправил вам личное сообщение в "{{topic}}" - {{site_title}}'
         linked: '{{username}} ссылается на ваш пост в теме: "{{topic}}" - {{site_title}}'
+        queued: '{{username}} новое сообщение на модерации в теме: "{{topic}}" - {{site_title}}'
     upload_selector:
       title: "Add an image"
       title_with_attachments: "Add an image or a file"

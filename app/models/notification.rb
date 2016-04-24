@@ -50,7 +50,8 @@ class Notification < ActiveRecord::Base
                         invited_to_topic: 13,
                         custom: 14,
                         group_mentioned: 15,
-                        group_message_summary: 16
+                        group_message_summary: 16,
+                        queued: 17
                        )
   end
 

@@ -1079,6 +1079,7 @@ ru:
     invitee_accepted: "%{display_username} принял ваше приглашение"
     linked: "пользователь %{display_username} упомянул вас в %{link}"
     granted_badge: "Вы награждены: %{link}"
+    queued: "{{display_username}} новое сообщение на модерации в теме: %{link}"
   search:
     within_post: "#%{post_number} от %{username}"
     types:

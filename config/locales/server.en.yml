@@ -1355,6 +1355,7 @@ en:
     invitee_accepted: "%{display_username} accepted your invitation"
     linked: "%{display_username} linked you in %{link}"
     granted_badge: "You earned %{link}"
+    queued: "{{display_username}} new post for moderation in: %{link}"
 
   search:
     within_post: "#%{post_number} by %{username}"

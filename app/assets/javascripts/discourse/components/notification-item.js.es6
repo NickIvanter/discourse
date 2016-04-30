@@ -96,7 +96,13 @@ export default Ember.Component.extend({
       text = I18n.t(this.get('scope'), {count, group_name});
     } else if (notification.get('notification_type') === LIKED_TYPE && notification.get("data.count") > 1)  {
       const count = notification.get('data.count') - 2;
-      const username2 = notification.get('data.username2');
+
+      var username2 = notification.get('data.username2');
+      const realName2 = notification.get('data.real_name2');
+      if (realName2) {
+        username2 = realName;
+      }
+
       if (count===0) {
         text = I18n.t('notifications.liked_2', {description, username, username2});
       } else {

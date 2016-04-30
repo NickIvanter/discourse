@@ -208,6 +208,7 @@ class Notification < ActiveRecord::Base
       data = JSON.parse(self.data);
       originalUsername = data['original_username'];
       displayUsername = data['display_username'];
+
       # *) Плагин Solved не заполняет original_username.
       # *) Зачастую display_username не является системным именем пользователя.
       # Например: {
@@ -228,9 +229,17 @@ class Notification < ActiveRecord::Base
           self.data = data.to_json
         end
       end
+
+      username2 = data['username2']
+      if username2
+        user2 = User.find_by username: username2
+        if user2 && !user2.name.blank?
+          data['real_name2'] = user2.name
+          self.data = data.to_json
+        end
+      end
     end
   end
-
 
 end
 

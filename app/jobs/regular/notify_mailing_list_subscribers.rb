@@ -13,7 +13,7 @@ module Jobs
       raise Discourse::InvalidParameters.new(:post_id) unless post
       return if post.trashed? || post.user_deleted? || (!post.topic)
 
-      return if NewPostManager.stealth_enabled? && post.present? && post.stealth? # Admins would be notified throu queued posts
+      return if NewPostManager.queued_preview_enabled? && post.present? && post.queued_preview? # Admins would be notified throu queued posts
 
       users =
           User.activated.not_blocked.not_suspended.real

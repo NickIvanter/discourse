@@ -29,7 +29,7 @@ class NotificationsController < ApplicationController
       guardian.ensure_can_see_notifications!(user)
 
       notifications = Notification.where(user_id: user.id)
-                                  .cloak_stealth(guardian)
+                                  .hide_queued_preview(guardian)
                                   .visible
                                   .includes(:topic)
                                   .order(created_at: :desc)

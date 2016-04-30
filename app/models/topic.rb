@@ -109,7 +109,7 @@ class Topic < ActiveRecord::Base
 
   has_one :first_post, -> {where post_number: 1}, class_name: Post
 
-  has_one :stealth_post_map, foreign_key: :topic_id
+  has_one :queued_preview_post_map, foreign_key: :topic_id
 
   # When we want to temporarily attach some data to a forum topic (usually before serialization)
   attr_accessor :user_data
@@ -150,44 +150,44 @@ class Topic < ActiveRecord::Base
            WHERE #{condition[0]})", condition[1])
   }
 
-  scope :with_stealth_map, -> { eager_load(:stealth_post_map) }
-  scope :cloak_stealth, -> (guardian) {
+  scope :with_queued_preview_map, -> { eager_load(:queued_preview_post_map) }
+  scope :hide_queued_preview, -> (guardian) {
     if guardian.present?
-      guardian.stealth_actions(
-        user_action: ->{with_stealth_map.where("stealth_post_maps.topic_id is null OR (topics.user_id = ? AND stealth_post_maps.topic_id is not null)", guardian.user.id)},
-        anon_action: ->{with_stealth_map.where("stealth_post_maps.topic_id is null")}
+      guardian.queued_preview_actions(
+        user_action: ->{with_queued_preview_map.where("queued_preview_post_maps.topic_id is null OR (topics.user_id = ? AND queued_preview_post_maps.topic_id is not null)", guardian.user.id)},
+        anon_action: ->{with_queued_preview_map.where("queued_preview_post_maps.topic_id is null")}
       )
     end
   }
 
-  def stealth?
-    stealth_post_map
+  def queued_preview?
+    queued_preview_post_map
   end
 
-  def cloak_last_post_user_id(guardian)
-    posts.by_newest.cloak_stealth(guardian).pluck(:user_id).first
+  def hide_last_post_user_id(guardian)
+    posts.by_newest.hide_queued_preview(guardian).pluck(:user_id).first
   end
 
-  def cloak_last_poster(guardian)
-    User.find(cloak_last_post_user_id(guardian))
+  def hide_last_poster(guardian)
+    User.find(hide_last_post_user_id(guardian))
   end
 
-  def cloak_posts_count(guardian)
-    posts.cloak_stealth(guardian).count
+  def hide_posts_count(guardian)
+    posts.hide_queued_preview(guardian).count
   end
 
-  def cloak_last_posted_at(guardian)
-    posts.by_newest.cloak_stealth(guardian).pluck(:created_at).first
+  def hide_last_posted_at(guardian)
+    posts.by_newest.hide_queued_preview(guardian).pluck(:created_at).first
   end
 
-  def cloak_highest_post_number(guardian)
-    posts.order('post_number DESC').cloak_stealth(guardian).pluck(:post_number).first
+  def hide_highest_post_number(guardian)
+    posts.order('post_number DESC').hide_queued_preview(guardian).pluck(:post_number).first
   end
 
-  def self.cloak_highest_post_number_query(guardian)
-    guardian.stealth_actions(
-      user_action: -> {"(SELECT MAX(pst.post_number) FROM posts AS pst LEFT OUTER JOIN stealth_post_maps AS spm ON pst.id=spm.post_id WHERE pst.topic_id=topics.id AND (spm.post_id is null OR (pst.user_id=#{guardian.user.id} AND spm.post_id is not null)))"},
-      anon_action: -> {"(SELECT MAX(pst.post_number) FROM posts AS pst LEFT OUTER JOIN stealth_post_maps AS spm ON pst.id=spm.post_id WHERE pst.topic_id=topics.id AND spm.post_id is null)"}
+  def self.hide_highest_post_number_query(guardian)
+    guardian.queued_preview_actions(
+      user_action: -> {"(SELECT MAX(pst.post_number) FROM posts AS pst LEFT OUTER JOIN queued_preview_post_maps AS spm ON pst.id=spm.post_id WHERE pst.topic_id=topics.id AND (spm.post_id is null OR (pst.user_id=#{guardian.user.id} AND spm.post_id is not null)))"},
+      anon_action: -> {"(SELECT MAX(pst.post_number) FROM posts AS pst LEFT OUTER JOIN queued_preview_post_maps AS spm ON pst.id=spm.post_id WHERE pst.topic_id=topics.id AND spm.post_id is null)"}
     )
   end
 
@@ -358,7 +358,7 @@ class Topic < ActiveRecord::Base
     topics = Topic
               .visible
               .secured(guardian)
-              .cloak_stealth(guardian)
+              .hide_queued_preview(guardian)
               .joins("LEFT OUTER JOIN topic_users ON topic_users.topic_id = topics.id AND topic_users.user_id = #{user.id.to_i}")
               .joins("LEFT OUTER JOIN users ON users.id = topics.user_id")
               .where(closed: false, archived: false)
@@ -465,7 +465,7 @@ class Topic < ActiveRecord::Base
 
     candidates = Topic.visible
        .secured(guardian)
-       .cloak_stealth(guardian)
+       .hide_queued_preview(guardian)
        .listable_topics
        .joins('JOIN topic_search_data s ON topics.id = s.topic_id')
        .where("search_data @@ #{ts_query}")

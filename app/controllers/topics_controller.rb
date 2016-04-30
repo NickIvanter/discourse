@@ -72,8 +72,8 @@ class TopicsController < ApplicationController
     page = params[:page]
     if (page < 0) ||
        ((page - 1) * @topic_view.chunk_size >
-                     (if NewPostManager.stealth_enabled? then @topic_view.topic.cloak_highest_post_number(guardian)
-                                                         else @topic_view.topic.highest_post_number end))
+                     (if NewPostManager.queued_preview_enabled? then @topic_view.topic.hide_highest_post_number(guardian)
+                                                                else @topic_view.topic.highest_post_number end))
       raise Discourse::NotFound
     end
 

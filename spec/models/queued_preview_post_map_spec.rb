@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-describe StealthPostMap do
+describe QueuedPreviewPostMap do
 
   it { is_expected.to belong_to :post }
   it { is_expected.to belong_to :topic }

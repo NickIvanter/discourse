@@ -1,7 +1,7 @@
 require_dependency 'post_creator'
 require_dependency 'new_post_result'
 require_dependency 'post_enqueuer'
-require_dependency 'post_stealth_mapper'
+require_dependency 'post_queued_preview_mapper'
 
 # Determines what actions should be taken with new posts.
 #
@@ -71,7 +71,7 @@ class NewPostManager
     user = manager.user
 
     return false if user.staff? || user.staged
-    return true if stealth_enabled?
+    return true if queued_preview_enabled?
 
     (user.trust_level <= TrustLevel.levels[:basic] && user.post_count < SiteSetting.approve_post_count) ||
     (user.trust_level < SiteSetting.approve_unless_trust_level.to_i) ||
@@ -96,11 +96,11 @@ class NewPostManager
     SiteSetting.approve_post_count > 0 ||
     SiteSetting.approve_unless_trust_level.to_i > 0 ||
     handlers.size > 1 ||
-    stealth_enabled?
+    queued_preview_enabled?
   end
 
-  def self.stealth_enabled?
-    SiteSetting.approve_stealth_mode
+  def self.queued_preview_enabled?
+    SiteSetting.queued_preview_mode
   end
 
   def initialize(user, args)
@@ -123,7 +123,7 @@ class NewPostManager
       handled_result = handler.call(self)
     end
 
-    if self.class.stealth_enabled?
+    if self.class.queued_preview_enabled?
       if handled && handled_result
         return handled_result if handled_result.failed? || handled_result.action != :enqueued
       end
@@ -137,9 +137,9 @@ class NewPostManager
       end
 
       # Do mapping from posts to queued_posts to hide it
-      # if approve_stealth mode is on
+      # if queued_preview mode is on
       if create_result.success? && handled_result.present? && handled_result.queued_post.present? && handled_result.success?
-        stealth(handled_result, create_result)
+        queued_preview(handled_result, create_result)
       end
 
       create_result
@@ -194,8 +194,8 @@ class NewPostManager
   end
 
   # Create hiding mapping from posts to queued_posts
-  def stealth(enqueue_result, post_result)
-    PostStealthMapper.new(enqueue_result, post_result).cloak
+  def queued_preview(enqueue_result, post_result)
+    PostQueuedPreviewMapper.new(enqueue_result, post_result).hide
   end
 
 end

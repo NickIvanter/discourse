@@ -7,8 +7,8 @@ class TopicParticipantsSummary
     @user = options[:user]
     @guardian = Guardian.new(@user)
 
-    if NewPostManager.stealth_enabled?
-      @post_ids = topic.posts.cloak_stealth(@guardian).pluck(:user_id) # Only show not cloaked ids
+    if NewPostManager.queued_preview_enabled?
+      @post_ids = topic.posts.hide_queued_preview(@guardian).pluck(:user_id) # Only show not queued_preview ids
     end
   end
 
@@ -35,7 +35,7 @@ class TopicParticipantsSummary
     return [] unless @user
     ids = [topic.user_id] + topic.allowed_user_ids - [@user.id]
 
-    if !NewPostManager.stealth_enabled? || @guardian.can_see_stealth?
+    if !NewPostManager.queued_preview_enabled? || @guardian.can_see_queued_preview?
       ids
     else
       @post_ids & ids

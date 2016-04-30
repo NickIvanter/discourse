@@ -91,7 +91,7 @@ describe Post do
       end
     end
 
-    describe '#cloak_stealth' do
+    describe '#hide_queued_preview' do
       let(:anon)     { nil }
       let(:stranger) { Fabricate(:user) }
       let(:writer)   { Fabricate(:user) }
@@ -104,54 +104,54 @@ describe Post do
       let!(:p4) { Post.create(topic: topic, user: author, post_number: 4, raw: 'Test post 4', reply_to_post_number: p3.post_number) }
       let!(:p5) { Post.create(topic: topic, user: writer, post_number: 5, raw: 'Test post 5', reply_to_post_number: p3.post_number) }
 
-      context 'when stealth approving off' do
+      context 'when queued_preview approving off' do
         before(:each) do
-          SiteSetting.stubs(:approve_stealth_mode).returns(false)
+          SiteSetting.stubs(:queued_preview_mode).returns(false)
         end
 
-        it 'does not cloak any approved post to anybody' do
+        it 'does not hide any approved post to anybody' do
           [anon, stranger, writer, author, admin].each do |u|
-            expect(Post.cloak_stealth(Guardian.new(u)).by_post_number).to eq([p1, p2, p3, p4, p5])
+            expect(Post.hide_queued_preview(Guardian.new(u)).by_post_number).to eq([p1, p2, p3, p4, p5])
           end
         end
 
-        it 'does not cloak any stealth post to anybody' do
-          StealthPostMap.create(post_id: p4.id)
-          StealthPostMap.create(post_id: p5.id)
+        it 'does not hide any queued_preview post to anybody' do
+          QueuedPreviewPostMap.create(post_id: p4.id)
+          QueuedPreviewPostMap.create(post_id: p5.id)
 
           [anon, stranger, writer, author, admin].each do |u|
-            expect(Post.cloak_stealth(Guardian.new(u)).by_post_number).to eq([p1, p2, p3, p4, p5])
+            expect(Post.hide_queued_preview(Guardian.new(u)).by_post_number).to eq([p1, p2, p3, p4, p5])
           end
         end
       end
 
-      context 'when stealth approving on' do
+      context 'when queued_preview approving on' do
         before(:each) do
-          SiteSetting.stubs(:approve_stealth_mode).returns(true)
+          SiteSetting.stubs(:queued_preview_mode).returns(true)
         end
 
-        context 'when no stealth posts present' do
+        context 'when no queued_preview posts present' do
 
-          it 'does not cloak any approved post to anybody' do
+          it 'does not hide any approved post to anybody' do
             [anon, stranger, writer, author, admin].each do |u|
-              expect(Post.cloak_stealth(Guardian.new(u)).by_post_number).to eq([p1, p2, p3, p4, p5])
+              expect(Post.hide_queued_preview(Guardian.new(u)).by_post_number).to eq([p1, p2, p3, p4, p5])
             end
           end
 
-          it 'does not cloak last post to anybody' do
+          it 'does not hide last post to anybody' do
             [anon, stranger, writer, author, admin].each do |u|
-              expect(Post.find_cloak_last_post(Guardian.new(u))).to eq(p5)
+              expect(Post.find_queued_preview_last_post(Guardian.new(u))).to eq(p5)
             end
           end
 
-          it 'does not cloak reply count to anybody' do
+          it 'does not hide reply count to anybody' do
             [anon, stranger, writer, author, admin].each do |u|
-              expect(p1.find_cloak_reply_count(Guardian.new(u))).to eq(1)
-              expect(p3.find_cloak_reply_count(Guardian.new(u))).to eq(2)
+              expect(p1.find_queued_preview_reply_count(Guardian.new(u))).to eq(1)
+              expect(p3.find_queued_preview_reply_count(Guardian.new(u))).to eq(2)
             end
           end
 
-          it 'does not cloak reply history to anybody' do
+          it 'does not hide reply history to anybody' do
             [anon, stranger, writer, author, admin].each do |u|
               expect(p5.reply_history(100, Guardian.new(u))).to eq([p1, p3])
               expect(p4.reply_history(100, Guardian.new(u))).to eq([p1, p3])
@@ -160,56 +160,56 @@ describe Post do
 
         end
 
-        context 'when stealth posts present' do
-          let!(:ps4) { StealthPostMap.create(post_id: p4.id) }
-          let!(:ps5) { StealthPostMap.create(post_id: p5.id) }
+        context 'when queued_preview posts present' do
+          let!(:ps4) { QueuedPreviewPostMap.create(post_id: p4.id) }
+          let!(:ps5) { QueuedPreviewPostMap.create(post_id: p5.id) }
 
-          it 'does not cloak any post to admin' do
+          it 'does not hide any post to admin' do
             [admin].each do |u|
-              expect(Post.cloak_stealth(Guardian.new(u)).by_post_number).to eq([p1, p2, p3, p4, p5])
+              expect(Post.hide_queued_preview(Guardian.new(u)).by_post_number).to eq([p1, p2, p3, p4, p5])
             end
           end
 
-          it 'does not cloak last post to admin' do
+          it 'does not hide last post to admin' do
             [admin].each do |u|
-              expect(Post.find_cloak_last_post(Guardian.new(u))).to eq(p5)
+              expect(Post.find_queued_preview_last_post(Guardian.new(u))).to eq(p5)
             end
           end
 
-          it 'does not cloak reply count to admin' do
+          it 'does not hide reply count to admin' do
             [admin].each do |u|
-              expect(p1.find_cloak_reply_count(Guardian.new(u))).to eq(1)
-              expect(p3.find_cloak_reply_count(Guardian.new(u))).to eq(2)
+              expect(p1.find_queued_preview_reply_count(Guardian.new(u))).to eq(1)
+              expect(p3.find_queued_preview_reply_count(Guardian.new(u))).to eq(2)
             end
           end
 
-          it 'does not cloak reply history to admin' do
+          it 'does not hide reply history to admin' do
             [admin].each do |u|
               expect(p5.reply_history(100, Guardian.new(u))).to eq([p1, p3])
               expect(p4.reply_history(100, Guardian.new(u))).to eq([p1, p3])
             end
           end
 
-          it 'does cloak any not approved post to anon and stranger' do
+          it 'does hide any not approved post to anon and stranger' do
             [anon, stranger].each do |u|
-              expect(Post.cloak_stealth(Guardian.new(u)).by_post_number).to eq([p1, p2, p3])
+              expect(Post.hide_queued_preview(Guardian.new(u)).by_post_number).to eq([p1, p2, p3])
             end
           end
 
-          it 'does cloak last post to anon and stranger' do
+          it 'does hide last post to anon and stranger' do
             [anon, stranger].each do |u|
-              expect(Post.find_cloak_last_post(Guardian.new(u))).to eq(p3)
+              expect(Post.find_queued_preview_last_post(Guardian.new(u))).to eq(p3)
             end
           end
 
-          it 'does cloak reply count to anon and stranger' do
+          it 'does hide reply count to anon and stranger' do
             [anon, stranger].each do |u|
-              expect(p1.find_cloak_reply_count(Guardian.new(u))).to eq(1)
-              expect(p3.find_cloak_reply_count(Guardian.new(u))).to eq(0)
+              expect(p1.find_queued_preview_reply_count(Guardian.new(u))).to eq(1)
+              expect(p3.find_queued_preview_reply_count(Guardian.new(u))).to eq(0)
             end
           end
 
-          it 'does cloak reply history to anon and stranger' do
+          it 'does hide reply history to anon and stranger' do
             [anon, stranger].each do |u|
               expect(p4.reply_history(100, Guardian.new(u))).to eq([])
               expect(p5.reply_history(100, Guardian.new(u))).to eq([])
@@ -217,23 +217,23 @@ describe Post do
           end
 
           it 'post author can see its not approved post' do
-            expect(Post.cloak_stealth(Guardian.new(author)).by_post_number).to eq([p1, p2, p3, p4])
-            expect(Post.cloak_stealth(Guardian.new(writer)).by_post_number).to eq([p1, p2, p3, p5])
+            expect(Post.hide_queued_preview(Guardian.new(author)).by_post_number).to eq([p1, p2, p3, p4])
+            expect(Post.hide_queued_preview(Guardian.new(writer)).by_post_number).to eq([p1, p2, p3, p5])
           end
 
-          it 'cloak last post to post author if its not his own' do
-            expect(Post.find_cloak_last_post(Guardian.new(author))).to eq(p4)
-            expect(Post.find_cloak_last_post(Guardian.new(writer))).to eq(p5)
+          it 'hide last post to post author if its not his own' do
+            expect(Post.find_queued_preview_last_post(Guardian.new(author))).to eq(p4)
+            expect(Post.find_queued_preview_last_post(Guardian.new(writer))).to eq(p5)
           end
 
-          it 'cloak reply count for post author' do
-            expect(p1.find_cloak_reply_count(Guardian.new(author))).to eq(1)
-            expect(p3.find_cloak_reply_count(Guardian.new(author))).to eq(1)
-            expect(p1.find_cloak_reply_count(Guardian.new(writer))).to eq(1)
-            expect(p3.find_cloak_reply_count(Guardian.new(writer))).to eq(1)
+          it 'hide reply count for post author' do
+            expect(p1.find_queued_preview_reply_count(Guardian.new(author))).to eq(1)
+            expect(p3.find_queued_preview_reply_count(Guardian.new(author))).to eq(1)
+            expect(p1.find_queued_preview_reply_count(Guardian.new(writer))).to eq(1)
+            expect(p3.find_queued_preview_reply_count(Guardian.new(writer))).to eq(1)
           end
 
-          it 'cloak reply history to post author' do
+          it 'hide reply history to post author' do
             expect(p5.reply_history(100, Guardian.new(author))).to eq([])
             expect(p4.reply_history(100, Guardian.new(author))).to eq([p1, p3])
             expect(p5.reply_history(100, Guardian.new(writer))).to eq([p1, p3])

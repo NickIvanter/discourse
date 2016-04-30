@@ -7,8 +7,8 @@ class QueuedPost < ActiveRecord::Base
   belongs_to :approved_by, class_name: "User"
   belongs_to :rejected_by, class_name: "User"
 
-  has_one :stealth_post_map, foreign_key: :queued_id
-  scope :with_stealth_map, -> { eager_load(:stealth_post_map) }
+  has_one :queued_preview_post_map, foreign_key: :queued_id
+  scope :with_queued_preview_map, -> { eager_load(:queued_preview_post_map) }
 
   def create_pending_action
     UserAction.log_action!(action_type: UserAction::PENDING,
@@ -73,19 +73,19 @@ class QueuedPost < ActiveRecord::Base
     end
   end
 
-  # Delete stealth post and topic if any
-  def destroy_cloaked!
-    stealth_post_map.post.destroy if stealth_post_map.present? && stealth_post_map.post_id.present?
-    stealth_post_map.topic.destroy if stealth_post_map.present? && stealth_post_map.topic_id.present?
+  # Delete queued_preview post and topic if any
+  def destroy_queued_preview!
+    queued_preview_post_map.post.destroy if queued_preview_post_map.present? && queued_preview_post_map.post_id.present?
+    queued_preview_post_map.topic.destroy if queued_preview_post_map.present? && queued_preview_post_map.topic_id.present?
   end
 
-  def cleanup_cloaking!
-    stealth_post_map.destroy
+  def cleanup_hideing!
+    queued_preview_post_map.destroy
   end
 
-  def edit_cloaked!(raw)
-    if stealth_post_map.present? && stealth_post_map.post_id.present?
-      post = Post.find(stealth_post_map.post_id)
+  def edit_queued_preview!(raw)
+    if queued_preview_post_map.present? && queued_preview_post_map.post_id.present?
+      post = Post.find(queued_preview_post_map.post_id)
       post.update_column(:raw, raw)
       post.rebake!
     end
@@ -94,9 +94,9 @@ class QueuedPost < ActiveRecord::Base
   def reject!(rejected_by)
     QueuedPost.transaction do
       change_to!(:rejected, rejected_by)
-      if NewPostManager.stealth_enabled?
-        destroy_cloaked!
-        cleanup_cloaking!
+      if NewPostManager.queued_preview_enabled?
+        destroy_queued_preview!
+        cleanup_hideing!
       end
     end
 
@@ -119,8 +119,8 @@ class QueuedPost < ActiveRecord::Base
 
       UserBlocker.unblock(user, approved_by) if user.blocked? && !UserHellbanner.enabled?
 
-      unless NewPostManager.stealth_enabled?
-        creator = PostCreator.new(user, create_options.merge(skip_validations: true, stealth_approving: true))
+      unless NewPostManager.queued_preview_enabled?
+        creator = PostCreator.new(user, create_options.merge(skip_validations: true, queued_preview_approving: true))
         created_post = creator.create
         unless created_post && creator.errors.blank?
           raise StandardError, "Failed to create post #{raw[0..100]} #{creator.errors.full_messages.inspect}"
@@ -128,14 +128,14 @@ class QueuedPost < ActiveRecord::Base
       end
     end
 
-    if NewPostManager.stealth_enabled? && stealth_post_map.present? && stealth_post_map.post_id.present?
-      post = stealth_post_map.post
+    if NewPostManager.queued_preview_enabled? && queued_preview_post_map.present? && queued_preview_post_map.post_id.present?
+      post = queued_preview_post_map.post
       if post.present?
-        new_topic = stealth_post_map.new_topic?
-        cleanup_cloaking!
+        new_topic = queued_preview_post_map.new_topic?
+        cleanup_hideing!
 
         # Reapply events and jobs
-        PostJobsEnqueuer.new(post, post.topic, new_topic, {stealth_approving: true}).enqueue_jobs
+        PostJobsEnqueuer.new(post, post.topic, new_topic, {queued_preview_approving: true}).enqueue_jobs
         opts = create_options
         DiscourseEvent.trigger(:topic_created, post.topic, opts, user) if new_topic
         DiscourseEvent.trigger(:post_created, post, opts, user)
@@ -147,7 +147,7 @@ class QueuedPost < ActiveRecord::Base
 
     DiscourseEvent.trigger(:approved_post, self)
 
-    if NewPostManager.stealth_enabled?
+    if NewPostManager.queued_preview_enabled?
       post
     else
       created_post
@@ -157,7 +157,7 @@ class QueuedPost < ActiveRecord::Base
   def edit_content!(raw)
     QueuedPost.transaction do
       update_column(:raw, raw)
-      edit_cloaked!(raw) if NewPostManager.stealth_enabled?
+      edit_queued_preview!(raw) if NewPostManager.queued_preview_enabled?
     end
   end
 

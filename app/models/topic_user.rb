@@ -189,9 +189,9 @@ class TopicUser < ActiveRecord::Base
         threshold: SiteSetting.default_other_auto_track_topics_after_msecs
       }
 
-      if NewPostManager.stealth_enabled?
+      if NewPostManager.queued_preview_enabled?
         guardian = Guardian.new(user)
-        args[:highest_post_number] = Topic.find(topic_id).cloak_highest_post_number(guardian)
+        args[:highest_post_number] = Topic.find(topic_id).hide_highest_post_number(guardian)
       else
         args[:highest_post_number] = Topic.find(topic_id).highest_post_number
       end

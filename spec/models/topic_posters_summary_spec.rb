@@ -23,7 +23,7 @@ describe TopicPostersSummary do
     let(:featured_user3) { nil }
     let(:featured_user4) { nil }
 
-    context "without stealth approval" do
+    context "without queued_preview approval" do
 
       it 'contains only the topic creator when there are no other posters' do
         expect(summary.count).to eq 1
@@ -73,7 +73,7 @@ describe TopicPostersSummary do
       end
     end
 
-    context "with stealth approval" do
+    context "with queued_preview approval" do
       let(:stranger) { Fabricate(:user) }
       let(:admin)    { Fabricate(:user, admin: true) }
       let(:summary_anon) { described_class.new(topic).summary }
@@ -84,7 +84,7 @@ describe TopicPostersSummary do
       let(:summary_featured2) { described_class.new(topic, user: featured_user2).summary }
 
       before(:each) do
-        SiteSetting.stubs(:approve_stealth_mode).returns(true)
+        SiteSetting.stubs(:queued_preview_mode).returns(true)
         SiteSetting.stubs(:approve_unless_trust_level).returns(4)
       end
 
@@ -106,7 +106,7 @@ describe TopicPostersSummary do
         end # it
 
         it 'when not approved only creator and staff can see topic creator' do
-          StealthPostMap.create(post_id: p1.id)
+          QueuedPreviewPostMap.create(post_id: p1.id)
 
           expect(summary_admin.count).to eq 1
           expect(summary_creator.count).to eq 1
@@ -122,7 +122,7 @@ describe TopicPostersSummary do
         end # it
       end
 
-      context "when the lastest poster can be cloaked" do
+      context "when the lastest poster can be hidden" do
         let(:featured_user1) { Fabricate(:user) }
         let(:featured_user2) { Fabricate(:user) }
 
@@ -150,7 +150,7 @@ describe TopicPostersSummary do
 
         context 'when last post does not approved' do
           before do
-            StealthPostMap.create(post_id: p4.id)
+            QueuedPreviewPostMap.create(post_id: p4.id)
           end
 
           it 'post creator and staff can see actual last poster' do
@@ -176,7 +176,7 @@ describe TopicPostersSummary do
             let!(:p5) { Post.create(topic: topic, user: featured_user1, post_number: 5, raw: 'Test post 5') }
 
             before do
-              StealthPostMap.create(post_id: p5.id)
+              QueuedPreviewPostMap.create(post_id: p5.id)
             end
 
             it 'each poster see only her post and only featured user if he has at least one approved post' do

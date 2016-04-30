@@ -190,7 +190,7 @@ class TopicTrackingState
         TopicQuery.new_filter(Topic, "xxx").where_values.join(" AND ").gsub!("'xxx'", treat_as_new_topic_clause)
       end
 
-    if NewPostManager.stealth_enabled?
+    if NewPostManager.queued_preview_enabled?
     select = (opts && opts[:select]) || "
            u.id AS user_id,
            topics.id AS topic_id,
@@ -214,7 +214,7 @@ class TopicTrackingState
     JOIN user_options AS uo ON uo.user_id = u.id
     JOIN categories c ON c.id = topics.category_id
     LEFT JOIN topic_users tu ON tu.topic_id = topics.id AND tu.user_id = u.id
-    LEFT JOIN stealth_post_maps spm ON spm.topic_id = topics.id
+    LEFT JOIN queued_preview_post_maps spm ON spm.topic_id = topics.id
     WHERE u.id = :user_id AND
           (spm.topic_id is null OR (#{part2})) AND
           topics.archetype <> 'private_message' AND

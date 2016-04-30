@@ -22,7 +22,7 @@ module PostStreamSerializerMixin
         ps.add_raw = true if @options[:include_raw]
         ps.topic_view = object
         p.topic = object.topic
-        p.reply_count = p.find_cloak_reply_count(scope) if NewPostManager.stealth_enabled?
+        p.reply_count = p.find_queued_preview_reply_count(scope) if NewPostManager.queued_preview_enabled?
 
         @posts << ps.as_json
       end

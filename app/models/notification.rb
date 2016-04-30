@@ -12,11 +12,11 @@ class Notification < ActiveRecord::Base
   scope :visible , lambda { joins('LEFT JOIN topics ON notifications.topic_id = topics.id')
                             .where('topics.id IS NULL OR topics.deleted_at IS NULL') }
 
-  scope :with_stealth_map, -> { joins('LEFT JOIN stealth_post_maps ON notifications.topic_id = stealth_post_maps.topic_id') }
-  scope :cloak_stealth, -> (guardian) {
-    guardian.stealth_actions(
-      user_action: ->{with_stealth_map.where("stealth_post_maps.topic_id is null OR (topics.user_id = ? AND stealth_post_maps.topic_id is not null)", guardian.user.id)},
-      anon_action: ->{with_stealth_map.where("stealth_post_maps.topic_id is null")}
+  scope :with_queued_preview_map, -> { joins('LEFT JOIN queued_preview_post_maps ON notifications.topic_id = queued_preview_post_maps.topic_id') }
+  scope :hide_queued_preview, -> (guardian) {
+    guardian.queued_preview_actions(
+      user_action: ->{with_queued_preview_map.where("queued_preview_post_maps.topic_id is null OR (topics.user_id = ? AND queued_preview_post_maps.topic_id is not null)", guardian.user.id)},
+      anon_action: ->{with_queued_preview_map.where("queued_preview_post_maps.topic_id is null")}
     )
   }
 
@@ -136,7 +136,7 @@ class Notification < ActiveRecord::Base
     count ||= 10
     guardian = Guardian.new(user)
     notifications = user.notifications
-                        .cloak_stealth(guardian)
+                        .hide_queued_preview(guardian)
                         .visible
                         .recent(count)
                         .includes(:topic)

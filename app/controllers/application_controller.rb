@@ -491,10 +491,10 @@ class ApplicationController < ActionController::Base
       @container_class = "wrap not-found-container"
       @top_viewed = TopicQuery.new(nil, {except_topic_ids: category_topic_ids}).list_top_for("monthly").topics.first(10)
 
-      if NewPostManager.stealth_enabled?
+      if NewPostManager.queued_preview_enabled?
         # Any unapproved topic is unlikely to appear among the top viewed, so we only
         # care about protecting the recent view here.
-        @recent = Topic.cloak_stealth(guardian).where.not(id: category_topic_ids).recent(10)
+        @recent = Topic.hide_queued_preview(guardian).where.not(id: category_topic_ids).recent(10)
       else
         @recent = Topic.where.not(id: category_topic_ids).recent(10)
       end

@@ -366,6 +366,7 @@ class Topic < ActiveRecord::Base
               .created_since(since)
               .listable_topics
               .includes(:category)
+              .order('views/(extract(epoch from now()-created_at)) desc') # view per period, most vpp first
 
     unless user.user_option.try(:include_tl0_in_digests)
       topics = topics.where("COALESCE(users.trust_level, 0) > 0")

@@ -118,7 +118,7 @@ describe UserNotifications do
         SiteSetting.email_prefix = "Try Discourse"
         SiteSetting.title = "Discourse Meta"
 
-        expect(subject.subject).to match(/Try Discourse/)
+        expect(subject.subject).to match(@featured_topics[0].title)
         expect(subject.subject).not_to match(/Discourse Meta/)
       end
     end

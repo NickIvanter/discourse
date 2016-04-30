@@ -75,7 +75,20 @@ export default Ember.Component.extend({
     // since we are reusing views now sometimes this can be unset
     if (!notification) { return; }
     const description = this.get('description');
-    const username = notification.get('data.display_username');
+    var username = notification.get('data.display_username');
+
+    // Real name
+    /** @type {?String} */
+    const originalUsername = notification.get('data.original_username');
+    if (username && (!originalUsername || originalUsername === username)) {
+      /** @type {?String} */
+      const realName = notification.get('data.real_name');
+      if (realName) {
+        notification.set('data.display_username', realName);
+        username = realName;
+      }
+    }
+
     var text;
     if (notification.get('notification_type') === GROUP_SUMMARY_TYPE) {
       const count = notification.get('data.inbox_count');

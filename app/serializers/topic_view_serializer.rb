@@ -251,4 +251,27 @@ class TopicViewSerializer < ApplicationSerializer
     scope.is_staff? && NewPostManager.queue_enabled?
   end
 
+  # Real name
+  def accepted_answer
+    if info = accepted_answer_post_info
+      {
+        post_number: info[0],
+        username: info[1],
+        name: info[2],
+      }
+    end
+  end
+
+  def accepted_answer_post_info
+    Post.where(id: accepted_answer_post_id, topic_id: object.topic.id)
+      .joins(:user)
+      .pluck('post_number, username, name')
+      .first
+  end
+
+  def accepted_answer_post_id
+    id = object.topic.custom_fields["accepted_answer_post_id"]
+    id && id.to_i
+  end
+
 end

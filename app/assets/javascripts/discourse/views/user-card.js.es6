@@ -80,7 +80,23 @@ export default Ember.View.extend(CleansUp, {
     // note: we DO NOT use afterRender here cause _willShow may
     //  run after _shown, if we allowed this to happen the usercard
     //  may be offscreen and we may scroll all the way to it on focus
-    Ember.run.next(null, () => this.$('a:first').focus() );
+    // Ember.run.next(null, () => this.$('a:first').focus() );
+    this._super();
+
+    // Real name
+    var controller = this.get('controller');
+    var user = controller.get('user');
+    if (user.name) {
+      var $names = $('.names');
+      var $h1 = $('h1', $names).first();
+      var $container = $h1.parent();
+      var $h2 = $container.children('h2').first();
+      var $realName = $h2.contents();
+      var $a = $h1.children('a').first();
+      var $userName = $a.contents();
+      $a.empty().append($realName);
+      $h2.empty().append($userName);
+    }
   },
 
   _willShow(target) {

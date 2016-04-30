@@ -1,3 +1,4 @@
+# coding: utf-8
 require_dependency 'enum'
 
 class Notification < ActiveRecord::Base
@@ -198,6 +199,38 @@ class Notification < ActiveRecord::Base
   def refresh_notification_count
     user.publish_notifications_state
   end
+
+  # Real name
+  before_save :add_real_name
+  private
+  def add_real_name
+    unless self.data.blank?
+      data = JSON.parse(self.data);
+      originalUsername = data['original_username'];
+      displayUsername = data['display_username'];
+      # *) Плагин Solved не заполняет original_username.
+      # *) Зачастую display_username не является системным именем пользователя.
+      # Например: {
+      # 	"topic_title":"Test Email Notifications",
+      # 	"original_post_id":61,
+      # 	"original_username":"crazydog",
+      # 	"display_username":"2 replies"
+      # }
+      # *) В то же время original_username, похоже,
+      # всегда является системным именем пользователя (если, конечно, присутствует).
+      # *) Может отсутствовать как original_username, так и display_username, например:
+      # {"badge_id":3,"badge_name":"Regular"}
+      username = originalUsername.blank? ? displayUsername : originalUsername;
+      if username
+        user = User.find_by username: username
+        if user && !user.name.blank?
+          data['real_name'] = user.name;
+          self.data = data.to_json
+        end
+      end
+    end
+  end
+
 
 end
 

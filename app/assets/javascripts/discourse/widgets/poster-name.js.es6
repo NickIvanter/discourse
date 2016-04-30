@@ -56,6 +56,12 @@ export default createWidget('poster-name', {
       contents.push(h('span.user-title', titleContents));
     }
 
+    // Real name
+    if (contents.length == 2) {
+      contents.shift(); // Drop username
+      contents[0].properties.className = 'full-name username'; // Decorate full-name as username
+    }
+
     return contents;
   }
 });

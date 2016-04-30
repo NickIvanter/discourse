@@ -58,15 +58,14 @@ createWidget('reply-to-tab', {
 
   html(attrs, state) {
     if (state.loading) { return I18n.t('loading'); }
-
     return [iconNode('mail-forward'),
             ' ',
             avatarImg.call(this,'small',{
               template: attrs.replyToAvatarTemplate,
-              username: attrs.replyToUsername
+              username: attrs.replyToDisplayName ? attrs.replyToDisplayName : attrs.replyToUsername
             }),
             ' ',
-            h('span', attrs.replyToUsername)];
+            h('span', attrs.replyToDisplayName ? attrs.replyToDisplayName : attrs.replyToUsername)];
   },
 
   click() {

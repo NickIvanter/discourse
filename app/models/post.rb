@@ -49,7 +49,7 @@ class Post < ActiveRecord::Base
 
   has_many :user_actions, foreign_key: :target_post_id
 
-  has_one :stealth_post_map, foreign_key: :post_id
+  has_one :queued_preview_post_map, foreign_key: :post_id
 
   validates_with ::Validators::PostValidator
 
@@ -67,18 +67,18 @@ class Post < ActiveRecord::Base
   scope :with_topic_subtype, ->(subtype) { joins(:topic).where('topics.subtype = ?', subtype) }
   scope :visible, -> { joins(:topic).where('topics.visible = true').where(hidden: false) }
   scope :secured, lambda { |guardian| where('posts.post_type in (?)', Topic.visible_post_types(guardian && guardian.user))}
-  scope :with_stealth_map, -> { eager_load(:stealth_post_map) }
-  scope :cloak_stealth, -> (guardian) {
+  scope :with_queued_preview_map, -> { eager_load(:queued_preview_post_map) }
+  scope :hide_queued_preview, -> (guardian) {
     if guardian.present?
-      guardian.stealth_actions(
-        user_action: ->{with_stealth_map.where("stealth_post_maps.post_id is null OR (posts.user_id = ? AND stealth_post_maps.post_id is not null)", guardian.user.id)},
-        anon_action: ->{with_stealth_map.where("stealth_post_maps.post_id is null")}
+      guardian.queued_preview_actions(
+        user_action: ->{with_queued_preview_map.where("queued_preview_post_maps.post_id is null OR (posts.user_id = ? AND queued_preview_post_maps.post_id is not null)", guardian.user.id)},
+        anon_action: ->{with_queued_preview_map.where("queued_preview_post_maps.post_id is null")}
       )
     end
   }
 
-  def self.find_cloak_last_post(guardian)
-    cloak_stealth(guardian).by_newest.first
+  def self.find_queued_preview_last_post(guardian)
+    hide_queued_preview(guardian).by_newest.first
   end
 
   delegate :username, to: :user
@@ -107,12 +107,12 @@ class Post < ActiveRecord::Base
     includes(:post_details).find_by(post_details: { key: key, value: value })
   end
 
-  def stealth?
-    stealth_post_map
+  def queued_preview?
+    queued_preview_post_map
   end
 
-  def find_cloak_reply_count(guardian)
-    topic.posts.cloak_stealth(guardian).where(reply_to_post_number: post_number).count
+  def find_queued_preview_reply_count(guardian)
+    topic.posts.hide_queued_preview(guardian).where(reply_to_post_number: post_number).count
   end
 
   def whisper?
@@ -602,7 +602,7 @@ class Post < ActiveRecord::Base
     # [1,2,3][-10,-1] => nil
     post_ids = (post_ids[(0-max_replies)..-1] || post_ids)
 
-    Post.cloak_stealth(guardian).secured(guardian).where(id: post_ids).includes(:user, :topic).order(:id).to_a
+    Post.hide_queued_preview(guardian).secured(guardian).where(id: post_ids).includes(:user, :topic).order(:id).to_a
   end
 
   def revert_to(number)

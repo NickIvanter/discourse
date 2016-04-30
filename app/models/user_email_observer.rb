@@ -104,7 +104,7 @@ class UserEmailObserver < ActiveRecord::Observer
   end
 
   def self.process_notification(notification)
-    # if NewPostManager.stealth_enabled?
+    # if NewPostManager.queued_preview_enabled?
     #   post = Post.find(notification.post_id)
     #   guardian = Guardian.new(notification.user)
     #   return unless guardian.can_see?(post)

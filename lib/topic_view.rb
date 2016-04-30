@@ -206,7 +206,7 @@ class TopicView
 
   # Find the sort order for a post in the topic
   def sort_order_for_post_number(post_number)
-    posts = Post.cloak_stealth(@guardian).where(topic_id: @topic.id, post_number: post_number).with_deleted
+    posts = Post.hide_queued_preview(@guardian).where(topic_id: @topic.id, post_number: post_number).with_deleted
     posts = filter_post_types(posts)
     posts.select(:sort_order).first.try(:sort_order)
   end
@@ -257,10 +257,10 @@ class TopicView
 
   def post_counts_by_user
     @post_counts_by_user ||= Post.where(topic_id: @topic.id)
-                                 .cloak_stealth(@guardian)
+                                 .hide_queued_preview(@guardian)
                                  .where("user_id IS NOT NULL")
                                  .group(:user_id)
-                                 .order(if NewPostManager.stealth_enabled? && !@guardian.can_see_stealth? then "count_id DESC" else "count_all DESC" end)
+                                 .order(if NewPostManager.queued_preview_enabled? && !@guardian.can_see_queued_preview? then "count_id DESC" else "count_all DESC" end)
                                  .limit(24)
                                  .count
   end
@@ -357,7 +357,7 @@ class TopicView
 
   def filter_posts_by_ids(post_ids)
     # TODO: Sort might be off
-    @posts = Post.cloak_stealth(@guardian)
+    @posts = Post.hide_queued_preview(@guardian)
                  .where(id: post_ids, topic_id: @topic.id)
                  .includes(:user, :reply_to_user, :incoming_email)
                  .order('sort_order')
@@ -397,8 +397,8 @@ class TopicView
     @contains_gaps = false
     @filtered_posts = unfiltered_posts
 
-    # TODO: filter out stealth posts
-    @filtered_posts = @filtered_posts.cloak_stealth(@guardian)
+    # TODO: filter out queued_preview posts
+    @filtered_posts = @filtered_posts.hide_queued_preview(@guardian)
 
     # Filters
     if @filter == 'summary'

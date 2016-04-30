@@ -56,18 +56,18 @@ class TopicViewSerializer < ApplicationSerializer
              :last_posted_at,
              :posts_count
 
-  # Cloak some stats
+  # Hide some stats
   def last_posted_at
-    if NewPostManager.stealth_enabled?
-      object.topic.posts.find_cloak_last_post(scope).created_at
+    if NewPostManager.queued_preview_enabled?
+      object.topic.posts.find_queued_preview_last_post(scope).created_at
     else
       object.topic.last_posted_at
     end
   end
 
   def posts_count
-    if NewPostManager.stealth_enabled?
-      object.topic.posts.cloak_stealth(scope).count
+    if NewPostManager.queued_preview_enabled?
+      object.topic.posts.hide_queued_preview(scope).count
     else
       object.topic.posts_count
     end
@@ -80,8 +80,8 @@ class TopicViewSerializer < ApplicationSerializer
       auto_close_hours: object.topic.auto_close_hours,
       auto_close_based_on_last_post: object.topic.auto_close_based_on_last_post,
       created_by: BasicUserSerializer.new(object.topic.user, scope: scope, root: false),
-      last_poster: if NewPostManager.stealth_enabled?
-        BasicUserSerializer.new(object.topic.cloak_last_poster(scope), scope: scope, root: false)
+      last_poster: if NewPostManager.queued_preview_enabled?
+        BasicUserSerializer.new(object.topic.hide_last_poster(scope), scope: scope, root: false)
       else
         BasicUserSerializer.new(object.topic.last_poster, scope: scope, root: false)
       end

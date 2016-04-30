@@ -77,11 +77,11 @@ class PostMover
       post.is_first_post? ? create_first_post(post) : move(post)
     end
 
-    if NewPostManager.stealth_enabled?
+    if NewPostManager.queued_preview_enabled?
       destination_topic.posts.each do |post| # Somewhat suboptimal
-        if post.stealth?
+        if post.queued_preview?
           update_queued_post post
-          update_stealth_map post
+          update_queued_preview_map post
         end
       end
     end
@@ -89,7 +89,7 @@ class PostMover
   end
 
   def update_queued_post(post)
-    queued_post = post.stealth_post_map.queued_post
+    queued_post = post.queued_preview_post_map.queued_post
     if queued_post.present?
       if post.is_first_post? # For first post
         queued_post.post_options['title'] = post.topic.title # Setup new queued topic
@@ -101,18 +101,18 @@ class PostMover
     end
   end
 
-  def update_stealth_map(post)
+  def update_queued_preview_map(post)
     if post.is_first_post? # For first post
-      post.stealth_post_map.topic_id = post.topic_id
+      post.queued_preview_post_map.topic_id = post.topic_id
     else # For other posts
-      post.stealth_post_map.topic_id = nil
+      post.queued_preview_post_map.topic_id = nil
     end
-    post.stealth_post_map.save
+    post.queued_preview_post_map.save
   end
 
 
   def create_first_post(post)
-    if NewPostManager.stealth_enabled? && post.stealth?
+    if NewPostManager.queued_preview_enabled? && post.queued_preview?
       pm = NewPostManager.new(
         post.user,
         raw: post.raw,

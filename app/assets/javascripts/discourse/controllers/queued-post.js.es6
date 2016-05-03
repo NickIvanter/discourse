@@ -25,10 +25,26 @@ export default Ember.Controller.extend(BufferedContent, {
   editing: propertyEqual('model', 'currentlyEditing'),
 
   _confirmDelete: updateState('rejected', {deleteUser: true}),
+  _confirmApprove: updateState('approved'),
+  _confirmReject: updateState('rejected'),
 
   actions: {
-    approve: updateState('approved'),
-    reject: updateState('rejected'),
+
+    approve() {
+      bootbox.confirm(I18n.t('queue.approve_prompt'), (confirmed) => {
+        if (confirmed) {
+          this._confirmApprove();
+        }
+      });
+    },
+
+    reject() {
+      bootbox.confirm(I18n.t('queue.reject_prompt'), (confirmed) => {
+        if (confirmed) {
+          this._confirmReject();
+        }
+      });
+    },
 
     deleteUser() {
       bootbox.confirm(I18n.t('queue.delete_prompt', {username: this.get('model.user.username')}), (confirmed) => {

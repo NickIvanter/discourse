@@ -303,6 +303,8 @@ en:
 
       confirm: "Save Changes"
       delete_prompt: "Are you sure you want to delete <b>%{username}</b>? This will remove all of their posts and block their email and IP address."
+      approve_prompt: "Are you sure you want to approve post?"
+      reject_prompt: "Are you sure you want to reject post?"
 
       approval:
         title: "Post Needs Approval"

@@ -242,8 +242,8 @@ class TopicQuery
   end
 
   def self.unread_filter(list, guardian = nil)
-    if NewPostManager.stealth_enabled? && guardian && !guardian.can_see_stealth?
-      highest_post_number = Topic.cloak_highest_post_number_query(guardian)
+    if NewPostManager.queued_preview_enabled? && guardian && !guardian.can_see_queued_preview?
+      highest_post_number = Topic.hide_highest_post_number_query(guardian)
     else
       highest_post_number = "topics.highest_post_number"
     end
@@ -305,13 +305,13 @@ class TopicQuery
       t.allowed_user_ids = filter == :private_messages ? t.allowed_users.map{|u| u.id} : []
     end
 
-    # Cloak some feilds
-    if NewPostManager.stealth_enabled?
+    # Hide some feilds
+    if NewPostManager.queued_preview_enabled?
       topics.each do |t|
-        t.posts_count = t.cloak_posts_count(@guardian)
-        t.last_posted_at = t.cloak_last_posted_at(@guardian)
+        t.posts_count = t.hide_posts_count(@guardian)
+        t.last_posted_at = t.hide_last_posted_at(@guardian)
         t.bumped_at = t.last_posted_at
-        t.highest_post_number = t.cloak_highest_post_number(@guardian)
+        t.highest_post_number = t.hide_highest_post_number(@guardian)
       end
     end
 
@@ -445,7 +445,7 @@ class TopicQuery
       # Start with a list of all topics
       result = Topic.unscoped
 
-      result = result.cloak_stealth(@guardian) if NewPostManager.stealth_enabled?
+      result = result.hide_queued_preview(@guardian) if NewPostManager.queued_preview_enabled?
 
       if @user
         result = result.joins("LEFT OUTER JOIN topic_users AS tu ON (topics.id = tu.topic_id AND tu.user_id = #{@user.id.to_i})")

@@ -154,7 +154,7 @@ describe QueuedPost do
     end
   end
 
-  context "approve/reject a stealth post" do
+  context "approve/reject a queued_preview post" do
 
     let(:author) { Fabricate(:user) }
     let(:admin) { Fabricate(:admin) }
@@ -163,14 +163,14 @@ describe QueuedPost do
     let(:post) { Fabricate(:post, topic: topic, user: author) }
 
     let(:qp) { Fabricate(:queued_post, topic: topic, user: author) }
-    let(:spm) { Fabricate(:stealth_post_map, post: post, queued_post: qp) }
+    let(:spm) { Fabricate(:queued_preview_post_map, post: post, queued_post: qp) }
 
     before(:each) do
-      SiteSetting.stubs(:approve_stealth_mode).returns(true)
-      qp.stealth_post_map = spm
+      SiteSetting.stubs(:queued_preview_mode).returns(true)
+      qp.queued_preview_post_map = spm
     end
 
-    it "follows the correct workflow for stealth approval" do
+    it "follows the correct workflow for queued_preview approval" do
       qp.create_pending_action
       apost = qp.approve!(admin)
 
@@ -187,14 +187,14 @@ describe QueuedPost do
       # It removes the pending action
       expect(UserAction.where(queued_post_id: qp.id).count).to eq(0)
 
-      # It clears stealth mapping
+      # It clears queued_preview mapping
       expect(spm.destroyed?).to be true
 
       # We can't approve twice
       expect(-> { qp.approve!(admin) }).to raise_error(QueuedPost::InvalidStateTransition)
     end
 
-    it "follows the correct workflow for stealth rejection" do
+    it "follows the correct workflow for queued_preview rejection" do
       qp.create_pending_action
       qp.reject!(admin)
 
@@ -203,10 +203,10 @@ describe QueuedPost do
       expect(qp.state).to eq(QueuedPost.states[:rejected])
       expect(qp.rejected_at).to be_present
 
-      # It clears stealth mapping
+      # It clears queued_preview mapping
       expect(spm.destroyed?).to be true
 
-      # It deletes stealth post
+      # It deletes queued_preview post
       expect(post.destroyed?).to be true
 
       # It removes the pending action
@@ -217,7 +217,7 @@ describe QueuedPost do
     end
   end
 
-  context "approve/reject a stealth topic" do
+  context "approve/reject a queued_preview topic" do
     let(:author) { Fabricate(:user) }
     let(:admin) { Fabricate(:admin) }
 
@@ -238,11 +238,11 @@ describe QueuedPost do
       let(:topic) { Fabricate(:topic, category: category) }
       let(:post) { Fabricate(:post, topic: topic, user: author) }
 
-      let(:spm) { Fabricate(:stealth_post_map, topic: topic, post: post, queued_post: qp) }
+      let(:spm) { Fabricate(:queued_preview_post_map, topic: topic, post: post, queued_post: qp) }
 
       before(:each) do
-        SiteSetting.stubs(:approve_stealth_mode).returns(true)
-        qp.stealth_post_map = spm
+        SiteSetting.stubs(:queued_preview_mode).returns(true)
+        qp.queued_preview_post_map = spm
       end
 
       it "it approves the post and topic" do
@@ -260,7 +260,7 @@ describe QueuedPost do
         expect(topic).to be_present
         expect(topic.category).to eq(category)
 
-        # It clears stealth mapping
+        # It clears queued_preview mapping
         expect(spm.destroyed?).to be true
       end
 
@@ -272,10 +272,10 @@ describe QueuedPost do
         expect(Topic.count).to eq(topic_count - 1)
         expect(Post.count).to eq(post_count - 1)
 
-        # It clears stealth mapping
+        # It clears queued_preview mapping
         expect(spm.destroyed?).to be true
 
-        # It deletes stealth post and topic
+        # It deletes queued_preview post and topic
         expect(post.destroyed?).to be true
         expect(topic.destroyed?).to be true
       end

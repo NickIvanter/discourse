@@ -6,10 +6,10 @@ class TopicPostersSummary
     @options = options
     @guardian = Guardian.new(@options[:user])
 
-    # Cache stealth ids
-    if NewPostManager.stealth_enabled?
-      @last_post_user_id = @topic.cloak_last_post_user_id(@guardian)
-      @post_ids = @topic.posts.cloak_stealth(@guardian).pluck(:user_id)
+    # Cache queued_preview ids
+    if NewPostManager.queued_preview_enabled?
+      @last_post_user_id = @topic.hide_last_post_user_id(@guardian)
+      @post_ids = @topic.posts.hide_queued_preview(@guardian).pluck(:user_id)
       @topic_user_id = (@post_ids & [ topic.user_id ]).first
     else
       @topic_user_id = topic.user_id
@@ -79,7 +79,7 @@ class TopicPostersSummary
   end
 
   def user_ids
-    if NewPostManager.stealth_enabled? && !@guardian.can_see_stealth?
+    if NewPostManager.queued_preview_enabled? && !@guardian.can_see_queued_preview?
       featured_ids = topic.featured_user_ids & @post_ids
     else
       featured_ids = topic.featured_user_ids

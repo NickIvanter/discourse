@@ -46,8 +46,8 @@ class PostRevisor
     @post = post
     @topic = topic || post.topic
 
-    if NewPostManager.stealth_enabled? && post.stealth?
-      @queued_post = post.stealth_post_map.queued_post
+    if NewPostManager.queued_preview_enabled? && post.queued_preview?
+      @queued_post = post.queued_preview_post_map.queued_post
     else
       @queued_post = nil
     end
@@ -277,20 +277,20 @@ class PostRevisor
   def update_queued_post
     return unless @queued_post.present?
 
-    stealth_map = @queued_post.stealth_post_map
+    queued_preview_map = @queued_post.queued_preview_post_map
 
-    stealth_map.post_id = @post.id
+    queued_preview_map.post_id = @post.id
     @queued_post.user_id = @post.user_id
     @queued_post.raw = @post.raw
 
     if topic_changed?
       topic = @post.topic
 
-      stealth_map.topic_id = topic.id if topic.stealth? # Cloak new topic if it's in stealth map
+      queued_preview_map.topic_id = topic.id if topic.queued_preview? # Hide new topic if it's in queued_preview map
       @queued_post.topic_id = topic.id
     end
 
-    stealth_map.save
+    queued_preview_map.save
     @queued_post.save
   end
 

@@ -296,7 +296,7 @@ class User < ActiveRecord::Base
   end
 
   def unread_notifications
-    unless NewPostManager.stealth_enabled?
+    unless NewPostManager.queued_preview_enabled?
       @unread_notifications ||=
         begin
           # perf critical, much more efficient than AR
@@ -322,7 +322,7 @@ class User < ActiveRecord::Base
           sql = "
            SELECT COUNT(*) FROM notifications n
            LEFT JOIN topics t ON n.topic_id = t.id
-           LEFT JOIN stealth_post_maps spm ON n.topic_id = spm.topic_id
+           LEFT JOIN queued_preview_post_maps spm ON n.topic_id = spm.topic_id
            WHERE
             (spm.topic_id IS NULL OR (t.user_id = :user_id AND spm.topic_id is not null)) AND
             t.deleted_at IS NULL AND
@@ -340,7 +340,7 @@ class User < ActiveRecord::Base
   end
 
   def total_unread_notifications
-    @unread_total_notifications ||= notifications.eager_load(:topic).cloak_stealth(Guardian.new(self)).where("read = false").count
+    @unread_total_notifications ||= notifications.eager_load(:topic).hide_queued_preview(Guardian.new(self)).where("read = false").count
   end
 
   def saw_notification_id(notification_id)
@@ -352,7 +352,7 @@ class User < ActiveRecord::Base
     # publish last notification json with the message so we
     # can apply an update
 
-    unless NewPostManager.stealth_enabled?
+    unless NewPostManager.queued_preview_enabled?
       notification = notifications.visible.order('notifications.id desc').first
 
       sql = "
@@ -380,13 +380,13 @@ class User < ActiveRecord::Base
       ) AS y
     "
     else
-      notification = notifications.visible.cloak_stealth(Guardian.new(self)).order('notifications.id desc').first
+      notification = notifications.visible.hide_queued_preview(Guardian.new(self)).order('notifications.id desc').first
 
       sql = "
        SELECT * FROM (
          SELECT n.id, n.read FROM notifications n
          LEFT JOIN topics t ON n.topic_id = t.id
-         LEFT JOIN stealth_post_maps spm ON n.topic_id = spm.topic_id
+         LEFT JOIN queued_preview_post_maps spm ON n.topic_id = spm.topic_id
          WHERE
           (spm.topic_id IS NULL OR (t.user_id = :user_id AND spm.topic_id IS NOT NULL)) AND
           t.deleted_at IS NULL AND
@@ -400,7 +400,7 @@ class User < ActiveRecord::Base
       SELECT * FROM (
        SELECT n.id, n.read FROM notifications n
        LEFT JOIN topics t ON n.topic_id = t.id
-       LEFT JOIN stealth_post_maps spm ON n.topic_id = spm.topic_id
+       LEFT JOIN queued_preview_post_maps spm ON n.topic_id = spm.topic_id
        WHERE
         (spm.topic_id IS NULL OR (t.user_id = :user_id AND spm.topic_id IS NOT NULL)) AND
         t.deleted_at IS NULL AND

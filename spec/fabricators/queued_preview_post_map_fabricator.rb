@@ -1,4 +1,4 @@
-Fabricator(:stealth_post_map) do
+Fabricator(:queued_preview_post_map) do
   topic_id nil
   queued_post
   post

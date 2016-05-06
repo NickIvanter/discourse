@@ -1627,9 +1627,9 @@ describe Topic do
     expect(@topic_status_event_triggered).to eq(true)
   end
 
-  context 'when stealth approving on' do
+  context 'when queued_preview approving on' do
     before(:each) do
-      SiteSetting.stubs(:approve_stealth_mode).returns(true)
+      SiteSetting.stubs(:queued_preview_mode).returns(true)
       ActiveRecord::Base.observers.enable :search_observer
     end
 
@@ -1670,7 +1670,7 @@ describe Topic do
       t5.last_posted_at = p52.created_at.strftime('%Y-%m-%d %H:%M:%S.%6N')
     end
 
-    context 'when no topics cloaked' do
+    context 'when no topics hidden' do
       it 'topics saved' do
         expect(Topic.by_newest.to_a).to eq([t5,t4,t3,t2,t1])
       end
@@ -1678,7 +1678,7 @@ describe Topic do
       it 'all can see all topics' do
         [anon, stranger, writer, author1, author2, admin].each do |u|
           guardian = Guardian.new(u)
-          expect(Topic.cloak_stealth(guardian).by_newest.to_a).to eq([t5,t4,t3,t2,t1])
+          expect(Topic.hide_queued_preview(guardian).by_newest.to_a).to eq([t5,t4,t3,t2,t1])
         end
       end
 
@@ -1687,8 +1687,8 @@ describe Topic do
         [anon, stranger, writer, author1, author2, admin].each do |u|
           guardian = Guardian.new(u)
           [t1,t2,t3,t4,t5].each do |t|
-            expect(t.cloak_last_post_user_id(guardian)).to eq(uid)
-            expect(t.cloak_last_poster(guardian)).to eq(writer)
+            expect(t.hide_last_post_user_id(guardian)).to eq(uid)
+            expect(t.hide_last_poster(guardian)).to eq(writer)
           end
         end
       end
@@ -1697,7 +1697,7 @@ describe Topic do
         [anon, stranger, writer, author1, author2, admin].each do |u|
           guardian = Guardian.new(u)
           [t1,t2,t3,t4,t5].each do |t|
-            expect(t.cloak_last_posted_at(guardian)).to eq(t.last_posted_at)
+            expect(t.hide_last_posted_at(guardian)).to eq(t.last_posted_at)
           end
         end
       end
@@ -1706,7 +1706,7 @@ describe Topic do
         [anon, stranger, writer, author1, author2, admin].each do |u|
           guardian = Guardian.new(u)
           [t1,t2,t3,t4,t5].each do |t|
-            expect(t.cloak_posts_count(guardian)).to eq(t.posts_count)
+            expect(t.hide_posts_count(guardian)).to eq(t.posts_count)
           end
         end
       end
@@ -1715,7 +1715,7 @@ describe Topic do
         [anon, stranger, writer, author1, author2, admin].each do |u|
           guardian = Guardian.new(u)
           [t1,t2,t3,t4,t5].each do |t|
-            expect(t.cloak_highest_post_number(guardian)).to eq(t.highest_post_number)
+            expect(t.hide_highest_post_number(guardian)).to eq(t.highest_post_number)
           end
         end
       end
@@ -1733,7 +1733,7 @@ describe Topic do
       end
     end
 
-    context 'when some topics cloaked' do
+    context 'when some topics hidden' do
       before do
         [t1,t2,t3,t4,t5].each do |t|
           t.highest_post_number = 2
@@ -1745,30 +1745,30 @@ describe Topic do
         t4.last_posted_at = p42.created_at.strftime('%Y-%m-%d %H:%M:%S.%6N')
         t5.last_posted_at = p52.created_at.strftime('%Y-%m-%d %H:%M:%S.%6N')
 
-        # Cloak topics
-        StealthPostMap.create(topic_id: t4.id, post_id: p41.id)
-        StealthPostMap.create(topic_id: t5.id, post_id: p51.id)
+        # Hide topics
+        QueuedPreviewPostMap.create(topic_id: t4.id, post_id: p41.id)
+        QueuedPreviewPostMap.create(topic_id: t5.id, post_id: p51.id)
 
-        # Cloak some posts
-        StealthPostMap.create(post_id: p32.id)
+        # Hide some posts
+        QueuedPreviewPostMap.create(post_id: p32.id)
       end
 
       it 'admin can see all topics' do
         [admin].each do |u|
           guardian = Guardian.new(u)
-          expect(Topic.cloak_stealth(guardian).by_newest.to_a).to eq([t5,t4,t3,t2,t1])
+          expect(Topic.hide_queued_preview(guardian).by_newest.to_a).to eq([t5,t4,t3,t2,t1])
         end
       end
 
       it 'authors can see theirs topics' do
-        expect(Topic.cloak_stealth(Guardian.new(author1)).by_newest.to_a).to eq([t5,t3,t2,t1])
-        expect(Topic.cloak_stealth(Guardian.new(author2)).by_newest.to_a).to eq([t4,t3,t2,t1])
+        expect(Topic.hide_queued_preview(Guardian.new(author1)).by_newest.to_a).to eq([t5,t3,t2,t1])
+        expect(Topic.hide_queued_preview(Guardian.new(author2)).by_newest.to_a).to eq([t4,t3,t2,t1])
       end
 
       it 'others can see only approved topics' do
         [anon, stranger, writer].each do |u|
           guardian = Guardian.new(u)
-          expect(Topic.cloak_stealth(guardian).by_newest.to_a).to eq([t3,t2,t1])
+          expect(Topic.hide_queued_preview(guardian).by_newest.to_a).to eq([t3,t2,t1])
         end
       end
 
@@ -1776,8 +1776,8 @@ describe Topic do
         uid = writer.id
         [writer, admin].each do |u|
           guardian = Guardian.new(u)
-          expect(t3.cloak_last_post_user_id(guardian)).to eq(uid)
-          expect(t3.cloak_last_poster(guardian)).to eq(writer)
+          expect(t3.hide_last_post_user_id(guardian)).to eq(uid)
+          expect(t3.hide_last_poster(guardian)).to eq(writer)
         end
       end
 
@@ -1785,50 +1785,50 @@ describe Topic do
         uid = author2.id
         [anon, stranger, author1, author2].each do |u|
           guardian = Guardian.new(u)
-          expect(t3.cloak_last_post_user_id(guardian)).to eq(uid)
-          expect(t3.cloak_last_poster(guardian)).to eq(author2)
+          expect(t3.hide_last_post_user_id(guardian)).to eq(uid)
+          expect(t3.hide_last_poster(guardian)).to eq(author2)
         end
       end
 
       it 'admin and writer can see actual last posted at' do
         [writer, admin].each do |u|
           guardian = Guardian.new(u)
-          expect(t3.cloak_last_posted_at(guardian)).to eq(t3.last_posted_at)
+          expect(t3.hide_last_posted_at(guardian)).to eq(t3.last_posted_at)
         end
       end
 
       it 'others can see last approved posted at' do
         [anon, stranger, author1, author2].each do |u|
           guardian = Guardian.new(u)
-          expect(t3.cloak_last_posted_at(guardian)).to eq(p31.created_at.strftime('%Y-%m-%d %H:%M:%S.%6N'))
+          expect(t3.hide_last_posted_at(guardian)).to eq(p31.created_at.strftime('%Y-%m-%d %H:%M:%S.%6N'))
         end
       end
 
       it 'admin and writer can see actual post count' do
         [writer, admin].each do |u|
           guardian = Guardian.new(u)
-          expect(t3.cloak_posts_count(guardian)).to eq(t3.posts_count)
+          expect(t3.hide_posts_count(guardian)).to eq(t3.posts_count)
         end
       end
 
       it 'others can see approved post count' do
         [anon, stranger,author1, author2].each do |u|
           guardian = Guardian.new(u)
-          expect(t3.cloak_posts_count(guardian)).to eq(t3.posts_count - 1)
+          expect(t3.hide_posts_count(guardian)).to eq(t3.posts_count - 1)
         end
       end
 
       it 'admin and writer can see actual highest post_number' do
         [writer, admin].each do |u|
           guardian = Guardian.new(u)
-          expect(t3.cloak_highest_post_number(guardian)).to eq(t3.highest_post_number)
+          expect(t3.hide_highest_post_number(guardian)).to eq(t3.highest_post_number)
         end
       end
 
       it 'others can see highest approved post_number' do
         [anon, stranger, author1, author2].each do |u|
           guardian = Guardian.new(u)
-          expect(t3.cloak_highest_post_number(guardian)).to eq(t3.highest_post_number - 1)
+          expect(t3.hide_highest_post_number(guardian)).to eq(t3.highest_post_number - 1)
         end
       end
 

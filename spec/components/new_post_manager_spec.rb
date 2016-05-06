@@ -54,13 +54,13 @@ describe NewPostManager do
       end
     end
 
-    context "without stealth posting" do
+    context "without queued_preview posting" do
       include_examples "actions"
     end
 
-    context "with stealth posting" do
+    context "with queued_preview posting" do
       before(:each) do
-        SiteSetting.stubs(:approve_stealth_mode).returns(true)
+        SiteSetting.stubs(:queued_preview_mode).returns(true)
       end
 
       include_examples "actions"
@@ -87,7 +87,7 @@ describe NewPostManager do
       end
     end
 
-    context "without stealth posting" do
+    context "without queued_preview posting" do
       context 'with a high approval post count and TL0' do
         before do
           SiteSetting.approve_post_count = 100
@@ -157,9 +157,9 @@ describe NewPostManager do
       end
     end
 
-    context "with stealth posting" do
+    context "with queued_preview posting" do
       before(:each) do
-        SiteSetting.stubs(:approve_stealth_mode).returns(true)
+        SiteSetting.stubs(:queued_preview_mode).returns(true)
       end
 
       context 'with a high approval post count and TL0' do
@@ -296,7 +296,7 @@ describe NewPostManager do
       end
     end
 
-    context "without stealth approval" do
+    context "without queued_preview approval" do
 
       before do
         NewPostManager.add_handler(&@counter_handler)
@@ -334,17 +334,17 @@ describe NewPostManager do
       end
     end
 
-    context "with stealth approval" do
+    context "with queued_preview approval" do
       before(:each) do
         NewPostManager.add_handler(1, &@counter_handler)
         NewPostManager.add_handler(1, &@queue_handler)
 
-        SiteSetting.stubs(:approve_stealth_mode).returns(true)
+        SiteSetting.stubs(:queued_preview_mode).returns(true)
       end
 
       include_examples "common"
 
-      it "calls custom enqueuing handlers and create a stealth post" do
+      it "calls custom enqueuing handlers and create a queued_preview post" do
         manager = NewPostManager.new(topic.user, raw: 'to the handler I say enqueue me!', title: 'this is the title of the queued post')
 
         result = manager.perform
@@ -352,9 +352,9 @@ describe NewPostManager do
         expect(result).to be_success
         expect(result.queued_post).to be_nil
         expect(result.post).to be_present
-        expect(result.post.stealth_post_map).to be_present
+        expect(result.post.queued_preview_post_map).to be_present
 
-        enqueued = result.post.stealth_post_map.queued_post
+        enqueued = result.post.queued_preview_post_map.queued_post
         expect(enqueued).to be_present
         expect(enqueued.post_options['title']).to eq('this is the title of the queued post')
         expect(QueuedPost.new_count).to eq(1)
@@ -362,7 +362,7 @@ describe NewPostManager do
         expect(@counter).to be(0)
       end
 
-      it "if nothing returns a result it creates a stealth post" do
+      it "if nothing returns a result it creates a queued_preview post" do
         manager = NewPostManager.new(topic.user, raw: 'this is a new post', topic_id: topic.id)
 
         result = manager.perform
@@ -370,9 +370,9 @@ describe NewPostManager do
         expect(result).to be_success
         expect(result.queued_post).to be_nil
         expect(result.post).to be_present
-        expect(result.post.stealth_post_map).to be_present
+        expect(result.post.queued_preview_post_map).to be_present
 
-        enqueued = result.post.stealth_post_map.queued_post
+        enqueued = result.post.queued_preview_post_map.queued_post
         expect(enqueued).to be_present
         expect(enqueued.raw).to eq(result.post.raw)
         expect(QueuedPost.new_count).to eq(1)
@@ -392,7 +392,7 @@ describe NewPostManager do
       user
     end
 
-    it "handles user_needs_approval? correctly without stealth approval" do
+    it "handles user_needs_approval? correctly without queued_preview approval" do
       u = user
       default = NewPostManager.new(u,{})
       expect(NewPostManager.user_needs_approval?(default)).to eq(false)
@@ -410,8 +410,8 @@ describe NewPostManager do
       expect(NewPostManager.user_needs_approval?(with_check_tl1)).to eq(false)
     end
 
-    it "handles user_needs_approval? correctly with stealth approval" do
-      SiteSetting.approve_stealth_mode = true
+    it "handles user_needs_approval? correctly with queued_preview approval" do
+      SiteSetting.queued_preview_mode = true
 
       u = user
       default = NewPostManager.new(u,{})

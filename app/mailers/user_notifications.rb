@@ -230,8 +230,8 @@ class UserNotifications < ActionMailer::Base
     allowed_post_types = [Post.types[:regular]]
     allowed_post_types << Post.types[:whisper] if user.staff?
 
-    guardian = Guardian.new(user) if NewPostManager.stealth_enabled? && user.present?
-    context_posts = Post.cloak_stealth(guardian)
+    guardian = Guardian.new(user) if NewPostManager.queued_preview_enabled? && user.present?
+    context_posts = Post.hide_queued_preview(guardian)
                         .where(topic_id: post.topic_id)
                         .where("posts.post_number < ?", post.post_number)
                         .where(user_deleted: false)

@@ -141,11 +141,11 @@ class PostCreator
     end
 
     if @post && errors.blank?
-      publish if stealth_approving?
+      publish if queued_preview_approving?
 
       track_latest_on_category
-      enqueue_jobs if stealth_approving?
-      BadgeGranter.queue_badge_grant(Badge::Trigger::PostRevision, post: @post) if stealth_approving?
+      enqueue_jobs if queued_preview_approving?
+      BadgeGranter.queue_badge_grant(Badge::Trigger::PostRevision, post: @post) if queued_preview_approving?
 
       trigger_after_events(@post)
 
@@ -159,9 +159,9 @@ class PostCreator
     @post
   end
 
-  # For actions on approving or when stealth posts disabled
-  def stealth_approving?
-    !NewPostManager.stealth_enabled? || @opts[:stealth_approving] || guardian.is_staff? ||
+  # For actions on approving or when queued_preview posts disabled
+  def queued_preview_approving?
+    !NewPostManager.queued_preview_enabled? || @opts[:queued_preview_approving] || guardian.is_staff? ||
       (opts[:archetype] && opts[:archetype] == Archetype.private_message) ||
       (@topic && @topic.private_message?)
   end

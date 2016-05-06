@@ -1,4 +1,4 @@
-class StealthPostMap < ActiveRecord::Base
+class QueuedPreviewPostMap < ActiveRecord::Base
   belongs_to :post
   belongs_to :topic
   belongs_to :queued_post, class_name: 'QueuedPost', foreign_key: 'queued_id'

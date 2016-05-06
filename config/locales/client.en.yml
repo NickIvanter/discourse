@@ -314,6 +314,11 @@ en:
           other: "You have <strong>{{count}}</strong> posts pending."
         ok: "OK"
 
+      nav:
+        new: "New"
+        approved: "Approved"
+        rejected: "Rejected"
+
     user_action:
       user_posted_topic: "<a href='{{userUrl}}'>{{user}}</a> posted <a href='{{topicUrl}}'>the topic</a>"
       you_posted_topic: "<a href='{{userUrl}}'>You</a> posted <a href='{{topicUrl}}'>the topic</a>"

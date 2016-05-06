@@ -19,5 +19,11 @@ export default DiscourseRoute.extend({
     refresh() {
       this.modelFor('queued-posts').refresh();
     }
+  },
+
+  queryParams: {
+    state: {
+      refreshModel: true
+    }
   }
 });

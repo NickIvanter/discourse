@@ -332,6 +332,11 @@ ru:
           many: "<strong>{{count}}</strong> сообщений ожидают одобрения."
           other: "<strong>{{count}}</strong> сообщений ожидают одобрения."
         ok: "ОК"
+      nav:
+        new: "Новые"
+        approved: "Одобренные"
+        rejected: "Не одобренные"
+
     user_action:
       user_posted_topic: "<a href='{{userUrl}}'>{{user}}</a> создал <a href='{{topicUrl}}'>тему</a>"
       you_posted_topic: "<a href='{{userUrl}}'>Вы</a> создали <a href='{{topicUrl}}'>тему</a>"

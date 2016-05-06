@@ -1,4 +1,13 @@
 <div class='container'>
+  <div class="row">
+    <div class="full-width">
+      <ul class="nav nav-pills">
+        <li>{{#link-to "queued-posts" (query-params state="new")}}{{i18n "queue.nav.new"}}{{/link-to}}</li>
+        <li>{{#link-to "queued-posts" (query-params state="approved")}}{{i18n "queue.nav.approved"}}{{/link-to}}</li>
+        <li>{{#link-to "queued-posts" (query-params state="rejected")}}{{i18n "queue.nav.rejected"}}{{/link-to}}</li>
+      </ul>
+    </div>
+  </div>
   <div class='queued-posts'>
     {{#each ctrl in model itemController='queued-post'}}
       <div class='queued-post'>
@@ -53,16 +62,20 @@
                          disabled=ctrl.post.isSaving
                          class="btn-danger cancel"}}
             {{else}}
-              {{d-button action="approve"
-                         disabled=ctrl.post.isSaving
-                         label="queue.approve"
-                         icon="check"
-                         class="btn-primary approve"}}
-              {{d-button action="reject"
-                         disabled=ctrl.post.isSaving
-                         label="queue.reject"
-                         icon="times"
-                         class="btn-danger reject"}}
+              {{#if showApproveButton}}
+                {{d-button action="approve"
+                           disabled=ctrl.post.isSaving
+                           label="queue.approve"
+                           icon="check"
+                           class="btn-primary approve"}}
+              {{/if}}
+              {{#if showRejectButton}}
+                {{d-button action="reject"
+                           disabled=ctrl.post.isSaving
+                           label="queue.reject"
+                           icon="times"
+                           class="btn-danger reject"}}
+              {{/if}}
               {{#if ctrl.post.can_delete_user}}
                 {{d-button action="deleteUser"
                            disabled=ctrl.post.isSaving

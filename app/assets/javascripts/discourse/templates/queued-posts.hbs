@@ -7,6 +7,11 @@
       </ul>
     </div>
   </div>
+  <div class="admin-reports-filter">
+    <span>{{i18n "queued.filter.date_from"}}{{date-picker-past-settable value=dateFrom defaultDate=dateFrom}}</span>
+    <span>{{i18n "queued.filter.date_to"}}{{date-picker-past-settable value=dateTo defaultDate=dateTo}}</span>
+  </div>
+  {{d-button action="refresh" label="refresh" icon="refresh" disabled=model.refreshing id='refresh-queued'}}
   <div class='queued-posts'>
     {{#each ctrl in model itemController='queued-post'}}
       <div class='queued-post'>
@@ -97,7 +102,5 @@
     {{else}}
       <p>{{i18n "queue.none"}}</p>
     {{/each}}
-
-    {{d-button action="refresh" label="refresh" icon="refresh" disabled=model.refreshing id='refresh-queued'}}
   </div>
 </div>

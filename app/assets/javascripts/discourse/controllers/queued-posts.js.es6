@@ -1,7 +1,9 @@
 export default Ember.Controller.extend({
-  queryParams: ['state', 'limit'],
+  queryParams: ['state', 'limit', 'dateFrom', 'dateTo'],
   state: 'new',
   limit: 100,
+  dateFrom: null,
+  dateTo: null,
 
   isNewList: Ember.computed.equal('state', 'new'),
   isApprovedList: Ember.computed.equal('state', 'approved'),

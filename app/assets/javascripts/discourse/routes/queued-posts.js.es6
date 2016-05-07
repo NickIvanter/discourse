@@ -11,7 +11,9 @@ export default DiscourseRoute.extend({
   model(params) {
     return this.store.find('queuedPost', {
       state: params.state,
-      limit: params.limit
+      limit: params.limit,
+      dateFrom: params.dateFrom,
+      dateTo: params.dateTo
     });
   },
 
@@ -24,6 +26,13 @@ export default DiscourseRoute.extend({
   queryParams: {
     state: {
       refreshModel: true
+    },
+    dateFrom: {
+      refreshModel: true
+    },
+    dateTo: {
+      refreshModel: true
     }
-  }
+  },
+
 });

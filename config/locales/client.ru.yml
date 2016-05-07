@@ -336,6 +336,9 @@ ru:
         new: "Новые"
         approved: "Одобренные"
         rejected: "Не одобренные"
+      filter:
+        date_from: "Начальная дата"
+        date_to: "Конечная дата"
 
     user_action:
       user_posted_topic: "<a href='{{userUrl}}'>{{user}}</a> создал <a href='{{topicUrl}}'>тему</a>"

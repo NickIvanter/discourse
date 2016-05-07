@@ -318,6 +318,9 @@ en:
         new: "New"
         approved: "Approved"
         rejected: "Rejected"
+      filter:
+        date_from: "From date"
+        date_to: "To date"
 
     user_action:
       user_posted_topic: "<a href='{{userUrl}}'>{{user}}</a> posted <a href='{{topicUrl}}'>the topic</a>"

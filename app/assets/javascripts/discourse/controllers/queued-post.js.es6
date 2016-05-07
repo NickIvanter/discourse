@@ -42,6 +42,7 @@ export default Ember.Controller.extend(BufferedContent, {
       bootbox.confirm(I18n.t('queue.reject_prompt'), (confirmed) => {
         if (confirmed) {
           this._confirmReject();
+          this.send('refresh');
         }
       });
     },

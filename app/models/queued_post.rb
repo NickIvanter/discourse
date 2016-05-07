@@ -43,6 +43,18 @@ class QueuedPost < ActiveRecord::Base
     QueuedPost.visible_queues.include?(queue)
   end
 
+  def new?
+    state == QueuedPost.states[:new]
+  end
+
+  def approved?
+    state == QueuedPost.states[:approved]
+  end
+
+  def rejected?
+    state == QueuedPost.states[:rejected]
+  end
+
   def self.broadcast_new!
     msg = { post_queue_new_count: QueuedPost.new_count }
     MessageBus.publish('/queue_counts', msg, user_ids: User.staff.pluck(:id))
@@ -91,10 +103,27 @@ class QueuedPost < ActiveRecord::Base
     end
   end
 
+  def reject_replies!(rejected_by)
+    if queued_preview_post_map.new_topic?
+      post_options['old_topic_id'] = queued_preview_post_map.topic_id
+      save
+      QueuedPost.where('topic_id = ?', queued_preview_post_map.topic_id).each do |queued|
+        queued.reject! rejected_by
+      end
+    end
+  end
+
+  def update_rejected(old_topic_id, new_topic_id)
+    if old_topic_id
+      QueuedPost.where('topic_id = ?',old_topic_id).update_all({topic_id: new_topic_id})
+    end
+  end
+
   def reject!(rejected_by)
     QueuedPost.transaction do
       change_to!(:rejected, rejected_by)
       if NewPostManager.queued_preview_enabled?
+        reject_replies! rejected_by
         destroy_queued_preview!
         cleanup_hideing!
       end
@@ -114,21 +143,26 @@ class QueuedPost < ActiveRecord::Base
 
   def approve!(approved_by)
     created_post = nil
+    reapprove = rejected?
     QueuedPost.transaction do
       change_to!(:approved, approved_by)
 
       UserBlocker.unblock(user, approved_by) if user.blocked? && !UserHellbanner.enabled?
 
-      unless NewPostManager.queued_preview_enabled?
-        creator = PostCreator.new(user, create_options.merge(skip_validations: true, queued_preview_approving: true))
+      if !NewPostManager.queued_preview_enabled? || reapprove
+        creator = PostCreator.new(user, create_options.merge(skip_validations: true))
         created_post = creator.create
         unless created_post && creator.errors.blank?
           raise StandardError, "Failed to create post #{raw[0..100]} #{creator.errors.full_messages.inspect}"
         end
       end
+
+      if reapprove || post_options['old_topic_id'].present?
+        update_rejected(post_options['old_topic_id'], created_post.topic_id)
+      end
     end
 
-    if NewPostManager.queued_preview_enabled? && queued_preview_post_map.present? && queued_preview_post_map.post_id.present?
+    if NewPostManager.queued_preview_enabled? && queued_preview_post_map.present? && queued_preview_post_map.post_id.present? && !reapprove
       post = queued_preview_post_map.post
       if post.present?
         new_topic = queued_preview_post_map.new_topic?
@@ -147,7 +181,7 @@ class QueuedPost < ActiveRecord::Base
 
     DiscourseEvent.trigger(:approved_post, self)
 
-    if NewPostManager.queued_preview_enabled?
+    if NewPostManager.queued_preview_enabled? && !reapprove
       post
     else
       created_post
@@ -157,7 +191,7 @@ class QueuedPost < ActiveRecord::Base
   def edit_content!(raw)
     QueuedPost.transaction do
       update_column(:raw, raw)
-      edit_queued_preview!(raw) if NewPostManager.queued_preview_enabled?
+      edit_queued_preview!(raw) if NewPostManager.queued_preview_enabled? && new?
     end
   end
 

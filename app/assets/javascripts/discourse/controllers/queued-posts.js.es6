@@ -11,6 +11,9 @@ export default Ember.Controller.extend({
     return this.state=='new' || this.state=='rejected';
   }),
   showRejectButton: Ember.computed('state', function() {
-    return this.state=='new' || this.state=='approved';
+    return this.state=='new';
+  }),
+  showEditButton: Ember.computed('state', function() {
+    return this.state=='new' || this.state=='rejected';
   })
 });

@@ -3,7 +3,6 @@
     <div class="full-width">
       <ul class="nav nav-pills">
         <li>{{#link-to "queued-posts" (query-params state="new")}}{{i18n "queue.nav.new"}}{{/link-to}}</li>
-        <li>{{#link-to "queued-posts" (query-params state="approved")}}{{i18n "queue.nav.approved"}}{{/link-to}}</li>
         <li>{{#link-to "queued-posts" (query-params state="rejected")}}{{i18n "queue.nav.rejected"}}{{/link-to}}</li>
       </ul>
     </div>
@@ -83,11 +82,13 @@
                            icon="trash"
                            class="btn-danger delete-user"}}
               {{/if}}
-              {{d-button action="edit"
-                         disabled=ctrl.post.isSaving
-                         label="queue.edit"
-                         icon="pencil"
-                         class="edit"}}
+              {{#if showEditButton}}
+                {{d-button action="edit"
+                           disabled=ctrl.post.isSaving
+                           label="queue.edit"
+                           icon="pencil"
+                           class="edit"}}
+              {{/if}}
             {{/if}}
           </div>
         </div>

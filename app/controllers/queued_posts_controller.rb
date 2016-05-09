@@ -19,11 +19,20 @@ class QueuedPostsController < ApplicationController
     @queued_posts = @queued_posts.where("created_at >= to_date( ?, 'YYYY-MM-DD')", dateFrom_query) if dateFrom_query
     @queued_posts = @queued_posts.where("created_at <= to_date( ?, 'YYYY-MM-DD') + INTERVAL '1 DAY'", dateTo_query) if dateTo_query
 
+    refresher = "/queued_posts?state=#{state_query}&limit=#{limit_query}"
+
+    if dateFrom_query.present?  && !dateFrom_query.empty?
+      refresher += "&dateFrom=#{dateFrom_query}"
+    end
+    if dateTo_query.present? && !dateTo_query.empty?
+      refresher += "&dateTo=#{dateTo_query}"
+    end
+
     render_serialized(@queued_posts,
                       QueuedPostSerializer,
                       root: :queued_posts,
                       rest_serializer: true,
-                      refresh_queued_posts: "/queued_posts?state=#{state_query}&limit=#{limit_query}&dateFrom=#{dateFrom_query}&dateTo=#{dateTo_query}")
+                      refresh_queued_posts: refresher)
 
   end
 

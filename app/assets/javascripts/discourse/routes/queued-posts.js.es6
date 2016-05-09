@@ -8,13 +8,31 @@ export default DiscourseRoute.extend({
     loadScript('defer/html-sanitizer-bundle');
   },
 
-  model() {
-    return this.store.find('queuedPost', {status: 'new'});
+  model(params) {
+    return this.store.find('queuedPost', {
+      state: params.state,
+      limit: params.limit,
+      dateFrom: params.dateFrom,
+      dateTo: params.dateTo
+    });
   },
 
   actions: {
     refresh() {
       this.modelFor('queued-posts').refresh();
     }
-  }
+  },
+
+  queryParams: {
+    state: {
+      refreshModel: true
+    },
+    dateFrom: {
+      refreshModel: true
+    },
+    dateTo: {
+      refreshModel: true
+    }
+  },
+
 });

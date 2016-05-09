@@ -5,15 +5,25 @@ class QueuedPostsController < ApplicationController
   before_filter :ensure_staff
 
   def index
-    state = QueuedPost.states[(params[:state] || 'new').to_sym]
+    state_query = params[:state] || 'new'
+    state = QueuedPost.states[(state_query).to_sym]
     state ||= QueuedPost.states[:new]
 
+    limit_query = params[:limit] || 100;
+    dateFrom_query = params[:dateFrom] || nil;
+    dateTo_query = params[:dateTo] || nil;
+
     @queued_posts = QueuedPost.visible.where(state: state).includes(:topic, :user).order(:created_at)
+                    .limit(limit_query)
+
+    @queued_posts = @queued_posts.where("created_at >= to_date( ?, 'YYYY-MM-DD')", dateFrom_query) if dateFrom_query
+    @queued_posts = @queued_posts.where("created_at <= to_date( ?, 'YYYY-MM-DD') + INTERVAL '1 DAY'", dateTo_query) if dateTo_query
+
     render_serialized(@queued_posts,
                       QueuedPostSerializer,
                       root: :queued_posts,
                       rest_serializer: true,
-                      refresh_queued_posts: "/queued_posts?status=new")
+                      refresh_queued_posts: "/queued_posts?state=#{state_query}&limit=#{limit_query}&dateFrom=#{dateFrom_query}&dateTo=#{dateTo_query}")
 
   end
 

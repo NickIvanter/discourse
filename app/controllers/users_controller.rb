@@ -1,6 +1,7 @@
 require_dependency 'discourse_hub'
 require_dependency 'user_name_suggester'
 require_dependency 'rate_limiter'
+require_dependency 'user_device_id_updater'
 
 class UsersController < ApplicationController
 
@@ -107,6 +108,22 @@ class UsersController < ApplicationController
     json_result(user, serializer: UserSerializer, additional_errors: [:user_profile]) do |u|
       updater = UserUpdater.new(current_user, user)
       updater.update(params)
+    end
+  end
+
+  def device_id
+    user = fetch_user_from_params
+    guardian.ensure_can_edit!(user)
+    updater = UserDeviceIdUpdater.new(user);
+    updater.update(params);
+
+    if params[:device_id].present?
+      json_result(user, serializer: UserSerializer, additional_errors: [:user_profile]) do |u|
+        updater = UserDeviceIdUpdater.new(user);
+        updater.update(params);
+      end
+    else
+      raise Discourse::InvalidParameters.new('device_id must be present');
     end
   end
 

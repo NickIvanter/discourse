@@ -247,7 +247,7 @@ Discourse::Application.routes.draw do
   get "session/csrf" => "session#csrf"
   get "composer-messages" => "composer_messages#index"
 
-  resources :users, except: [:show, :update, :destroy] do
+  resources :users, except: [:show, :update, :destroy, :device_id] do
     collection do
       get "check_username"
       get "is_local_username"
@@ -294,6 +294,8 @@ Discourse::Application.routes.draw do
   get "users/:username.json" => "users#show", constraints: {username: USERNAME_ROUTE_FORMAT}, defaults: {format: :json}
   get "users/:username" => "users#show", as: 'user', constraints: {username: USERNAME_ROUTE_FORMAT}
   put "users/:username" => "users#update", constraints: {username: USERNAME_ROUTE_FORMAT}
+  put "users/:username/deviceid" => "users#device_id", constraints: {username: USERNAME_ROUTE_FORMAT}
+  get "users/:username/deviceid" => "users#device_id", constraints: {username: USERNAME_ROUTE_FORMAT}
   put "users/:username/emails" => "users#check_emails", constraints: {username: USERNAME_ROUTE_FORMAT}
   get "users/:username/preferences" => "users#preferences", constraints: {username: USERNAME_ROUTE_FORMAT}, as: :email_preferences
   get "users/:username/preferences/email" => "users_email#index", constraints: {username: USERNAME_ROUTE_FORMAT}

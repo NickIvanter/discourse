@@ -1166,6 +1166,13 @@ user_preferences:
     type: category_list
     default: ''
 
+  push_notifications:
+    default: false
+  push_notification_gcm_apikey:
+    default: ""
+  push_notification_apns_apikey:
+    default: ""
+
 tags:
   tagging_enabled:
     client: true

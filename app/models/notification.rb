@@ -1,4 +1,5 @@
 require_dependency 'enum'
+require_dependency 'push_notifier'
 
 class Notification < ActiveRecord::Base
   belongs_to :user
@@ -20,6 +21,7 @@ class Notification < ActiveRecord::Base
     )
   }
 
+  after_create :push_notification
   after_save :refresh_notification_count
   after_destroy :refresh_notification_count
 
@@ -197,6 +199,11 @@ class Notification < ActiveRecord::Base
 
   def refresh_notification_count
     user.publish_notifications_state
+  end
+
+  def push_notification
+    File.write '/tmp/fire.log', "#{self.inspect}\n"
+    PushNotifier.publish(self)
   end
 
 end

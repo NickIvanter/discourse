@@ -3,7 +3,6 @@ require 'net/http'
 class PushNotifier
   class << self
     def publish(notification)
-      File.write '/tmp/pub.log', "#{notification.inspect}\n"
       if SiteSetting.push_notifications
         unless SiteSetting.push_notification_gcm_apikey.empty?
           pushGCM(user: notification.user)
@@ -31,7 +30,7 @@ class PushNotifier
             'registration_ids' => ids,
             'data' => {
               'message' => 'NEVER MIND DUDE!',
-              'title' => 'BEHOLD!',
+              'title' => SiteSetting.title,
               'vibrate' => 1,
               'sound' => 1
             }

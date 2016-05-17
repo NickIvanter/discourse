@@ -1114,14 +1114,14 @@ en:
         linked: '{{username}} linked to your post from "{{topic}}" - {{site_title}}'
         queued: '{{username}} new queued post in: "{{topic}}" - {{site_title}}'
       push:
-        mentioned: '{{username}} mentioned you in "{{topic}}"'
-        group_mentioned: '{{username}} mentioned you in "{{topic}}"'
-        quoted: '{{username}} quoted you in "{{topic}}"'
-        replied: '{{username}} replied to you in "{{topic}}"'
-        posted: '{{username}} posted in "{{topic}}"'
-        private_message: '{{username}} sent you a private message in "{{topic}}"'
-        linked: '{{username}} linked to your post from "{{topic}}"'
-        queued: '{{username}} new queued post in: "{{topic}}"'
+        mentioned: '%{username} mentioned you in "%{topic}"'
+        group_mentioned: '%{username} mentioned you in "%{topic}"'
+        quoted: '%{username} quoted you in "%{topic}"'
+        replied: '%{username} replied to you in "%{topic}"'
+        posted: '%{username} posted in "%{topic}"'
+        private_message: '%{username} sent you a private message in "%{topic}"'
+        linked: '%{username} linked to your post from "%{topic}"'
+        queued: '%{username} new queued post in: "%{topic}"'
 
     upload_selector:
       title: "Add an image"

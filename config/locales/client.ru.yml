@@ -1049,14 +1049,14 @@ ru:
         linked: '{{username}} ссылается на ваш пост в теме: "{{topic}}" - {{site_title}}'
         queued: '{{username}} новое сообщение на модерации в теме: "{{topic}}" - {{site_title}}'
       push:
-        mentioned: '{{username}} упомянул вас в "{{topic}}"'
-        group_mentioned: '{{username}} упомянул вас в "{{topic}}"'
-        quoted: '{{username}} процитировал Вас в "{{topic}}"'
-        replied: '{{username}} ответил вам в "{{topic}}"'
-        posted: '{{username}} написал в "{{topic}}"'
-        private_message: '{{username}} отправил вам личное сообщение в "{{topic}}"'
-        linked: '{{username}} ссылается на ваш пост в теме: "{{topic}}"'
-        queued: '{{username}} новое сообщение на модерации в теме: "{{topic}}"'
+        mentioned: '%{username} упомянул вас в "%{topic}"'
+        group_mentioned: '%{username} упомянул вас в "%{topic}"'
+        quoted: '%{username} процитировал Вас в "%{topic}"'
+        replied: '%{username} ответил вам в "%{topic}"'
+        posted: '%{username} написал в "%{topic}"'
+        private_message: '%{username} отправил вам личное сообщение в "%{topic}"'
+        linked: '%{username} ссылается на ваш пост в теме: "%{topic}"'
+        queued: '%{username} новое сообщение на модерации в теме: "%{topic}"'
     upload_selector:
       title: "Add an image"
       title_with_attachments: "Add an image or a file"

@@ -204,8 +204,7 @@ class Notification < ActiveRecord::Base
   end
 
   def push_notification
-    File.write '/tmp/fire.log', "#{self.inspect}\n"
-    PushNotifier.publish(self)
+    PushNotifier.new(self).publish()
   end
 
   # Real name

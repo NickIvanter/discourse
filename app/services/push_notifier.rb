@@ -3,8 +3,8 @@ require 'net/http'
 class PushNotifier
 
   def initialize(notification)
+    @notification = notification
     if SiteSetting.push_notifications && notificationHasTranslation()
-      @notification = notification
       @message = renderMessage()
     else
       @notification = nil
@@ -31,15 +31,36 @@ class PushNotifier
     I18n.t("#{@@i18nPushKey}}")[Notification.types[@notification.notification_type]]
   end
 
-  def renderMessage(notification)
-    message = I18n.t(
-      "#{@@i18nPushKey}.#{Notification.types[notification.notification_type].to_s}",
-      title: notification.topic.title
+  def renderMessage()
+    data = JSON.parse(@notification.data)
+
+    if data['real_name']
+      username = data['real_name']
+    elsif data['original_username']
+      username = data['original_username']
+    elsif data['username']
+      username = data['username']
+    else
+      username = nil
+    end
+
+    if data['topic_title']
+      title = data['topic_title']
+    else
+      title = nil
+    end
+
+    # TODO Badge?
+
+    I18n.t(
+      "#{@@i18nPushKey}.#{Notification.types[@notification.notification_type].to_s}",
+      title: title,
+      username: username
     )
   end
 
-  def pushGCM(user: nil, message: nil)
-    ids = UserDeviceIdField.new(user).get_ids_by_type('Android')
+  def pushGCM()
+    ids = UserDeviceIdField.new(@notification.user).get_ids_by_type('Android')
     unless ids.empty?
       sendPush(
         @@gcmUri,
@@ -47,7 +68,7 @@ class PushNotifier
         {
           'registration_ids' => ids,
           'data' => {
-            'message' => message,
+            'message' => @message,
             'title' => SiteSetting.title,
             'vibrate' => 1,
             'sound' => 1
@@ -57,8 +78,8 @@ class PushNotifier
     end
   end
 
-  def pushAPNS(user: nil)
-    ids = UserDeviceIdField.new(opts[:user]).get_ids_by_type('iOS')
+  def pushAPNS()
+    ids = UserDeviceIdField.new(@notification.user).get_ids_by_type('iOS')
     unless ids.empty?
       sendPush(
         @@apnsUri,
@@ -70,7 +91,6 @@ class PushNotifier
   end
 
   def sendPush(uri, headers, body)
-    File.write '/tmp/send.log', "#{body.inspect}\n"
     req = Net::HTTP::Post.new(uri)
     req['Content-Type'] = 'application/json'
     headers.each do |key, value|

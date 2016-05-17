@@ -160,6 +160,7 @@ export default function transformPost(currentUser, site, post, prevPost, nextPos
 
   const replyToUser = post.get('reply_to_user');
   if (replyToUser) {
+    postAtts.replyToDisplayName = replyToUser.display_username;
     postAtts.replyToUsername = replyToUser.username;
     postAtts.replyToAvatarTemplate = replyToUser.avatar_template;
   }

@@ -184,7 +184,8 @@ class PostSerializer < BasicPostSerializer
   def reply_to_user
     {
       username: object.reply_to_user.username,
-      avatar_template: object.reply_to_user.avatar_template
+      avatar_template: object.reply_to_user.avatar_template,
+      display_username: object.reply_to_user.name
     }
   end
 

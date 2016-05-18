@@ -28,7 +28,7 @@ class PushNotifier
   # @@apnsUri = URI.parse('http://localhost:7777') # TBD
 
   def notificationHasTranslation()
-    I18n.t("#{@@i18nPushKey}}")[Notification.types[@notification.notification_type]]
+    I18n.t("#{@@i18nPushKey}")[Notification.types[@notification.notification_type]]
   end
 
   def renderMessage()
@@ -54,7 +54,7 @@ class PushNotifier
 
     I18n.t(
       "#{@@i18nPushKey}.#{Notification.types[@notification.notification_type].to_s}",
-      title: title,
+      topic: title,
       username: username
     )
   end

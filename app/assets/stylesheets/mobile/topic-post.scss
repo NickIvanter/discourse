@@ -500,8 +500,13 @@ span.highlighted {
   .names {
     margin: 5px 0 0 5px;
     line-height: 17px;
+    float: none;
     span.full-name, span.user-title, span.username {
       display: block;
+      float: left;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      width: 45%;
     }
 
     .poster-icon {

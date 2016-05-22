@@ -8,7 +8,9 @@
     </li>
     <li>{{user-stat value=model.posts_read_count label="user.summary.posts_read"}}</li>
     <li>{{user-stat value=model.likes_given label="user.summary.likes_given"}}</li>
-    <li>{{user-stat value=model.bookmark_count label="user.summary.bookmark_count"}}</li>
+    {{#if model.bookmark_count}}
+      <li>{{user-stat value=model.bookmark_count label="user.summary.bookmark_count"}}</li>
+    {{/if}}
     <li>{{user-stat value=model.topic_count label="user.summary.topic_count"}}</li>
     <li>{{user-stat value=model.post_count label="user.summary.post_count"}}</li>
     <li>{{user-stat value=model.likes_received label="user.summary.likes_received"}}</li>
@@ -96,7 +98,7 @@
   <h3 class='stats-title'>{{i18n "user.summary.most_replied_to_users"}}</h3>
     {{#if model.most_replied_to_users.length}}
       <ul>
-        {{#each user in model.most_replied_to_users}}
+        {{#each model.most_replied_to_users as |user|}}
           <li>
             {{#user-info user=user}}
               {{fa-icon "reply"}}
@@ -133,7 +135,7 @@
     <h3 class='stats-title'>{{i18n "user.summary.most_liked_users"}}</h3>
     {{#if model.most_liked_users.length}}
       <ul>
-        {{#each user in model.most_liked_users}}
+        {{#each model.most_liked_users as |user|}}
           <li>
             {{#user-info user=user}}
               {{fa-icon "heart"}}

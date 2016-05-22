@@ -150,7 +150,7 @@ class PostCreator
 
       trigger_after_events(@post)
 
-      auto_close
+      auto_close unless @opts[:import_mode]
     end
 
     if @post || @spam
@@ -382,6 +382,8 @@ class PostCreator
   end
 
   def update_user_counts
+    return if @opts[:import_mode]
+
     @user.create_user_stat if @user.user_stat.nil?
 
     if @user.user_stat.first_post_created_at.nil?

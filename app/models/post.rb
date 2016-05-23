@@ -69,6 +69,7 @@ class Post < ActiveRecord::Base
   scope :secured, lambda { |guardian| where('posts.post_type in (?)', Topic.visible_post_types(guardian && guardian.user))}
   scope :for_mailing_list, ->(user, since) {
      created_since(since)
+    .hide_queued_preview(Guardian.new(user))
     .joins(:topic)
     .where(topic: Topic.for_digest(user, 100.years.ago)) # we want all topics with new content, regardless when they were created
     .order('posts.created_at ASC')

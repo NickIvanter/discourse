@@ -105,7 +105,7 @@ class UserNotifications < ActionMailer::Base
 
       @new_topics_since_seen = Topic.new_since_last_seen(user, min_date, featured_topic_ids).count
       if @new_topics_since_seen > SiteSetting.digest_topics
-        category_counts = Topic.new_since_last_seen(user, min_date, featured_topic_ids).group(:category_id).count
+        category_counts = Topic.new_since_last_seen(user, min_date, featured_topic_ids, dont_sort: true).group(:category_id).count
 
         @new_by_category = []
         if category_counts.present?

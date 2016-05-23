@@ -365,7 +365,9 @@ class Topic < ActiveRecord::Base
               .created_since(since)
               .listable_topics
               .includes(:category)
-              .order('topics.views/(extract(epoch from now()-topics.created_at)) desc') # view per period, most vpp first
+
+    # view per period, most vpp first
+    topics = topics.order('topics.views/(extract(epoch from now()-topics.created_at)) desc') unless opts[:dont_sort]
 
     unless user.user_option.try(:include_tl0_in_digests)
       topics = topics.where("COALESCE(users.trust_level, 0) > 0")
@@ -400,8 +402,8 @@ class Topic < ActiveRecord::Base
   end
 
   # Using the digest query, figure out what's  new for a user since last seen
-  def self.new_since_last_seen(user, since, featured_topic_ids)
-    topics = Topic.for_digest(user, since)
+  def self.new_since_last_seen(user, since, featured_topic_ids, opts=nil)
+    topics = Topic.for_digest(user, since, opts)
     topics.where("topics.id NOT IN (?)", featured_topic_ids)
   end
 

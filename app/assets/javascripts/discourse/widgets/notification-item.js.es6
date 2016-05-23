@@ -70,11 +70,19 @@ createWidget('notification-item', {
       return I18n.t(scope, { count, group_name });
     }
 
-    const username = data.display_username;
+    let username = data.display_username;
+    if (data.real_name) {
+      username = data.real_name;
+    }
+
     const description = this.description();
     if (notificationType === LIKED_TYPE && data.count > 1) {
       const count = data.count - 2;
-      const username2 = data.username2;
+      let username2 = data.username2;
+      if (data.real_name2) {
+        username2 = data.real_name2;
+      }
+
       if (count===0) {
         return I18n.t('notifications.liked_2', {description, username, username2});
       } else {

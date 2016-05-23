@@ -30,7 +30,7 @@ createWidget('user-menu-links', {
       model: currentUser,
       className: 'user-activity-link',
       icon: 'user',
-      rawLabel: currentUser.username
+      rawLabel: currentUser.name ? currentUser.name : (currentUser.display_username ? currentUser.display_username : currentUser.username)
     };
 
     if (currentUser.is_anonymous) {

@@ -243,7 +243,12 @@ module Email
 
     def strip_classes_and_ids
       @fragment.css('*').each do |element|
-        element.delete('class')
+        if element['class'] =~ /emoji/ # Don't strip emoji class
+          element.delete('class')
+          element['class'] = 'emoji'
+        else
+          element.delete('class')
+        end
         element.delete('id')
       end
     end

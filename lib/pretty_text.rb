@@ -1,4 +1,4 @@
-require 'v8'
+require 'mini_racer'
 require 'nokogiri'
 require_dependency 'url_helper'
 require_dependency 'excerpt_parser'
@@ -7,7 +7,9 @@ require_dependency 'discourse_tagging'
 
 module PrettyText
 
-  class Helpers
+  module Helpers
+    extend self
+
     def t(key, opts)
       key = "js." + key
       unless opts
@@ -81,6 +83,7 @@ module PrettyText
         nil
       end
     end
+
   end
 
   @mutex = Mutex.new
@@ -92,9 +95,11 @@ module PrettyText
 
   def self.create_new_context
     # timeout any eval that takes longer than 15 seconds
-    ctx = V8::Context.new(timeout: 15000)
+    ctx = MiniRacer::Context.new(timeout: 15000)
 
-    ctx["helpers"] = Helpers.new
+    Helpers.instance_methods.each do |method|
+      ctx.attach("helpers.#{method}", Helpers.method(method))
+    end
 
     ctx_load(ctx,
       "vendor/assets/javascripts/md5.js",
@@ -210,6 +215,7 @@ module PrettyText
     # we use the exact same markdown converter as the client
     # TODO: use the same extensions on both client and server (in particular the template for mentions)
     baked = nil
+    text = text || ""
 
     text = add_quote_real_name(text)
 
@@ -220,8 +226,9 @@ module PrettyText
 
       context_opts = opts || {}
       context_opts[:sanitize] = true unless context_opts[:sanitize] == false
-      context['opts'] = context_opts
-      context['raw'] = text
+
+      context.eval("opts = #{context_opts.to_json};")
+      context.eval("raw = #{text.inspect};")
 
       if Post.white_listed_image_classes.present?
         Post.white_listed_image_classes.each do |klass|
@@ -272,8 +279,10 @@ module PrettyText
   # leaving this here, cause it invokes v8, don't want to implement twice
   def self.avatar_img(avatar_template, size)
     protect do
-      v8['avatarTemplate'] = avatar_template
-      v8['size'] = size
+      v8.eval <<JS
+      avatarTemplate = #{avatar_template.inspect};
+      size = #{size.inspect};
+JS
       decorate_context(v8)
       v8.eval("Discourse.Utilities.avatarImg({ avatarTemplate: avatarTemplate, size: size });")
     end
@@ -281,9 +290,8 @@ module PrettyText
 
   def self.unescape_emoji(title)
     protect do
-      v8["title"] = title
       decorate_context(v8)
-      v8.eval("Discourse.Emoji.unescape(title)")
+      v8.eval("Discourse.Emoji.unescape(#{title.inspect})")
     end
   end
 
@@ -427,15 +435,7 @@ module PrettyText
   def self.protect
     rval = nil
     @mutex.synchronize do
-      begin
-        rval = yield
-        # This may seem a bit odd, but we don't want to leak out
-        # objects that require locks on the v8 vm, to get a backtrace
-        # you need a lock, if this happens in the wrong spot you can
-        # deadlock a process
-      rescue V8::Error => e
-        raise JavaScriptError.new(e.message, e.backtrace)
-      end
+      rval = yield
     end
     rval
   end

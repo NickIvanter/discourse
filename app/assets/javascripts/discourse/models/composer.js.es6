@@ -136,13 +136,18 @@ const Composer = RestModel.extend({
   actionTitle: function() {
     const topic = this.get('topic');
 
+    var username = this.get('post.username');
+    var real_name = this.get('post.name');
+    if (real_name) username = real_name;
+    console.log('real name');console.log(real_name);console.log(username);
+
     let postLink, topicLink, usernameLink;
     if (topic) {
       const postNumber = this.get('post.post_number');
       postLink = "<a href='" + (topic.get('url')) + "/" + postNumber + "'>" +
         I18n.t("post.post_number", { number: postNumber }) + "</a>";
       topicLink = "<a href='" + (topic.get('url')) + "'> " + Discourse.Utilities.escapeExpression(topic.get('title')) + "</a>";
-      usernameLink = "<a href='" + (topic.get('url')) + "/" + postNumber + "'>" + this.get('post.username') + "</a>";
+      usernameLink = "<a href='" + (topic.get('url')) + "/" + postNumber + "'>" + username + "</a>";
     }
 
     let postDescription;
@@ -152,15 +157,16 @@ const Composer = RestModel.extend({
       postDescription = I18n.t('post.' +  this.get('action'), {
         link: postLink,
         replyAvatar: Discourse.Utilities.tinyAvatar(post.get('avatar_template')),
-        username: this.get('post.username'),
+        username: username,
         usernameLink
       });
 
       if (!this.site.mobileView) {
         const replyUsername = post.get('reply_to_user.username');
+        const replyDisplayname = post.get('reply_to_user.display_username');
         const replyAvatarTemplate = post.get('reply_to_user.avatar_template');
         if (replyUsername && replyAvatarTemplate && this.get('action') === EDIT) {
-          postDescription += " <i class='fa fa-mail-forward reply-to-glyph'></i> " + Discourse.Utilities.tinyAvatar(replyAvatarTemplate) + " " + replyUsername;
+          postDescription += " <i class='fa fa-mail-forward reply-to-glyph'></i> " + Discourse.Utilities.tinyAvatar(replyAvatarTemplate) + " " + replyDisplayname ? replyDisplayname : replyUsername;
         }
       }
     }

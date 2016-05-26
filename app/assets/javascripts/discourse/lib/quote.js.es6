@@ -19,7 +19,17 @@ export default {
     sansQuotes = sansQuotes.replace(/</g, "&lt;")
                            .replace(/>/g, "&gt;");
 
-    result = "[quote=\"" + post.get('username') + ", post:" + post.get('post_number') + ", topic:" + post.get('topic_id');
+    var real_name = post.get('name');
+    var display_username = post.get('display_username');
+    if (!real_name && display_username) {
+      real_name = display_username;
+    }
+
+    if (real_name) {
+      var real_name_field = ', real_name:'+real_name;
+    }
+
+    result = "[quote=\"" + post.get('username') + real_name_field + ", post:" + post.get('post_number') + ", topic:" + post.get('topic_id');
 
     /* Strip the HTML from cooked */
     tmp = document.createElement('div');

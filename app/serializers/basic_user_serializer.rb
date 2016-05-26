@@ -1,5 +1,5 @@
 class BasicUserSerializer < ApplicationSerializer
-  attributes :id, :username, :avatar_template
+  attributes :id, :username, :avatar_template, :name
 
   def include_name?
     SiteSetting.enable_names?
@@ -15,6 +15,10 @@ class BasicUserSerializer < ApplicationSerializer
 
   def user
     object[:user] || object
+  end
+
+  def name
+    user.try(:name)
   end
 
 end

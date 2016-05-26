@@ -89,7 +89,7 @@ createWidget('post-avatar', {
     } else {
       body = avatarFor.call(this, this.settings.size, {
         template: attrs.avatar_template,
-        username: attrs.username,
+        username: attrs.name ? attrs.name : attrs.username,
         url: attrs.usernameUrl,
         className: 'main-avatar'
       });

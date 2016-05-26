@@ -27,7 +27,8 @@ createWidget('topic-map-show-links', {
 
 createWidget('topic-participant', {
   html(attrs, state) {
-    const linkContents = [avatarImg('medium', { username: attrs.username, template: attrs.avatar_template })];
+    const username =  attrs.name ? attrs.name : attrs.username;
+    const linkContents = [avatarImg('medium', { username: username, template: attrs.avatar_template })];
 
     if (attrs.post_count > 2) {
       linkContents.push(h('span.post-count', attrs.post_count.toString()));
@@ -35,7 +36,7 @@ createWidget('topic-participant', {
 
     return h('a.poster.trigger-user-card', {
       className: state.toggled ? 'toggled' : null,
-      attributes: { title: attrs.username, 'data-user-card': attrs.username }
+      attributes: { title: username, 'data-user-card': attrs.username }
     }, linkContents);
   }
 });
@@ -48,18 +49,21 @@ createWidget('topic-map-summary', {
   },
 
   html(attrs, state) {
+    var username = attrs.createdByUserRealname ? attrs.createdByUserRealname : attrs.createdByUsername;
+    var last_username = attrs.lastPostUserRealname ? attrs.lastPostUserRealname : attrs.lastPostUsername;
+
     const contents = [];
     contents.push(h('li',
       [
         h('h4', I18n.t('created_lowercase')),
-        avatarFor('tiny', { username: attrs.createdByUsername, template: attrs.createdByAvatarTemplate }),
+        avatarFor('tiny', { username: username, template: attrs.createdByAvatarTemplate }),
         dateNode(attrs.topicCreatedAt)
       ]
     ));
     contents.push(h('li',
       h('a', { attributes: { href: attrs.lastPostUrl } }, [
         h('h4', I18n.t('last_reply_lowercase')),
-        avatarFor('tiny', { username: attrs.lastPostUsername, template: attrs.lastPostAvatarTemplate }),
+        avatarFor('tiny', { username: last_username, template: attrs.lastPostAvatarTemplate }),
         dateNode(attrs.lastPostAt)
       ])
     ));

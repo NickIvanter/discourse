@@ -139,7 +139,6 @@ const Composer = RestModel.extend({
     var username = this.get('post.username');
     var real_name = this.get('post.name');
     if (real_name) username = real_name;
-    console.log('real name');console.log(real_name);console.log(username);
 
     let postLink, topicLink, usernameLink;
     if (topic) {

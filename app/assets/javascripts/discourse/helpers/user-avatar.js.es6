@@ -4,7 +4,6 @@ function renderAvatar(user, options) {
   options = options || {};
 
   if (user) {
-
     const username = Em.get(user, options.usernamePath || 'username');
     const avatarTemplate = Em.get(user, options.avatarTemplatePath || 'avatar_template');
 

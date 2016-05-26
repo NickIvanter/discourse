@@ -194,10 +194,24 @@ module PrettyText
     };")
   end
 
+  def self.add_quote_real_name(text)
+    s = text.match(/\[quote="([^\s,]+)/)
+    if s
+      username = s[1]
+      user = User.where(username: username).first
+      if user && !user.name.empty?
+        text = text.sub(username, "#{username}, real_name:#{user.name}")
+      end
+    end
+    text
+  end
+
   def self.markdown(text, opts=nil)
     # we use the exact same markdown converter as the client
     # TODO: use the same extensions on both client and server (in particular the template for mentions)
     baked = nil
+
+    text = add_quote_real_name(text)
 
     protect do
       context = v8

@@ -25,6 +25,7 @@ Discourse.BBCode.register('quote', {noWrap: true, singlePara: true}, function(co
   var avatarImg;
   var postNumber = parseInt(params['data-post'], 10);
   var topicId = parseInt(params['data-topic'], 10);
+  var real_name = params['data-real_name'];
 
   if (options.lookupAvatarByPostNumber) {
     // client-side, we can retrieve the avatar from the post
@@ -41,8 +42,8 @@ Discourse.BBCode.register('quote', {noWrap: true, singlePara: true}, function(co
 
   var header = [ 'div', {'class': 'title'},
                  ['div', {'class': 'quote-controls'}],
-                 avatarImg ? ['__RAW', avatarImg] : "",
-                 username ? I18n.t('user.said', {username: username}) : ""
+                 avatarImg ? ['a', {'href': '/users/'+username}, ['__RAW', avatarImg]] : "",
+                 username ? I18n.t('user.said', {username: real_name ? real_name : username}) : ""
                ];
 
   if (options.topicId && postNumber && options.getTopicInfo && topicId !== options.topicId) {

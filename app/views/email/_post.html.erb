@@ -9,9 +9,9 @@
             </td>
             <td>
               <%- if show_name_on_post(post) %>
-                <a class="user-name" href="<%=Discourse.base_url%>/users/<%= post.user.username_lower%>" target="_blank"><%= post.user.name %></a>
+                <a class="username" href="<%=Discourse.base_url%>/users/<%= post.user.username_lower%>" target="_blank"><%= post.user.name %></a>
               <% end %>
-              <a class="username" href="<%=Discourse.base_url%>/users/<%= post.user.username_lower%>" target="_blank"><%= post.user.username %></a>
+              <a class="user-name" href="<%=Discourse.base_url%>/users/<%= post.user.username_lower%>" target="_blank"><%= post.user.username %></a>
               <%- if post.user.title.present? %>
                 <span class='user-title'><%= post.user.title %></span>
               <% end %>

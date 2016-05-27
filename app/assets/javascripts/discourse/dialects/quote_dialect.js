@@ -42,7 +42,7 @@ Discourse.BBCode.register('quote', {noWrap: true, singlePara: true}, function(co
 
   var header = [ 'div', {'class': 'title'},
                  ['div', {'class': 'quote-controls'}],
-                 avatarImg ? ['a', {'href': '/users/'+username}, ['__RAW', avatarImg]] : "",
+                 avatarImg ? ['__RAW', avatarImg] : "",
                  username ? I18n.t('user.said', {username: real_name ? real_name : username}) : ""
                ];
 

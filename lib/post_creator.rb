@@ -445,17 +445,6 @@ class PostCreator
     PostJobsEnqueuer.new(@post, @topic, new_topic?, {import_mode: @opts[:import_mode]}).enqueue_jobs
   end
 
-  def auto_notify_for_tags
-    if SiteSetting.tagging_enabled
-      tags = DiscourseTagging.tags_for_saving(@opts[:tags], @guardian)
-      if tags.present?
-        @topic.custom_fields.update(DiscourseTagging::TAGS_FIELD_NAME => tags)
-        @topic.save
-        DiscourseTagging.auto_notify_for(tags, @topic)
-      end
-    end
-  end
-
   def new_topic?
     @opts[:topic_id].blank?
   end

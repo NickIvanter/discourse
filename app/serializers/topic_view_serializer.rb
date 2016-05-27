@@ -31,8 +31,7 @@ class TopicViewSerializer < ApplicationSerializer
                         :word_count,
                         :deleted_at,
                         :pending_posts_count,
-                        :user_id,
-                        :tags
+                        :user_id
 
   attributes :draft,
              :draft_key,
@@ -56,6 +55,7 @@ class TopicViewSerializer < ApplicationSerializer
              :message_archived,
              :last_posted_at,
              :posts_count
+             :tags
 
   # Hide some stats
   def last_posted_at
@@ -273,6 +273,13 @@ class TopicViewSerializer < ApplicationSerializer
   def accepted_answer_post_id
     id = object.topic.custom_fields["accepted_answer_post_id"]
     id && id.to_i
+  end
+
+  def include_tags?
+    SiteSetting.tagging_enabled
+  end
+  def tags
+    object.topic.tags.map(&:name)
   end
 
 end

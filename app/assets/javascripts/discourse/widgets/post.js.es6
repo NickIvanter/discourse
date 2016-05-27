@@ -13,7 +13,7 @@ export function avatarImg(wanted, attrs) {
 
   // We won't render an invalid url
   if (!url || url.length === 0) { return; }
-  const title = attrs.username;
+  const title = attrs.name ? attrs.name : attrs.username;
 
   const properties = {
     attributes: { alt: '', width: size, height: size, src: Discourse.getURLWithCDN(url), title },
@@ -89,7 +89,8 @@ createWidget('post-avatar', {
     } else {
       body = avatarFor.call(this, this.settings.size, {
         template: attrs.avatar_template,
-        username: attrs.name ? attrs.name : attrs.username,
+        username: attrs.username,
+        name: attrs.name,
         url: attrs.usernameUrl,
         className: 'main-avatar'
       });

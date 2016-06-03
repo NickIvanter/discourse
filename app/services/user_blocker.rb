@@ -34,7 +34,7 @@ class UserBlocker
   def unblock
     @user.blocked = false
     if @user.save
-      SystemMessage.create(@user, :unblocked)
+      SystemMessage.create(@user, :unblocked) unless UserHellbanner.enabled?
       StaffActionLogger.new(@by_user).log_unblock_user(@user) if @by_user
     end
   end

@@ -326,7 +326,7 @@ class TopicView
     @filtered_post_stream ||= @filtered_posts.order(:sort_order)
                                              .pluck(:id,
                                                     :post_number,
-                                                    'EXTRACT(DAYS FROM CURRENT_TIMESTAMP - created_at)::INT AS days_ago')
+                                                    'EXTRACT(DAYS FROM CURRENT_TIMESTAMP - posts.created_at)::INT AS days_ago')
   end
 
   def filtered_post_ids

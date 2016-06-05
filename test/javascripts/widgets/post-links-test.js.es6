@@ -1,9 +1,9 @@
 import { moduleForWidget, widgetTest } from 'helpers/widget-test';
 
-moduleForWidget('post-gutter');
+moduleForWidget('post-links');
 
 widgetTest("duplicate links", {
-  template: '{{mount-widget widget="post-gutter" args=args}}',
+  template: '{{mount-widget widget="post-links" args=args}}',
   setup() {
     this.set('args', {
       id: 2,
@@ -14,12 +14,15 @@ widgetTest("duplicate links", {
     });
   },
   test(assert) {
-    assert.equal(this.$('.post-links a.track-link').length, 1, 'it hides the dupe link');
+    click('.expand-links');
+    andThen(() => {
+      assert.equal(this.$('.post-links a.track-link').length, 1, 'it hides the dupe link');
+    });
   }
 });
 
 widgetTest("collapsed links", {
-  template: '{{mount-widget widget="post-gutter" args=args}}',
+  template: '{{mount-widget widget="post-links" args=args}}',
   setup() {
     this.set('args', {
       id: 1,
@@ -35,22 +38,22 @@ widgetTest("collapsed links", {
     });
   },
   test(assert) {
-    assert.equal(this.$('.post-links a.track-link').length, 5, 'collapses by default');
-    click('a.toggle-more');
+    assert.ok(this.$('.expand-links').length, 'collapsed by default');
+    click('a.expand-links');
     andThen(() => {
       assert.equal(this.$('.post-links a.track-link').length, 7);
     });
   }
 });
 
-widgetTest("reply as new topic", {
-  template: '{{mount-widget widget="post-gutter" args=args newTopicAction="newTopicAction"}}',
-  setup() {
-    this.set('args', { canReplyAsNewTopic: true });
-    this.on('newTopicAction', () => this.newTopicTriggered = true);
-  },
-  test(assert) {
-    click('a.reply-new');
-    andThen(() => assert.ok(this.newTopicTriggered));
-  }
-});
+// widgetTest("reply as new topic", {
+//   template: '{{mount-widget widget="post-links" args=args newTopicAction="newTopicAction"}}',
+//   setup() {
+//     this.set('args', { canReplyAsNewTopic: true });
+//     this.on('newTopicAction', () => this.newTopicTriggered = true);
+//   },
+//   test(assert) {
+//     click('a.reply-new');
+//     andThen(() => assert.ok(this.newTopicTriggered));
+//   }
+// });

@@ -3,6 +3,7 @@ import { h } from 'virtual-dom';
 import { queryRegistry } from 'discourse/widgets/widget';
 
 var postArticleWidget = queryRegistry('post-article');
+var postBodyWidget = queryRegistry('post-body');
 
 TopicNavigation.reopen({
   _checkSize() {
@@ -22,5 +23,19 @@ if (postArticleWidget) {
                             this.attach('post-body', attrs),
                             this.attach('post-gutter', attrs)]));
     return rows;
+  };
+}
+
+if (postBodyWidget) {
+  postBodyWidget.prototype.html = function (attrs) {
+    const postContents = this.attach('post-contents', attrs);
+    const result = [this.attach('post-meta-data', attrs), postContents];
+
+    result.push(this.attach('actions-summary', attrs));
+    if (attrs.showTopicMap) {
+      result.push(this.attach('topic-map', attrs));
+    }
+
+    return result;
   };
 }

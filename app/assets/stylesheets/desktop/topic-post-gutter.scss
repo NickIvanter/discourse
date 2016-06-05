@@ -1,0 +1,80 @@
+.gutter {
+  margin-top: 13px;
+  width: 100%;
+  box-sizing: border-box;
+  z-index: 1;
+  padding-left: 757px;
+
+  ul {margin: 0;}
+  li {margin-bottom: 10px;}
+  i {font-size: 0.857em;}
+
+  .reply-new {
+    padding-left: 27px;
+    display: inline-block;
+    overflow:hidden;
+  }
+
+  .track-link {
+    padding-left: 10px;
+    display: inline-block;
+    overflow: hidden;
+    }
+
+  .post-links {
+    list-style-type: none;
+    position: relative;
+    line-height: 18px;
+    word-wrap: break-word;
+    a i {
+      position: relative;
+      margin-right: 7px;
+      margin-top: -2px;
+      margin-left: -17px;
+    }
+
+    a.toggle-more {
+      display: block;
+      text-align: right;
+    }
+  }
+}
+
+.topic-post {
+  .gutter {
+    .reply-new {
+      .discourse-no-touch & {
+        opacity:0;
+        transition: opacity 0.7s ease-in-out;
+      }
+      .discourse-touch & {opacity: 1;}
+    }
+  }
+
+  &:hover .gutter, .selected .gutter {
+    .reply-new,
+    .track-link {
+      opacity:1;
+    }
+  }
+}
+
+a.reply-new {
+  margin-top: 3px;
+  color: dark-light-choose(scale-color($primary, $lightness: 50%), scale-color($secondary, $lightness: 50%));
+  i {
+    margin-right: 3px;
+    background: $secondary;
+    padding: 1.5px 3px;
+    border-radius: 20px;
+    transition: all linear .15s;
+    margin-left: -20px;
+  }
+}
+
+a:hover.reply-new {
+  color: $tertiary;
+  i {
+    background: dark-light-diff($tertiary, $secondary, 85%, -65%);
+  }
+}

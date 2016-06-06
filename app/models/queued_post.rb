@@ -92,7 +92,7 @@ class QueuedPost < ActiveRecord::Base
   end
 
   def cleanup_hideing!
-    queued_preview_post_map.destroy
+    queued_preview_post_map.destroy if queued_preview_post_map.present?
   end
 
   def edit_queued_preview!(raw)
@@ -104,7 +104,7 @@ class QueuedPost < ActiveRecord::Base
   end
 
   def reject_replies!(rejected_by)
-    if queued_preview_post_map.new_topic?
+    if queued_preview_post_map.present? && queued_preview_post_map.new_topic?
       post_options['old_topic_id'] = queued_preview_post_map.topic_id
       save
       QueuedPost.where('topic_id = ?', queued_preview_post_map.topic_id).each do |queued|
@@ -120,16 +120,18 @@ class QueuedPost < ActiveRecord::Base
   end
 
   def reject!(rejected_by)
-    QueuedPost.transaction do
-      change_to!(:rejected, rejected_by)
-      if NewPostManager.queued_preview_enabled?
-        reject_replies! rejected_by
-        destroy_queued_preview!
-        cleanup_hideing!
+    unless approved?
+      QueuedPost.transaction do
+        change_to!(:rejected, rejected_by)
+        if NewPostManager.queued_preview_enabled?
+          reject_replies! rejected_by
+          destroy_queued_preview!
+          cleanup_hideing!
+        end
       end
-    end
 
-    DiscourseEvent.trigger(:rejected_post, self)
+      DiscourseEvent.trigger(:rejected_post, self)
+    end
   end
 
   def create_options
@@ -144,47 +146,57 @@ class QueuedPost < ActiveRecord::Base
   def approve!(approved_by)
     created_post = nil
     reapprove = rejected?
+    doubleApprove = false;
     QueuedPost.transaction do
-      change_to!(:approved, approved_by)
+
+      begin
+        change_to!(:approved, approved_by)
+      rescue
+        doubleApprove = true;
+      end
 
       UserBlocker.unblock(user, approved_by) if user.blocked? && !UserHellbanner.enabled?
 
-      if !NewPostManager.queued_preview_enabled? || reapprove
-        creator = PostCreator.new(user, create_options.merge(skip_validations: true))
-        created_post = creator.create
-        unless created_post && creator.errors.blank?
-          raise StandardError, "Failed to create post #{raw[0..100]} #{creator.errors.full_messages.inspect}"
+      unless doubleApprove
+
+        if !NewPostManager.queued_preview_enabled? || reapprove
+          creator = PostCreator.new(user, create_options.merge(skip_validations: true))
+          created_post = creator.create
+          unless created_post && creator.errors.blank?
+            raise StandardError, "Failed to create post #{raw[0..100]} #{creator.errors.full_messages.inspect}"
+          end
+        end
+
+        if reapprove || post_options['old_topic_id'].present?
+          update_rejected(post_options['old_topic_id'], created_post.topic_id)
         end
       end
 
-      if reapprove || post_options['old_topic_id'].present?
-        update_rejected(post_options['old_topic_id'], created_post.topic_id)
+      if NewPostManager.queued_preview_enabled? && queued_preview_post_map.present? && queued_preview_post_map.post_id.present? && !reapprove
+        post = queued_preview_post_map.post
+        if post.present?
+          new_topic = queued_preview_post_map.new_topic?
+          cleanup_hideing!
+
+          # Reapply events and jobs
+          PostJobsEnqueuer.new(post, post.topic, new_topic, {queued_preview_approving: true}).enqueue_jobs
+          opts = create_options
+          DiscourseEvent.trigger(:topic_created, post.topic, opts, user) if new_topic
+          DiscourseEvent.trigger(:post_created, post, opts, user)
+          BadgeGranter.queue_badge_grant(Badge::Trigger::PostRevision, post: post)
+          post.publish_change_to_clients! :created
+          user.publish_notifications_state
+        end
       end
-    end
 
-    if NewPostManager.queued_preview_enabled? && queued_preview_post_map.present? && queued_preview_post_map.post_id.present? && !reapprove
-      post = queued_preview_post_map.post
-      if post.present?
-        new_topic = queued_preview_post_map.new_topic?
-        cleanup_hideing!
+      DiscourseEvent.trigger(:approved_post, self)
 
-        # Reapply events and jobs
-        PostJobsEnqueuer.new(post, post.topic, new_topic, {queued_preview_approving: true}).enqueue_jobs
-        opts = create_options
-        DiscourseEvent.trigger(:topic_created, post.topic, opts, user) if new_topic
-        DiscourseEvent.trigger(:post_created, post, opts, user)
-        BadgeGranter.queue_badge_grant(Badge::Trigger::PostRevision, post: post)
-        post.publish_change_to_clients! :created
-        user.publish_notifications_state
+      if NewPostManager.queued_preview_enabled? && !reapprove
+        post
+      else
+        created_post
       end
-    end
 
-    DiscourseEvent.trigger(:approved_post, self)
-
-    if NewPostManager.queued_preview_enabled? && !reapprove
-      post
-    else
-      created_post
     end
   end
 
@@ -208,6 +220,8 @@ class QueuedPost < ActiveRecord::Base
       # update the same row simultaneously. Only one state change should go through and
       # we can use the DB to enforce this
       row_count = QueuedPost.where('id = ? AND state <> ?', id, state_val).update_all(updates)
+
+      # original behavior
       raise InvalidStateTransition.new if row_count == 0
 
       if [:rejected, :approved].include?(state)

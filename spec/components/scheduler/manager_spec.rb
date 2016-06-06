@@ -74,19 +74,12 @@ describe Scheduler::Manager do
     expect(manager.enable_stats).to eq(true)
   end
 
-  before do
-    $redis.del manager.class.lock_key
-    $redis.del manager.class.queue_key
-    manager.remove(Testing::RandomJob)
-    manager.remove(Testing::SuperLongJob)
-    manager.remove(Testing::PerHostJob)
-  end
-
   after do
     manager.stop!
     manager.remove(Testing::RandomJob)
     manager.remove(Testing::SuperLongJob)
     manager.remove(Testing::PerHostJob)
+    $redis.flushall
   end
 
   describe 'per host jobs' do
@@ -133,7 +126,7 @@ describe Scheduler::Manager do
       expect($redis.zcard(Scheduler::Manager.queue_key)).to eq(0)
     end
 
-    it 'should recover from crashed manager' do
+    skip 'should recover from crashed manager' do
 
       info = manager.schedule_info(Testing::SuperLongJob)
       info.next_run = Time.now.to_i - 1
@@ -152,25 +145,25 @@ describe Scheduler::Manager do
     end
 
     # something about logging jobs causing a leak in connection pool in test
-    # it 'should log when job finishes running' do
-    #
-    #   Testing::RandomJob.runs = 0
-    #
-    #   info = manager.schedule_info(Testing::RandomJob)
-    #   info.next_run = Time.now.to_i - 1
-    #   info.write!
-    #
-    #   # with stats so we must be careful to cleanup
-    #   manager = Scheduler::Manager.new(DiscourseRedis.new)
-    #   manager.blocking_tick
-    #   manager.stop!
-    #
-    #   stat = SchedulerStat.first
-    #   expect(stat).to be_present
-    #   expect(stat.duration_ms).to be > 0
-    #   expect(stat.success).to be true
-    #   SchedulerStat.destroy_all
-    # end
+    skip 'should log when job finishes running' do
+
+      Testing::RandomJob.runs = 0
+
+      info = manager.schedule_info(Testing::RandomJob)
+      info.next_run = Time.now.to_i - 1
+      info.write!
+
+      # with stats so we must be careful to cleanup
+      manager = Scheduler::Manager.new(DiscourseRedis.new)
+      manager.blocking_tick
+      manager.stop!
+
+      stat = SchedulerStat.first
+      expect(stat).to be_present
+      expect(stat.duration_ms).to be > 0
+      expect(stat.success).to be true
+      SchedulerStat.destroy_all
+    end
 
     it 'should only run pending job once' do
 

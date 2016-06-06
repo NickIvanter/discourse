@@ -7,7 +7,7 @@ var postBodyWidget = queryRegistry('post-body');
 
 TopicNavigation.reopen({
   _checkSize() {
-    this.set('info', { null, null });
+    this.set('info', { renderTimeline:null, showTimeline:null });
   }
 });
 

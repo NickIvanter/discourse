@@ -145,6 +145,8 @@ class QueuedPost < ActiveRecord::Base
 
   def approve!(approved_by)
     created_post = nil
+    post = nill
+    new_topic = false
     reapprove = rejected?
     doubleApprove = false;
     QueuedPost.transaction do
@@ -177,26 +179,31 @@ class QueuedPost < ActiveRecord::Base
         if post.present?
           new_topic = queued_preview_post_map.new_topic?
           cleanup_hideing!
-
-          # Reapply events and jobs
-          PostJobsEnqueuer.new(post, post.topic, new_topic, {queued_preview_approving: true}).enqueue_jobs
-          opts = create_options
-          DiscourseEvent.trigger(:topic_created, post.topic, opts, user) if new_topic
-          DiscourseEvent.trigger(:post_created, post, opts, user)
-          BadgeGranter.queue_badge_grant(Badge::Trigger::PostRevision, post: post)
-          post.publish_change_to_clients! :created
-          user.publish_notifications_state
         end
       end
+    end
 
-      DiscourseEvent.trigger(:approved_post, self)
+    if NewPostManager.queued_preview_enabled? && queued_preview_post_map.present? && queued_preview_post_map.post_id.present? && !reapprove
 
-      if NewPostManager.queued_preview_enabled? && !reapprove
-        post
-      else
-        created_post
+      if post && post.present?
+
+        # Reapply events and jobs
+        PostJobsEnqueuer.new(post, post.topic, new_topic, {queued_preview_approving: true}).enqueue_jobs
+        opts = create_options
+        DiscourseEvent.trigger(:topic_created, post.topic, opts, user) if new_topic
+        DiscourseEvent.trigger(:post_created, post, opts, user)
+        BadgeGranter.queue_badge_grant(Badge::Trigger::PostRevision, post: post)
+        post.publish_change_to_clients! :created
+        user.publish_notifications_state
       end
+    end
 
+    DiscourseEvent.trigger(:approved_post, self)
+
+    if NewPostManager.queued_preview_enabled? && !reapprove
+      post
+    else
+      created_post
     end
   end
 

@@ -7,47 +7,48 @@ class WebhooksController < ActionController::Base
     return mailgun_failure if SiteSetting.mailgun_api_key.blank?
 
     # token is a random string of 50 characters
-    token = params.delete("token")
+    token = params["token"]
     return mailgun_failure if token.blank? || token.size != 50
 
     # prevent replay attack
     key = "mailgun_token_#{token}"
     return mailgun_failure unless $redis.setnx(key, 1)
-    $redis.expire(key, 8.hours)
+    $redis.expire(key, 10.minutes)
 
     # ensure timestamp isn't too far from current time
-    timestamp = params.delete("timestamp")
-    return mailgun_failure if (Time.at(timestamp.to_i) - Time.now).abs > 1.hour.to_i
+    timestamp = params["timestamp"]
+    return mailgun_failure if (Time.at(timestamp.to_i) - Time.now).abs > 24.hours.to_i
 
     # check the signature
     return mailgun_failure unless mailgun_verify(timestamp, token, params["signature"])
 
-    handled = false
-    event = params.delete("event")
+    event = params["event"]
+    message_id = params["Message-Id"].tr("<>", "")
 
     # only handle soft bounces, because hard bounces are also handled
     # by the "dropped" event and we don't want to increase bounce score twice
     # for the same message
     if event == "bounced".freeze && params["error"]["4."]
-      handled = mailgun_process(params, Email::Receiver::SOFT_BOUNCE_SCORE)
+      process_bounce(message_id, SiteSetting.soft_bounce_score)
     elsif event == "dropped".freeze
-      handled = mailgun_process(params, Email::Receiver::HARD_BOUNCE_SCORE)
+      process_bounce(message_id, SiteSetting.hard_bounce_score)
     end
 
-    handled ? mailgun_success : mailgun_failure
+    mailgun_success
   end
 
   def sendgrid
     events = params["_json"] || [params]
     events.each do |event|
+      message_id = (event["smtp-id"] || "").tr("<>", "")
       if event["event"] == "bounce".freeze
         if event["status"]["4."]
-          sendgrid_process(event, Email::Receiver::SOFT_BOUNCE_SCORE)
+          process_bounce(message_id, SiteSetting.soft_bounce_score)
         else
-          sendgrid_process(event, Email::Receiver::HARD_BOUNCE_SCORE)
+          process_bounce(message_id, SiteSetting.hard_bounce_score)
         end
       elsif event["event"] == "dropped".freeze
-        sendgrid_process(event, Email::Receiver::HARD_BOUNCE_SCORE)
+        process_bounce(message_id, SiteSetting.hard_bounce_score)
       end
     end
 
@@ -57,11 +58,51 @@ class WebhooksController < ActionController::Base
   def mailjet
     events = params["_json"] || [params]
     events.each do |event|
+      message_id = event["CustomID"]
       if event["event"] == "bounce".freeze
         if event["hard_bounce"]
-          mailjet_process(event, Email::Receiver::HARD_BOUNCE_SCORE)
+          process_bounce(message_id, SiteSetting.hard_bounce_score)
         else
-          mailjet_process(event, Email::Receiver::SOFT_BOUNCE_SCORE)
+          process_bounce(message_id, SiteSetting.soft_bounce_score)
+        end
+      end
+    end
+
+    render nothing: true, status: 200
+  end
+
+  def mandrill
+    events = params["mandrill_events"]
+    events.each do |event|
+      message_id = event["msg"]["metadata"]["message_id"] rescue nil
+      next unless message_id
+
+      case event["event"]
+      when "hard_bounce"
+        process_bounce(message_id, SiteSetting.hard_bounce_score)
+      when "soft_bounce"
+        process_bounce(message_id, SiteSetting.soft_bounce_score)
+      end
+    end
+
+    render nothing: true, status: 200
+  end
+
+  def sparkpost
+    events = params["_json"] || [params]
+    events.each do |event|
+      message_id = event["msys"]["message_event"]["campaign_id"] rescue nil
+      bounce_class = event["msys"]["message_event"]["bounce_class"] rescue nil
+      next unless message_id && bounce_class
+
+      bounce_class = bounce_class.to_i
+
+      # bounce class definitions: https://support.sparkpost.com/customer/portal/articles/1929896
+      if bounce_class < 80
+        if bounce_class == 10 || bounce_class == 25 || bounce_class == 30
+          process_bounce(message_id, SiteSetting.hard_bounce_score)
+        else
+          process_bounce(message_id, SiteSetting.soft_bounce_score)
         end
       end
     end
@@ -85,40 +126,7 @@ class WebhooksController < ActionController::Base
       signature == OpenSSL::HMAC.hexdigest(digest, SiteSetting.mailgun_api_key, data)
     end
 
-    def mailgun_process(params, bounce_score)
-      return false if params["message-headers"].blank?
-
-      return_path_header = params["message-headers"].first { |h| h[0] == "Return-Path".freeze }
-      return false if return_path_header.blank?
-
-      return_path = return_path_header[1]
-      return false if return_path.blank?
-
-      bounce_key = return_path[/\+verp-(\h{32})@/, 1]
-      return false if bounce_key.blank?
-
-      email_log = EmailLog.find_by(bounce_key: bounce_key)
-      return false if email_log.nil?
-
-      email_log.update_columns(bounced: true)
-      Email::Receiver.update_bounce_score(email_log.user.email, bounce_score)
-
-      true
-    end
-
-    def sendgrid_process(event, bounce_score)
-      message_id = event["smtp-id"]
-      return if message_id.blank?
-
-      email_log = EmailLog.find_by(message_id: message_id.tr("<>", ""))
-      return if email_log.nil?
-
-      email_log.update_columns(bounced: true)
-      Email::Receiver.update_bounce_score(email_log.user.email, bounce_score)
-    end
-
-    def mailjet_process(event, bounce_score)
-      message_id = event["CustomID"]
+    def process_bounce(message_id, bounce_score)
       return if message_id.blank?
 
       email_log = EmailLog.find_by(message_id: message_id)

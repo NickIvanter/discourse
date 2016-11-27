@@ -15,13 +15,23 @@ module ApplicationHelper
   include ConfigurableUrls
   include GlobalPath
 
-  def ga_universal_json
-    cookie_domain = SiteSetting.ga_universal_domain_name.gsub(/^http(s)?:\/\//, '')
-    result = {cookieDomain: cookie_domain}
+  def google_universal_analytics_json(ua_domain_name=nil)
+    result = {}
+    if ua_domain_name
+      result[:cookieDomain] = ua_domain_name.gsub(/^http(s)?:\/\//, '')
+    end
     if current_user.present?
       result[:userId] = current_user.id
     end
     result.to_json.html_safe
+  end
+
+  def ga_universal_json
+    google_universal_analytics_json(SiteSetting.ga_universal_domain_name)
+  end
+
+  def google_tag_manager_json
+    google_universal_analytics_json
   end
 
   def shared_session_key
@@ -38,7 +48,7 @@ module ApplicationHelper
   def script(*args)
     if SiteSetting.enable_cdn_js_debugging && GlobalSetting.cdn_url
       tags = javascript_include_tag(*args, "crossorigin" => "anonymous")
-      tags.gsub!("/assets/", "/cdn_asset/#{Discourse.current_hostname.gsub(".","_")}/")
+      tags.gsub!("/assets/", "/cdn_asset/#{Discourse.current_hostname.tr(".","_")}/")
       tags.gsub!(".js\"", ".js?v=1&origin=#{CGI.escape request.base_url}\"")
       tags.html_safe
     else
@@ -57,6 +67,12 @@ module ApplicationHelper
 
   def html_classes
     "#{mobile_view? ? 'mobile-view' : 'desktop-view'} #{mobile_device? ? 'mobile-device' : 'not-mobile-device'} #{rtl_class} #{current_user ? '' : 'anon'}"
+  end
+
+  def body_classes
+    if @category && @category.url.present?
+      "category-#{@category.url.sub(/^\/c\//, '').gsub(/\//, '-')}"
+    end
   end
 
   def rtl_class
@@ -126,20 +142,41 @@ module ApplicationHelper
     opts ||= {}
     opts[:url] ||= "#{Discourse.base_url_no_prefix}#{request.fullpath}"
 
-    # Use the correct scheme for open graph
-    if opts[:image].present? && opts[:image].start_with?("//")
-      uri = URI(Discourse.base_url)
-      opts[:image] = "#{uri.scheme}:#{opts[:image]}"
-    elsif opts[:image].present? && opts[:image].start_with?("/uploads/")
-      opts[:image] = "#{Discourse.base_url}#{opts[:image]}"
+    if opts[:image].blank? && (SiteSetting.default_opengraph_image_url.present? || SiteSetting.twitter_summary_large_image_url.present?)
+      opts[:twitter_summary_large_image] = SiteSetting.twitter_summary_large_image_url if SiteSetting.twitter_summary_large_image_url.present?
+      opts[:image] = SiteSetting.default_opengraph_image_url.present? ? SiteSetting.default_opengraph_image_url : SiteSetting.twitter_summary_large_image_url
+    elsif opts[:image].blank? && SiteSetting.apple_touch_icon_url.present?
+      opts[:image] = SiteSetting.apple_touch_icon_url
     end
 
-    # Add opengraph tags
+    # Use the correct scheme for open graph image
+    if opts[:image].present?
+      if opts[:image].start_with?("//")
+        uri = URI(Discourse.base_url)
+        opts[:image] = "#{uri.scheme}:#{opts[:image]}"
+      elsif opts[:image].start_with?("/uploads/")
+        opts[:image] = "#{Discourse.base_url}#{opts[:image]}"
+      elsif GlobalSetting.relative_url_root && opts[:image].start_with?(GlobalSetting.relative_url_root)
+        opts[:image] = "#{Discourse.base_url_no_prefix}#{opts[:image]}"
+      end
+    end
+
+    # Add opengraph & twitter tags
     result = []
     result << tag(:meta, property: 'og:site_name', content: SiteSetting.title)
-    result << tag(:meta, name: 'twitter:card', content: "summary")
 
-    [:url, :title, :description, :image].each do |property|
+    if opts[:twitter_summary_large_image].present?
+      result << tag(:meta, name: 'twitter:card', content: "summary_large_image")
+      result << tag(:meta, name: "twitter:image", content: opts[:twitter_summary_large_image])
+    elsif opts[:image].present?
+      result << tag(:meta, name: 'twitter:card', content: "summary")
+      result << tag(:meta, name: "twitter:image", content: opts[:image])
+    else
+      result << tag(:meta, name: 'twitter:card', content: "summary")
+    end
+    result << tag(:meta, property: "og:image", content: opts[:image]) if opts[:image].present?
+
+    [:url, :title, :description].each do |property|
       if opts[property].present?
         escape = (property != :image)
         result << tag(:meta, { property: "og:#{property}", content: opts[property] }, nil, escape)

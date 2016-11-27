@@ -297,7 +297,7 @@ td.flaggers td {
   height: 150px;
 }
 
-.groups, .badges {
+.groups, .badges, .web-hook-container {
   .form-horizontal {
     label {
       font-weight: bold;
@@ -311,10 +311,22 @@ td.flaggers td {
       width: 350px;
     }
 
-    input[type="checkbox"] {
+    input[type="checkbox"], input[type="radio"] {
       width: 20px;
     }
   }
+}
+
+.text-successful {
+  color: $success;
+}
+
+.text-danger {
+  color: $danger;
+}
+
+.text-muted {
+  color: lighten($primary, 40);
 }
 
 .admin-nav {
@@ -394,7 +406,7 @@ td.flaggers td {
       float: left;
       width: 53%;
       padding-right: 20px;
-      .category-group {
+      .category-selector {
         width: 95%;
       }
       @media (max-width: $mobile-breakpoint) {
@@ -684,6 +696,38 @@ section.details {
     width: 100%;
     border-color: dark-light-choose(scale-color($primary, $lightness: 75%), scale-color($secondary, $lightness: 25%));
   }
+  .avatar-flair-preview {
+    position: relative;
+    width: 45px;
+
+    .avatar-wrapper {
+      background-color: #f4f4f4;
+    }
+  }
+  .form-horizontal {
+    .flair_inputs {
+      margin-top: 30px;
+      margin-bottom: 30px;
+
+      .flair_left {
+        float: left;
+        width: 60%;
+        input[name=flair_url] {
+          width: 90%;
+        }
+      }
+
+      .flair_right {
+        float: left;
+        margin-left: 30px;
+      }
+    }
+  }
+}
+.row.groups {
+  input[type='text'].flair_bg_color, input[type='text'].flair_color {
+    width: 200px;
+  }
 }
 
 // Customise area
@@ -818,24 +862,21 @@ section.details {
   }
 }
 
-
 .admin-flags {
-  table-layout: fixed;
+  .hidden-post td.excerpt,
+  .hidden-post td.user {
+    opacity: 0.5;
+  }
 
-  .hidden-post td.excerpt, .hidden-post td.user { opacity: 0.5; }
-  .deleted td.excerpt, .deleted td.user { background-color: scale-color($danger, $lightness: 70%); }
+  .deleted td.excerpt,
+  .deleted td.user {
+    background-color: scale-color($danger, $lightness: 70%);
+  }
+
   .message { background-color: dark-light-diff($highlight, $secondary, 50%, -70%); }
   .message:hover { background-color: dark-light-diff($highlight, $secondary, 60%, -60%); }
-  td { vertical-align: top; }
-  th { text-align: left; }
-  .user {
-    width: 25px;
-    padding: 8px 0 0 0;
-    text-align: center;
-  }
+
   .excerpt {
-    max-width: 700px;
-    width: 75%;
     padding: 8px;
     word-wrap: break-word;
     .fa { display: inline-block; }
@@ -846,34 +887,13 @@ section.details {
       margin-bottom: 5px;
     }
   }
-  .flaggers {
-    font-size: 11px;
-    padding: 8px 0 0 5px;
-    .avatar {
-      width: 25px;
-    }
-    table {
-      max-width: 145px;
-    }
-    tr {
-      height: 44px;
-    }
-    td {
-      vertical-align: middle;
-      padding: 3px;
-      line-height: 1.4;
-    }
-  }
+
+  .flagged-posts { background: $danger; }
+
   .action {
      button { margin: 4px; }
      text-align: right;
-     padding-bottom: 20px;
   }
-  td p {
-    font-size: 0.929em;
-    margin: 0 0 5px 0;
-  }
-  .flagged-posts { background: $danger; }
 }
 
 /* Dashboard */
@@ -1200,44 +1220,6 @@ table.api-keys {
   }
 }
 
-.content-list {
-
-  h3 {
-    color: dark-light-diff($primary, $secondary, 50%, -20%);
-    font-size: 1.071em;
-    padding-left: 5px;
-    margin-bottom: 10px;
-  }
-
-  ul {
-    list-style: none;
-    margin: 0;
-
-    li:first-of-type {
-      border-top: 1px solid dark-light-diff($primary, $secondary, 90%, -60%);
-    }
-    li {
-      border-bottom: 1px solid dark-light-diff($primary, $secondary, 90%, -60%);
-    }
-
-    li a {
-      display: block;
-      padding: 10px;
-      color: $primary;
-
-      &:hover {
-        background-color: dark-light-diff($primary, $secondary, 90%, -60%);
-        color: $primary;
-      }
-
-      &.active {
-        font-weight: bold;
-        color: $primary;
-      }
-    }
-  }
-}
-
 .content-editor {
   min-height: 500px;
 
@@ -1276,6 +1258,21 @@ table.api-keys {
     bottom: 0;
   }
 
+}
+
+.hook-event {
+  display: inline-block;
+  width: 40%;
+
+  margin-left: 20px;
+
+  label {
+    display: inline-block;
+  }
+
+  p {
+    margin: 0 0 5px 25px;
+  }
 }
 
 .email-template {
@@ -1422,7 +1419,7 @@ table.api-keys {
   position: absolute;
 }
 
-.staff-actions, .screened-emails, .screened-urls, .screened-ip-addresses, .permalinks {
+.staff-actions, .screened-emails, .screened-urls, .screened-ip-addresses, .permalinks, .web-hook-events {
 
   border-bottom: dotted 1px dark-light-choose(scale-color($primary, $lightness: 75%), scale-color($secondary, $lightness: 25%));
 
@@ -1832,6 +1829,89 @@ table#user-badges {
     height: 150px;
     font-family: monospace;
     box-shadow: none;
+  }
+}
+
+// Webhook
+
+.web-hook-container {
+  > p {
+    padding-bottom: 10px;
+    border-bottom: darken($secondary, 10%) 1px solid;
+  }
+  .filters {
+    margin: 5px 0;
+    padding-bottom: 5px;
+    border-bottom: darken($secondary, 5%) 1px solid;
+  }
+  .instructions {
+    margin-top: 5px;
+  }
+  .subscription-choice {
+    margin-bottom: 10px;
+  }
+}
+
+.web-hook-direction {
+  button {
+    margin-right: 10px;
+  }
+}
+
+.web-hook-events {
+  li {
+    padding: 2px 0;
+  }
+
+  .col {
+    display: inline-block;
+    padding-top: 6px;
+    vertical-align: top;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .col.first {
+    width: 90px;
+  }
+
+  .col.event-id {
+    width: 300px;
+  }
+
+  .col.timestamp {
+    width: 150px;
+  }
+
+  .col.completion {
+    width: 220px;
+  }
+
+  .col.actions {
+    width: 305px;
+    padding-top: 0;
+    a {
+      text-decoration: underline;
+    }
+  }
+
+  .col.heading.actions {
+    padding: 4px 0;
+  }
+
+  .details {
+    display: block;
+    margin-top: 10px;
+  }
+  label {
+    font-size: 1.05em;
+  }
+}
+
+.web-hook-events-listing {
+  margin-top: 15px;
+  .alert {
+    margin: 15px 0 0 0;
   }
 }
 

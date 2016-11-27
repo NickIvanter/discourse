@@ -117,7 +117,8 @@ class PostMover
         post.user,
         raw: post.raw,
         topic_id: destination_topic.id,
-        acting_user: user
+        acting_user: user,
+        skip_validations: true
       );
       p = pm.perform().post
     else
@@ -125,7 +126,8 @@ class PostMover
         post.user,
         raw: post.raw,
         topic_id: destination_topic.id,
-        acting_user: user
+        acting_user: user,
+        skip_validations: true
       )
     end
     p.update_column(:reply_count, @reply_count[1] || 0)

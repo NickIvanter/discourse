@@ -20,6 +20,7 @@ module TopicGuardian
 
   def can_create_post_on_topic?(topic)
     # No users can create posts on deleted topics
+    return false if topic.blank?
     return false if topic.trashed?
     return true if is_admin?
 
@@ -68,45 +69,29 @@ module TopicGuardian
   end
 
   def can_reply_as_new_topic?(topic)
-    authenticated? && topic && not(topic.private_message?) && @user.has_trust_level?(TrustLevel[1])
+    authenticated? && topic && !topic.private_message? && @user.has_trust_level?(TrustLevel[1])
   end
 
   def can_see_deleted_topics?
     is_staff?
   end
 
-  def can_see_topic?(topic)
+  def can_see_topic?(topic, hide_deleted=true)
     return false unless topic
-    # Admins can see everything
     return true if is_admin?
-    # Deleted topics
-    return false if topic.deleted_at && !can_see_deleted_topics?
+    return false if hide_deleted && topic.deleted_at && !can_see_deleted_topics?
 
     return false if topic.user != @user && topic.queued_preview? # Do not show queued_preview topic
 
     if topic.private_message?
-      return authenticated? &&
-             topic.all_allowed_users.where(id: @user.id).exists?
+      return authenticated? && topic.all_allowed_users.where(id: @user.id).exists?
     end
 
-    # not secure, or I can see it
-    !topic.read_restricted_category? || can_see_category?(topic.category)
+    can_see_category?(topic.category)
   end
 
   def can_see_topic_if_not_deleted?(topic)
-    return false unless topic
-    # Admins can see everything
-    return true if is_admin?
-    # Deleted topics
-    # return false if topic.deleted_at && !can_see_deleted_topics?
-
-    if topic.private_message?
-      return authenticated? &&
-        topic.all_allowed_users.where(id: @user.id).exists?
-    end
-
-    # not secure, or I can see it
-    !topic.read_restricted_category? || can_see_category?(topic.category)
+    can_see_topic?(topic, false)
   end
 
   def filter_allowed_categories(records)

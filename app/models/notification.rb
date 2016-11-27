@@ -52,7 +52,8 @@ class Notification < ActiveRecord::Base
                         custom: 14,
                         group_mentioned: 15,
                         group_message_summary: 16,
-                        queued: 17
+                        watching_first_post: 17,
+                        queued: 127
                        )
   end
 
@@ -67,6 +68,15 @@ class Notification < ActiveRecord::Base
     user.publish_notifications_state if count > 0
 
     count
+  end
+
+  def self.read(user, notification_ids)
+    count = Notification.where(user_id: user.id,
+                               id: notification_ids,
+                               read: false).update_all(read: true)
+    if count > 0
+      user.publish_notifications_state
+    end
   end
 
   def self.interesting_after(min_date)
@@ -115,11 +125,6 @@ class Notification < ActiveRecord::Base
 
       parsed.with_indifferent_access
     end
-  end
-
-  def text_description
-    link = block_given? ? yield : ""
-    I18n.t("notification_types.#{Notification.types[notification_type]}", data_hash.merge(link: link))
   end
 
   def url

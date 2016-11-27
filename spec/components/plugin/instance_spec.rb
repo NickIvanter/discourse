@@ -48,7 +48,8 @@ describe Plugin::Instance do
 
         # DiscourseEvent
         @hello_count = 0
-        @plugin.on(:hello) { @hello_count += 1 }
+        @increase_count = -> { @hello_count += 1 }
+        @set = @plugin.on(:hello, &@increase_count)
 
         # Serializer
         @plugin.add_to_serializer(:trout, :scales) { 1024 }
@@ -56,7 +57,7 @@ describe Plugin::Instance do
       end
 
       after do
-        DiscourseEvent.clear
+        DiscourseEvent.off(:hello, &@set.first)
       end
 
       it "checks enabled/disabled functionality for extensions" do
@@ -133,16 +134,13 @@ describe Plugin::Instance do
 
       plugin.register_asset("code.js")
 
-      plugin.register_asset("server_side.js", :server_side)
-
       plugin.register_asset("my_admin.js", :admin)
       plugin.register_asset("my_admin2.js", :admin)
 
       plugin.activate!
 
-      expect(DiscoursePluginRegistry.javascripts.count).to eq(3)
+      expect(DiscoursePluginRegistry.javascripts.count).to eq(2)
       expect(DiscoursePluginRegistry.admin_javascripts.count).to eq(2)
-      expect(DiscoursePluginRegistry.server_side_javascripts.count).to eq(1)
       expect(DiscoursePluginRegistry.desktop_stylesheets.count).to eq(2)
       expect(DiscoursePluginRegistry.sass_variables.count).to eq(2)
       expect(DiscoursePluginRegistry.stylesheets.count).to eq(2)

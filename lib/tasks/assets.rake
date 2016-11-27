@@ -30,16 +30,7 @@ task 'assets:precompile:before' do
 
   if $node_uglify
     Rails.configuration.assets.js_compressor = nil
-
-    module ::Sprockets
-      # TODO: https://github.com/rails/sprockets-rails/pull/342
-      # Rails.configuration.assets.gzip = false
-      class Base
-        def skip_gzip?
-          true
-        end
-      end
-    end
+    Rails.configuration.assets.gzip = false
   end
 
 end
@@ -105,7 +96,15 @@ end
 
 def gzip(path)
   STDERR.puts "gzip #{path}"
-  STDERR.puts `gzip -f -c -7 #{path} > #{path}.gz`
+  STDERR.puts `gzip -f -c -9 #{path} > #{path}.gz`
+end
+
+def brotli(path)
+  if ENV['COMPRESS_BROTLI']
+    STDERR.puts "brotli #{path}"
+    STDERR.puts `brotli --quality 11 --input #{path} --output #{path}.br`
+    STDERR.puts `chmod +r #{path}.br`
+  end
 end
 
 def compress(from,to)
@@ -117,7 +116,7 @@ def compress(from,to)
 end
 
 def concurrent?
-  if ENV["CONCURRENT"] == "1"
+  if ENV["SPROCKETS_CONCURRENT"] == "1"
     concurrent_compressors = []
     yield(Proc.new { |&block| concurrent_compressors << Concurrent::Future.execute { block.call } })
     concurrent_compressors.each(&:wait!)
@@ -159,6 +158,7 @@ task 'assets:precompile' => 'assets:precompile:before' do
               info["size"] = File.size(path)
               info["mtime"] = File.mtime(path).iso8601
               gzip(path)
+              brotli(path)
             end
           end
       end

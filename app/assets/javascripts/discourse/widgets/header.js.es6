@@ -1,5 +1,5 @@
 import { createWidget } from 'discourse/widgets/widget';
-import { iconNode } from 'discourse/helpers/fa-icon';
+import { iconNode } from 'discourse/helpers/fa-icon-node';
 import { avatarImg } from 'discourse/widgets/post';
 import DiscourseURL from 'discourse/lib/url';
 import { wantsNewWindow } from 'discourse/lib/intercept-click';
@@ -21,12 +21,18 @@ const dropdown = {
 };
 
 createWidget('header-notifications', {
+  settings: {
+    avatarSize: 'medium'
+  },
+
   html(attrs) {
     const { currentUser } = this;
     const real_name = currentUser.get('name') ? currentUser.get('name') : currentUser.get('username');
 
-    const contents = [ avatarImg('medium', { template: currentUser.get('avatar_template'),
-                                             username: real_name }) ];
+    const contents = [ avatarImg(this.settings.avatarSize, {
+      template: currentUser.get('avatar_template'),
+      username: real_name
+    }) ];
 
     const unreadNotifications = currentUser.get('unread_notifications');
     if (!!unreadNotifications) {
@@ -98,7 +104,7 @@ createWidget('header-icons', {
                         contents() {
                           if (!attrs.flagCount) { return; }
                           return this.attach('link', {
-                            href: '/admin/flags/active',
+                            href: Discourse.getURL('/admin/flags/active'),
                             title: 'notifications.total_flagged',
                             rawLabel: attrs.flagCount,
                             className: 'badge-notification flagged-posts'
@@ -112,7 +118,7 @@ createWidget('header-icons', {
                      iconId: 'search-button',
                      action: 'toggleSearchMenu',
                      active: attrs.searchVisible,
-                     href: '/search'
+                     href: Discourse.getURL('/search')
                    });
 
     const icons = [search, hamburger];
@@ -217,7 +223,10 @@ export default createWidget('header', {
 
     this.state.searchVisible = !this.state.searchVisible;
     this.updateHighlight();
-    Ember.run.next(() => $('#search-term').focus());
+
+    if (this.state.searchVisible) {
+      Ember.run.schedule('afterRender', () => $('#search-term').focus().select());
+    }
   },
 
   toggleUserMenu() {

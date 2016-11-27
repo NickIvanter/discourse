@@ -65,10 +65,12 @@ class StaffActionLogger
   def log_topic_deletion(deleted_topic, opts={})
     raise Discourse::InvalidParameters.new(:deleted_topic) unless deleted_topic && deleted_topic.is_a?(Topic)
 
+    user = deleted_topic.user ? "#{deleted_topic.user.username} (#{deleted_topic.user.name})" : "(deleted user)"
+
     details = [
       "id: #{deleted_topic.id}",
       "created_at: #{deleted_topic.created_at}",
-      "user: #{deleted_topic.user.username} (#{deleted_topic.user.name})",
+      "user: #{user}",
       "title: #{deleted_topic.title}"
     ]
 
@@ -334,11 +336,29 @@ class StaffActionLogger
     }))
   end
 
-  def log_revoke_email(user, opts={})
+  def log_revoke_email(user, reason, opts={})
     UserHistory.create(params(opts).merge({
       action: UserHistory.actions[:revoke_email],
       target_user_id: user.id,
-      details: user.email
+      details: reason
+    }))
+  end
+
+  def log_user_deactivate(user, reason, opts={})
+    raise Discourse::InvalidParameters.new(:user) unless user
+    UserHistory.create(params(opts).merge({
+      action: UserHistory.actions[:deactivate_user],
+      target_user_id: user.id,
+      details: reason
+    }))
+  end
+
+  def log_wizard_step(step, opts={})
+    raise Discourse::InvalidParameters.new(:step) unless step
+    UserHistory.create(params(opts).merge({
+      action: UserHistory.actions[:wizard_step],
+      acting_user_id: @admin.id,
+      context: step.id
     }))
   end
 

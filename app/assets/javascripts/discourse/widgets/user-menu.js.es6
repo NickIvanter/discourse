@@ -46,9 +46,10 @@ createWidget('user-menu-links', {
                       className: 'enable-anonymous',
                       icon: 'user-secret' });
       } else {
-        links.push({ className: 'disable-anonymous',
-                     action: 'toggleAnonymous',
-                     label: 'switch_from_anon' });
+        glyphs.push({ action: 'toggleAnonymous',
+                      label: 'switch_from_anon',
+                      className: 'disable-anonymous',
+                      icon: 'ban' });
       }
     }
 
@@ -74,7 +75,6 @@ export default createWidget('user-menu', {
     return [this.attach('user-menu-links', { path }),
             this.attach('user-notifications', { path }),
             h('div.logout-link', [
-              h('hr'),
               h('ul.menu-links',
                 h('li', this.attach('link', { action: 'logout',
                                                        className: 'logout',

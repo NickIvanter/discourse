@@ -32,6 +32,10 @@ class PostCreator
   #   via_email               - Mark this post as arriving via email
   #   raw_email               - Full text of arriving email (to store)
   #   action_code             - Describes a small_action post (optional)
+  #   skip_jobs               - Don't enqueue jobs when creation succeeds. This is needed if you
+  #                             wrap `PostCreator` in a transaction, as the sidekiq jobs could
+  #                             dequeue before the commit finishes. If you do this, be sure to
+  #                             call `enqueue_jobs` after the transaction is comitted.
   #
   #   When replying to a topic:
   #     topic_id              - topic we're replying to
@@ -145,7 +149,7 @@ class PostCreator
       publish if queued_preview_approving?
 
       track_latest_on_category
-      enqueue_jobs if queued_preview_approving?
+      enqueue_jobs if queued_preview_approving? && !@opts[:skip_jobs]
       BadgeGranter.queue_badge_grant(Badge::Trigger::PostRevision, post: @post) if queued_preview_approving?
 
       trigger_after_events(@post)
@@ -158,6 +162,21 @@ class PostCreator
     end
 
     @post
+  end
+
+  def create!
+    create
+
+    if !self.errors.full_messages.empty?
+      raise ActiveRecord::RecordNotSaved.new("Failed to create post", self)
+    end
+
+    @post
+  end
+
+  def enqueue_jobs
+    return unless @post && !@post.errors.present?
+    PostJobsEnqueuer.new(@post, @topic, new_topic?, {import_mode: @opts[:import_mode]}).enqueue_jobs
   end
 
   # For actions on approving or when queued_preview posts disabled
@@ -177,6 +196,10 @@ class PostCreator
 
   def self.create(user, opts)
     PostCreator.new(user, opts).create
+  end
+
+  def self.create!(user, opts)
+    PostCreator.new(user, opts).create!
   end
 
   def self.before_create_tasks(post)
@@ -420,29 +443,28 @@ class PostCreator
   def track_topic
     return if @opts[:auto_track] == false
 
-    TopicUser.change(@post.user_id,
-                     @topic.id,
-                     posted: true,
-                     last_read_post_number: @post.post_number,
-                     highest_seen_post_number: @post.post_number)
+    unless @user.user_option.disable_jump_reply?
+      TopicUser.change(@post.user_id,
+                       @topic.id,
+                       posted: true,
+                       last_read_post_number: @post.post_number,
+                       highest_seen_post_number: @post.post_number)
 
 
-    # assume it took us 5 seconds of reading time to make a post
-    PostTiming.record_timing(topic_id: @post.topic_id,
-                             user_id: @post.user_id,
-                             post_number: @post.post_number,
-                             msecs: 5000)
-
-    if true || @user.staged
-      TopicUser.auto_watch(@user.id, @topic.id, TopicUser.notification_reasons[:created_post])
-    else
-      TopicUser.auto_track(@user.id, @topic.id, TopicUser.notification_reasons[:created_post])
+      # assume it took us 5 seconds of reading time to make a post
+      PostTiming.record_timing(topic_id: @post.topic_id,
+                               user_id: @post.user_id,
+                               post_number: @post.post_number,
+                               msecs: 5000)
     end
-  end
 
-  def enqueue_jobs
-    return unless @post && !@post.errors.present?
-    PostJobsEnqueuer.new(@post, @topic, new_topic?, {import_mode: @opts[:import_mode]}).enqueue_jobs
+    if @user.staged
+      TopicUser.auto_notification_for_staging(@user.id, @topic.id, TopicUser.notification_reasons[:auto_watch])
+    elsif @user.user_option.notification_level_when_replying === NotificationLevels.topic_levels[:watching]
+      TopicUser.auto_notification(@user.id, @topic.id, TopicUser.notification_reasons[:created_post], NotificationLevels.topic_levels[:watching])
+    else
+      TopicUser.auto_notification(@user.id, @topic.id, TopicUser.notification_reasons[:created_post], NotificationLevels.topic_levels[:tracking])
+    end
   end
 
   def new_topic?

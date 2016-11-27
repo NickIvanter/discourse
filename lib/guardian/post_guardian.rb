@@ -76,7 +76,6 @@ module PostGuardian
 
   # Creating Method
   def can_create_post?(parent)
-
     (!SpamRule::AutoBlock.block?(@user) || (!!parent.try(:private_message?) && parent.allowed_users.include?(@user))) && (
       !parent ||
       !parent.category ||
@@ -102,6 +101,10 @@ module PostGuardian
 
     if post.wiki && (@user.trust_level >= SiteSetting.min_trust_to_edit_wiki_post.to_i)
       return true
+    end
+
+    if @user.trust_level < SiteSetting.min_trust_to_edit_post
+      return false
     end
 
     if is_my_own?(post)
@@ -164,7 +167,7 @@ module PostGuardian
     return false unless post
 
     if !post.hidden
-      return true if post.wiki || SiteSetting.edit_history_visible_to_public || (post.user && post.user.user_option.edit_history_public)
+      return true if post.wiki || SiteSetting.edit_history_visible_to_public
     end
 
     authenticated? &&

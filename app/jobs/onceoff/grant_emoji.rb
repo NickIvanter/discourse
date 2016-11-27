@@ -2,13 +2,14 @@ module Jobs
 
   class GrantEmoji < Jobs::Onceoff
     def execute_onceoff(args)
+      return unless SiteSetting.enable_badges
       to_award = {}
 
       Post.secured(Guardian.new)
           .select(:id, :created_at, :cooked, :user_id)
           .visible
           .public_posts
-          .where("cooked like '%emoji%'")
+          .where("cooked LIKE '%emoji%'")
           .find_in_batches do |group|
         group.each do |p|
           doc = Nokogiri::HTML::fragment(p.cooked)
@@ -18,10 +19,14 @@ module Jobs
         end
       end
 
-      badge = Badge.find(Badge::FirstEmoji)
       to_award.each do |user_id, opts|
-        BadgeGranter.grant(badge, User.find(user_id), opts)
+        user = User.where(id: user_id).first
+        BadgeGranter.grant(badge, user, opts) if user
       end
+    end
+
+    def badge
+      @badge ||= Badge.find(Badge::FirstEmoji)
     end
 
   end

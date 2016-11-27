@@ -149,6 +149,8 @@ class QueuedPost < ActiveRecord::Base
     new_topic = false
     reapprove = rejected?
     doubleApprove = false;
+
+    creator = PostCreator.new(user, create_options.merge(skip_validations: true, skip_jobs: true))
     QueuedPost.transaction do
 
       begin
@@ -165,7 +167,7 @@ class QueuedPost < ActiveRecord::Base
           creator = PostCreator.new(user, create_options.merge(skip_validations: true))
           created_post = creator.create
           unless created_post && creator.errors.blank?
-            raise StandardError, "Failed to create post #{raw[0..100]} #{creator.errors.full_messages.inspect}"
+            raise StandardError.new(creator.errors.full_messages.join(" "))
           end
         end
 
@@ -196,6 +198,8 @@ class QueuedPost < ActiveRecord::Base
         post.publish_change_to_clients! :created
         user.publish_notifications_state
       end
+    else
+      creator.enqueue_jobs
     end
 
     DiscourseEvent.trigger(:approved_post, self)
@@ -227,8 +231,6 @@ class QueuedPost < ActiveRecord::Base
       # update the same row simultaneously. Only one state change should go through and
       # we can use the DB to enforce this
       row_count = QueuedPost.where('id = ? AND state <> ?', id, state_val).update_all(updates)
-
-      # original behavior
       raise InvalidStateTransition.new if row_count == 0
 
       if [:rejected, :approved].include?(state)

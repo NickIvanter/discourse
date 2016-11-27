@@ -144,8 +144,9 @@ describe Guardian do
       expect(Guardian.new(user).can_send_private_message?(nil)).to be_falsey
     end
 
-    it "returns false when the target is the same as the user" do
-      expect(Guardian.new(user).can_send_private_message?(user)).to be_falsey
+    it "returns true when the target is the same as the user" do
+      # this is now allowed so yay
+      expect(Guardian.new(user).can_send_private_message?(user)).to be_truthy
     end
 
     it "returns false when you are untrusted" do
@@ -573,12 +574,6 @@ describe Guardian do
         it 'is true when logged in' do
           expect(Guardian.new(Fabricate(:user)).can_see?(post_revision)).to be_truthy
         end
-
-        it 'is true if the author has public edit history' do
-          public_post_revision = Fabricate(:post_revision)
-          public_post_revision.post.user.user_option.edit_history_public = true
-          expect(Guardian.new.can_see?(public_post_revision)).to be_truthy
-        end
       end
 
       context 'edit_history_visible_to_public is false' do
@@ -595,12 +590,6 @@ describe Guardian do
 
         it 'is false for trust level lower than 4' do
           expect(Guardian.new(trust_level_3).can_see?(post_revision)).to be_falsey
-        end
-
-        it 'is true if the author has public edit history' do
-          public_post_revision = Fabricate(:post_revision)
-          public_post_revision.post.user.user_option.edit_history_public = true
-          expect(Guardian.new.can_see?(public_post_revision)).to be_truthy
         end
       end
     end
@@ -983,6 +972,20 @@ describe Guardian do
         expect(Guardian.new(trust_level_4).can_edit?(post)).to be_truthy
       end
 
+      it 'returns false when trying to edit a post with no trust' do
+        SiteSetting.min_trust_to_edit_post = 2
+        post.user.trust_level = 1
+
+        expect(Guardian.new(post.user).can_edit?(post)).to be_falsey
+      end
+
+      it 'returns true when trying to edit a post with trust' do
+        SiteSetting.min_trust_to_edit_post = 1
+        post.user.trust_level = 1
+
+        expect(Guardian.new(post.user).can_edit?(post)).to be_truthy
+      end
+
       it 'returns false when another user has too low trust level to edit wiki post' do
         SiteSetting.stubs(:min_trust_to_edit_wiki_post).returns(2)
         post.wiki = true
@@ -1206,6 +1209,14 @@ describe Guardian do
 
     it 'returns false with a nil object' do
       expect(Guardian.new(user).can_moderate?(nil)).to be_falsey
+    end
+
+    context 'when user is blocked' do
+      it 'returns false' do
+        user.toggle!(:blocked)
+        expect(Guardian.new(user).can_moderate?(post)).to be(false)
+        expect(Guardian.new(user).can_moderate?(topic)).to be(false)
+      end
     end
 
     context 'a Topic' do
@@ -2205,6 +2216,64 @@ describe Guardian do
 
       it 'returns true for trust_level_4 user' do
         expect(Guardian.new(trust_level_4).can_wiki?(post)).to be_truthy
+      end
+    end
+  end
+
+  describe "Tags" do
+    context "tagging disabled" do
+      before do
+        SiteSetting.tagging_enabled = false
+      end
+
+      it "can_create_tag returns false" do
+        expect(Guardian.new(admin).can_create_tag?).to be_falsey
+      end
+
+      it "can_admin_tags returns false" do
+        expect(Guardian.new(admin).can_admin_tags?).to be_falsey
+      end
+
+      it "can_admin_tag_groups returns false" do
+        expect(Guardian.new(admin).can_admin_tag_groups?).to be_falsey
+      end
+    end
+
+    context "tagging is enabled" do
+      before do
+        SiteSetting.tagging_enabled = true
+        SiteSetting.min_trust_to_create_tag = 3
+        SiteSetting.min_trust_level_to_tag_topics = 1
+      end
+
+      describe "can_create_tag" do
+        it "returns false if trust level is too low" do
+          expect(Guardian.new(trust_level_2).can_create_tag?).to be_falsey
+        end
+
+        it "returns true if trust level is high enough" do
+          expect(Guardian.new(trust_level_3).can_create_tag?).to be_truthy
+        end
+
+        it "returns true for staff" do
+          expect(Guardian.new(admin).can_create_tag?).to be_truthy
+          expect(Guardian.new(moderator).can_create_tag?).to be_truthy
+        end
+      end
+
+      describe "can_tag_topics" do
+        it "returns false if trust level is too low" do
+          expect(Guardian.new(Fabricate(:user, trust_level: 0)).can_tag_topics?).to be_falsey
+        end
+
+        it "returns true if trust level is high enough" do
+          expect(Guardian.new(Fabricate(:user, trust_level: 1)).can_tag_topics?).to be_truthy
+        end
+
+        it "returns true for staff" do
+          expect(Guardian.new(admin).can_tag_topics?).to be_truthy
+          expect(Guardian.new(moderator).can_tag_topics?).to be_truthy
+        end
       end
     end
   end

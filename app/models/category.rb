@@ -17,6 +17,7 @@ class Category < ActiveRecord::Base
   belongs_to :latest_post, class_name: "Post"
 
   has_many :topics
+  has_many :category_users
   has_many :category_featured_topics
   has_many :featured_topics, through: :category_featured_topics, source: :topic
 
@@ -26,6 +27,8 @@ class Category < ActiveRecord::Base
   has_many :category_groups, dependent: :destroy
   has_many :groups, through: :category_groups
 
+  has_and_belongs_to_many :web_hooks
+
   validates :user_id, presence: true
   validates :name, if: Proc.new { |c| c.new_record? || c.name_changed? },
                    presence: true,
@@ -34,6 +37,9 @@ class Category < ActiveRecord::Base
   validate :parent_category_validator
 
   validate :email_in_validator
+
+  validates :logo_url, upload_url: true, if: :logo_url_changed?
+  validates :background_url, upload_url: true, if: :background_url_changed?
 
   validate :ensure_slug
   before_save :apply_permissions
@@ -55,35 +61,29 @@ class Category < ActiveRecord::Base
   belongs_to :parent_category, class_name: 'Category'
   has_many :subcategories, class_name: 'Category', foreign_key: 'parent_category_id'
 
-  has_many :category_tags
+  has_many :category_tags, dependent: :destroy
   has_many :tags, through: :category_tags
+  has_many :category_tag_groups, dependent: :destroy
+  has_many :tag_groups, through: :category_tag_groups
 
-  scope :latest, ->{ order('topic_count desc') }
+  after_save :reset_topic_ids_cache
+  after_destroy :reset_topic_ids_cache
 
-  scope :secured, ->(guardian = nil) {
+  scope :latest, -> { order('topic_count DESC') }
+
+  scope :secured, -> (guardian = nil) {
     ids = guardian.secure_category_ids if guardian
     if ids.present?
-      where("NOT categories.read_restricted or categories.id in (:cats)", cats: ids).references(:categories)
+      where("NOT categories.read_restricted OR categories.id IN (:cats)", cats: ids).references(:categories)
     else
       where("NOT categories.read_restricted").references(:categories)
     end
   }
 
-  scope :topic_create_allowed, ->(guardian) {
-    if guardian.anonymous?
-      where("1=0")
-    else
-      scoped_to_permissions(guardian, [:full])
-    end
-  }
-
-  scope :post_create_allowed, ->(guardian) {
-    if guardian.anonymous?
-      where("1=0")
-    else
-      scoped_to_permissions(guardian, [:create_post, :full])
-    end
-  }
+  TOPIC_CREATION_PERMISSIONS ||= [:full]
+  POST_CREATION_PERMISSIONS  ||= [:create_post, :full]
+  scope :topic_create_allowed, -> (guardian) { scoped_to_permissions(guardian, TOPIC_CREATION_PERMISSIONS) }
+  scope :post_create_allowed,  -> (guardian) { scoped_to_permissions(guardian, POST_CREATION_PERMISSIONS) }
 
   delegate :post_template, to: 'self.class'
 
@@ -91,12 +91,26 @@ class Category < ActiveRecord::Base
   # we may consider wrapping this in another spot
   attr_accessor :displayable_topics, :permission, :subcategory_ids, :notification_level, :has_children
 
+  @topic_id_cache = DistributedCache.new('category_topic_ids')
+
+  def self.topic_ids
+    @topic_id_cache['ids'] || reset_topic_ids_cache
+  end
+
+  def self.reset_topic_ids_cache
+    @topic_id_cache['ids'] = Set.new(Category.pluck(:topic_id).compact)
+  end
+
+  def reset_topic_ids_cache
+    Category.reset_topic_ids_cache
+  end
+
   def self.last_updated_at
     order('updated_at desc').limit(1).pluck(:updated_at).first.to_i
   end
 
   def self.scoped_to_permissions(guardian, permission_types)
-    if guardian && guardian.is_admin?
+    if guardian.try(:is_admin?)
       all
     elsif !guardian || guardian.anonymous?
       if permission_types.include?(:readonly)
@@ -105,28 +119,19 @@ class Category < ActiveRecord::Base
         where("1 = 0")
       end
     else
-      permission_types = permission_types.map{ |permission_type|
-        CategoryGroup.permission_types[permission_type]
-      }
-      where("categories.id in (
-                  SELECT cg.category_id FROM category_groups cg
-                    WHERE permission_type in (:permissions) AND
-                    (
-                      group_id IN (
-                        SELECT g.group_id FROM group_users g where g.user_id = :user_id
-                      )
-                    )
-                )
-                OR
-                categories.id in (
-                  SELECT cg.category_id FROM category_groups cg
-                    WHERE permission_type in (:permissions) AND group_id = :everyone
-                  )
-                OR
-                categories.id NOT in (SELECT cg.category_id FROM category_groups cg)
-            ", permissions: permission_types,
-               user_id: guardian.user.id,
-               everyone: Group[:everyone].id)
+      permissions = permission_types.map { |p| CategoryGroup.permission_types[p] }
+      where("(:staged AND LENGTH(COALESCE(email_in, '')) > 0 AND email_in_allow_strangers)
+          OR categories.id NOT IN (SELECT category_id FROM category_groups)
+          OR categories.id IN (
+                SELECT category_id
+                  FROM category_groups
+                 WHERE permission_type IN (:permissions)
+                   AND (group_id = :everyone OR group_id IN (SELECT group_id FROM group_users WHERE user_id = :user_id))
+             )",
+        staged: guardian.is_staged?,
+        permissions: permissions,
+        user_id: guardian.user.id,
+        everyone: Group[:everyone].id)
     end
   end
 
@@ -137,14 +142,13 @@ class Category < ActiveRecord::Base
                               .group("topics.category_id")
                               .visible.to_sql
 
-    Category.exec_sql <<SQL
+    Category.exec_sql <<-SQL
     UPDATE categories c
-    SET   topic_count = x.topic_count,
-          post_count = x.post_count
-    FROM (#{topics_with_post_count}) x
-    WHERE x.category_id = c.id AND
-          (c.topic_count <> x.topic_count OR c.post_count <> x.post_count)
-
+       SET topic_count = x.topic_count,
+           post_count = x.post_count
+      FROM (#{topics_with_post_count}) x
+     WHERE x.category_id = c.id
+       AND (c.topic_count <> x.topic_count OR c.post_count <> x.post_count)
 SQL
 
     # Yes, there are a lot of queries happening below.
@@ -185,9 +189,7 @@ SQL
     self.topic_id ? query.where(['topics.id <> ?', self.topic_id]) : query
   end
 
-
-  # Internal: Generate the text of post prompting to enter category
-  # description.
+  # Internal: Generate the text of post prompting to enter category description.
   def self.post_template
     I18n.t("category.post_template", replace_paragraph: I18n.t("category.replace_paragraph"))
   end
@@ -217,7 +219,6 @@ SQL
     @@cache.getset(self.description) do
       Nokogiri::HTML(self.description).text
     end
-
   end
 
   def duplicate_slug?
@@ -316,16 +317,11 @@ SQL
   end
 
   def allowed_tags=(tag_names_arg)
-    tag_names = DiscourseTagging.tags_for_saving(tag_names_arg, Guardian.new(Discourse.system_user)) || []
-    if self.tags.pluck(:name).sort != tag_names.sort
-      self.tags = Tag.where(name: tag_names).all
-      if self.tags.size < tag_names.size
-        new_tag_names = tag_names - self.tags.map(&:name)
-        new_tag_names.each do |name|
-          self.tags << Tag.create(name: name)
-        end
-      end
-    end
+    DiscourseTagging.add_or_create_tags_by_name(self, tag_names_arg, {unlimited: true})
+  end
+
+  def allowed_tag_groups=(group_names)
+    self.tag_groups = TagGroup.where(name: group_names).all.to_a
   end
 
   def downcase_email
@@ -335,12 +331,14 @@ SQL
   def email_in_validator
     return if self.email_in.blank?
     email_in.split("|").each do |email|
+
+      escaped = Rack::Utils.escape_html(email)
       if !Email.is_valid?(email)
-        self.errors.add(:base, I18n.t('category.errors.invalid_email_in', email: email))
+        self.errors.add(:base, I18n.t('category.errors.invalid_email_in', email: escaped))
       elsif group = Group.find_by_email(email)
-        self.errors.add(:base, I18n.t('category.errors.email_already_used_in_group', email: email, group_name: group.name))
+        self.errors.add(:base, I18n.t('category.errors.email_already_used_in_group', email: escaped, group_name: Rack::Utils.escape_html(group.name)))
       elsif category = Category.where.not(id: self.id).find_by_email(email)
-        self.errors.add(:base, I18n.t('category.errors.email_already_used_in_category', email: email, category_name: category.name))
+        self.errors.add(:base, I18n.t('category.errors.email_already_used_in_category', email: escaped, category_name: Rack::Utils.escape_html(category.name)))
       end
     end
   end

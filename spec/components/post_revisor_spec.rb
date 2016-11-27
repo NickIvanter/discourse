@@ -323,6 +323,20 @@ describe PostRevisor do
           expect(post.revisions.size).to eq(1)
         end
       end
+
+      context 'passing skip_revision as true' do
+        before do
+          SiteSetting.stubs(:editing_grace_period).returns(1.minute.to_i)
+          subject.revise!(changed_by, { raw: 'yet another updated body' }, { revised_at: post.updated_at + 10.hours, skip_revision: true })
+          post.reload
+        end
+
+        it 'does not create new revision ' do
+          expect(post.version).to eq(2)
+          expect(post.public_version).to eq(2)
+          expect(post.revisions.size).to eq(1)
+        end
+      end
     end
 
     describe "topic excerpt" do
@@ -357,7 +371,7 @@ describe PostRevisor do
           revisor.revise!(newuser, { title: 'this is a test topic' })
         end
 
-        message = messages.find { |message| message.channel == "/topic/#{topic.id}" }
+        message = messages.find { |m| m.channel == "/topic/#{topic.id}" }
         payload = message.data
         expect(payload[:reload_topic]).to eq(true)
       end
@@ -410,6 +424,14 @@ describe PostRevisor do
           it "can remove all tags" do
             topic.tags = [Fabricate(:tag, name: "super"), Fabricate(:tag, name: "stuff")]
             result = subject.revise!(Fabricate(:user), { raw: "lets totally update the body", tags: [] })
+            expect(result).to eq(true)
+            post.reload
+            expect(post.topic.tags.size).to eq(0)
+          end
+
+          it "can remove all tags using tags_empty_array" do
+            topic.tags = [Fabricate(:tag, name: "stuff")]
+            result = subject.revise!(Fabricate(:user), { raw: "lets totally update the body", tags_empty_array: "true" })
             expect(result).to eq(true)
             post.reload
             expect(post.topic.tags.size).to eq(0)

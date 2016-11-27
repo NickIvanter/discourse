@@ -8,6 +8,7 @@ import computed from 'ember-addons/ember-computed-decorators';
 import Composer from 'discourse/models/composer';
 import DiscourseURL from 'discourse/lib/url';
 import { categoryBadgeHTML } from 'discourse/helpers/category-link';
+import Post from 'discourse/models/post';
 
 export default Ember.Controller.extend(SelectedPostsCount, BufferedContent, {
   needs: ['modal', 'composer', 'quote-button', 'application'],
@@ -143,7 +144,7 @@ export default Ember.Controller.extend(SelectedPostsCount, BufferedContent, {
   @computed('model')
   suggestedTitle(model) {
     return model.get('isPrivateMessage') ?
-      `<i class='private-message-glyph fa fa-envelope'></i> ${I18n.t("suggested_topics.pm_title")}` :
+      `<a href="${this.get('pmPath')}"><i class='private-message-glyph fa fa-envelope'></i></a> ${I18n.t("suggested_topics.pm_title")}` :
       I18n.t("suggested_topics.title");
   },
 
@@ -254,6 +255,10 @@ export default Ember.Controller.extend(SelectedPostsCount, BufferedContent, {
 
     removeAllowedUser(user) {
       return this.get('model.details').removeAllowedUser(user);
+    },
+
+    removeAllowedGroup(group) {
+      return this.get('model.details').removeAllowedGroup(group);
     },
 
     deleteTopic() {
@@ -513,6 +518,16 @@ export default Ember.Controller.extend(SelectedPostsCount, BufferedContent, {
       });
     },
 
+    mergePosts() {
+      bootbox.confirm(I18n.t("post.merge.confirm", { count: this.get('selectedPostsCount') }), result => {
+        if (result) {
+          const selectedPosts = this.get('selectedPosts');
+          Post.mergePosts(selectedPosts);
+          this.send('toggleMultiSelect');
+        }
+      });
+    },
+
     expandHidden(post) {
       post.expandHidden();
     },
@@ -586,10 +601,10 @@ export default Ember.Controller.extend(SelectedPostsCount, BufferedContent, {
     },
 
     replyAsNewTopic(post) {
-      const composerController = this.get('controllers.composer'),
-            quoteController = this.get('controllers.quote-button'),
-            quotedText = Quote.build(quoteController.get('post'), quoteController.get('buffer')),
-            self = this;
+      const composerController = this.get('controllers.composer');
+      const quoteController = this.get('controllers.quote-button');
+      post = post || quoteController.get('post');
+      const quotedText = Quote.build(post, quoteController.get('buffer'));
 
       quoteController.deselectText();
 
@@ -601,7 +616,7 @@ export default Ember.Controller.extend(SelectedPostsCount, BufferedContent, {
         return Em.isEmpty(quotedText) ? "" : quotedText;
       }).then(q => {
         const postUrl = `${location.protocol}//${location.host}${post.get('url')}`;
-        const postLink = `[${Handlebars.escapeExpression(self.get('model.title'))}](${postUrl})`;
+        const postLink = `[${Handlebars.escapeExpression(this.get('model.title'))}](${postUrl})`;
         composerController.get('model').prependText(`${I18n.t("post.continue_discussion", { postLink })}\n\n${q}`, {new_line: true});
       });
     },
@@ -672,6 +687,12 @@ export default Ember.Controller.extend(SelectedPostsCount, BufferedContent, {
     this.send('togglePinnedForUser');
   },
 
+  print() {
+    if (this.siteSettings.max_prints_per_hour_per_user > 0) {
+      window.open(this.get('model.printUrl'), '', 'menubar=no,toolbar=no,resizable=yes,scrollbars=yes,width=600,height=315');
+    }
+  },
+
   canMergeTopic: function() {
     if (!this.get('model.details.can_move_posts')) return false;
     return this.get('selectedPostsCount') > 0;
@@ -687,6 +708,13 @@ export default Ember.Controller.extend(SelectedPostsCount, BufferedContent, {
     if (!Discourse.User.current() || !Discourse.User.current().admin) return false;
     return this.get('selectedPostsUsername') !== undefined;
   }.property('selectedPostsUsername'),
+
+  @computed('selectedPosts', 'selectedPostsCount', 'selectedPostsUsername')
+  canMergePosts(selectedPosts, selectedPostsCount, selectedPostsUsername) {
+    if (selectedPostsCount < 2) return false;
+    if (!selectedPosts.every(p => p.get('can_delete'))) return false;
+    return selectedPostsUsername !== undefined;
+  },
 
   categories: function() {
     return Discourse.Category.list();
@@ -754,7 +782,6 @@ export default Ember.Controller.extend(SelectedPostsCount, BufferedContent, {
   },
 
   deleteTopic() {
-    this.unsubscribe();
     this.get('content').destroy(Discourse.User.current());
   },
 

@@ -86,7 +86,18 @@ class PostRevisor
         tc.check_result(false)
         next
       end
-      tc.record_change('tags', prev_tags, tags)
+      tc.record_change('tags', prev_tags, tags) unless prev_tags.sort == tags.sort
+    end
+  end
+
+  track_topic_field(:tags_empty_array) do |tc, val|
+    if val.present? && tc.guardian.can_tag_topics?
+      prev_tags = tc.topic.tags.map(&:name)
+      if !DiscourseTagging.tag_topic_by_names(tc.topic, tc.guardian, [])
+        tc.check_result(false)
+        next
+      end
+      tc.record_change('tags', prev_tags, nil)
     end
   end
 
@@ -96,6 +107,7 @@ class PostRevisor
   # - bypass_rate_limiter:
   # - bypass_bump: do not bump the topic, even if last post
   # - skip_validations: ask ActiveRecord to skip validations
+  # - skip_revision: do not create a new PostRevision record
   def revise!(editor, fields, opts={})
     @editor = editor
     @fields = fields.with_indifferent_access
@@ -129,9 +141,13 @@ class PostRevisor
     @validate_topic = @opts[:validate_topic] if @opts.has_key?(:validate_topic)
     @validate_topic = !@opts[:validate_topic] if @opts.has_key?(:skip_validations)
 
+    @skip_revision = false
+    @skip_revision = @opts[:skip_revision] if @opts.has_key?(:skip_revision)
+
     Post.transaction do
       revise_post
 
+      yield if block_given?
       # TODO: these callbacks are being called in a transaction
       # it is kind of odd, because the callback is called "before_edit"
       # but the post is already edited at this point
@@ -185,6 +201,7 @@ class PostRevisor
   end
 
   def should_create_new_version?
+    return false if @skip_revision
     edited_by_another_user? || !ninja_edit? || owner_changed? || force_new_version?
   end
 
@@ -339,6 +356,7 @@ class PostRevisor
   end
 
   def create_or_update_revision
+    return if @skip_revision
     # don't create an empty revision if something failed
     return unless successfully_saved_post_and_topic
     @version_changed ? create_revision : update_revision

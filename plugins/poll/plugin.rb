@@ -4,13 +4,10 @@
 # authors: Vikhyat Korrapati (vikhyat), Régis Hanol (zogstrip)
 # url: https://github.com/discourse/discourse/tree/master/plugins/poll
 
-enabled_site_setting :poll_enabled
-
 register_asset "stylesheets/common/poll.scss"
+register_asset "stylesheets/common/poll-ui-builder.scss"
 register_asset "stylesheets/desktop/poll.scss", :desktop
 register_asset "stylesheets/mobile/poll.scss", :mobile
-
-register_asset "javascripts/poll_dialect.js", :server_side
 
 PLUGIN_NAME ||= "discourse_poll".freeze
 
@@ -35,8 +32,9 @@ after_initialize do
   class DiscoursePoll::Poll
     class << self
 
-      def vote(post_id, poll_name, options, user_id)
+      def vote(post_id, poll_name, options, user)
         DistributedMutex.synchronize("#{PLUGIN_NAME}-#{post_id}") do
+          user_id = user.id
           post = Post.find_by(id: post_id)
 
           # post must not be deleted
@@ -57,6 +55,7 @@ after_initialize do
 
           raise StandardError.new I18n.t("poll.no_poll_with_this_name", name: poll_name) if poll.blank?
           raise StandardError.new I18n.t("poll.poll_must_be_open_to_vote") if poll["status"] != "open"
+          public_poll = (poll["public"] == "true")
 
           # remove options that aren't available in the poll
           available_options = poll["options"].map { |o| o["id"] }.to_set
@@ -80,12 +79,28 @@ after_initialize do
           poll["options"].each do |option|
             anonymous_votes = option["anonymous_votes"] || 0
             option["votes"] = all_options[option["id"]] + anonymous_votes
+
+            if public_poll
+              option["voter_ids"] ||= []
+
+              if options.include?(option["id"])
+                option["voter_ids"] << user_id if !option["voter_ids"].include?(user_id)
+              else
+                option["voter_ids"].delete(user_id)
+              end
+            end
           end
 
           post.custom_fields[DiscoursePoll::POLLS_CUSTOM_FIELD] = polls
           post.save_custom_fields(true)
 
-          MessageBus.publish("/polls/#{post.topic_id}", { post_id: post_id, polls: polls })
+          payload = { post_id: post_id, polls: polls }
+
+          if public_poll
+            payload.merge!(user: UserNameSerializer.new(user).serializable_hash)
+          end
+
+          MessageBus.publish("/polls/#{post.topic_id}", payload)
 
           return [poll, options]
         end
@@ -127,10 +142,10 @@ after_initialize do
         end
       end
 
-      def extract(raw, topic_id)
+      def extract(raw, topic_id, user_id = nil)
         # TODO: we should fix the callback mess so that the cooked version is available
         # in the validators instead of cooking twice
-        cooked = PrettyText.cook(raw, topic_id: topic_id)
+        cooked = PrettyText.cook(raw, topic_id: topic_id, user_id: user_id)
         parsed = Nokogiri::HTML(cooked)
 
         extracted_polls = []
@@ -166,16 +181,15 @@ after_initialize do
   class DiscoursePoll::PollsController < ::ApplicationController
     requires_plugin PLUGIN_NAME
 
-    before_filter :ensure_logged_in
+    before_filter :ensure_logged_in, except: [:voters]
 
     def vote
       post_id   = params.require(:post_id)
       poll_name = params.require(:poll_name)
       options   = params.require(:options)
-      user_id   = current_user.id
 
       begin
-        poll, options = DiscoursePoll::Poll.vote(post_id, poll_name, options, user_id)
+        poll, options = DiscoursePoll::Poll.vote(post_id, poll_name, options, current_user)
         render json: { poll: poll, vote: options }
       rescue StandardError => e
         render_json_error e.message
@@ -196,11 +210,21 @@ after_initialize do
       end
     end
 
+    def voters
+      user_ids = params.require(:user_ids)
+
+      users = User.where(id: user_ids).map do |user|
+        UserNameSerializer.new(user).serializable_hash
+      end
+
+      render json: { users: users }
+    end
   end
 
   DiscoursePoll::Engine.routes.draw do
     put "/vote" => "polls#vote"
     put "/toggle_status" => "polls#toggle_status"
+    get "/voters" => 'polls#voters'
   end
 
   Discourse::Application.routes.append do
@@ -224,6 +248,8 @@ after_initialize do
   end
 
   validate(:post, :validate_polls) do
+    return if !SiteSetting.poll_enabled? && (self.user && !self.user.staff?)
+
     # only care when raw has changed!
     return unless self.raw_changed?
 
@@ -271,7 +297,10 @@ after_initialize do
   add_to_serializer(:post, :polls, false) { post_custom_fields[DiscoursePoll::POLLS_CUSTOM_FIELD] }
   add_to_serializer(:post, :include_polls?) { post_custom_fields.present? && post_custom_fields[DiscoursePoll::POLLS_CUSTOM_FIELD].present? }
 
-  add_to_serializer(:post, :polls_votes, false) { post_custom_fields[DiscoursePoll::VOTES_CUSTOM_FIELD]["#{scope.user.id}"] }
+  add_to_serializer(:post, :polls_votes, false) do
+    post_custom_fields[DiscoursePoll::VOTES_CUSTOM_FIELD]["#{scope.user.id}"]
+  end
+
   add_to_serializer(:post, :include_polls_votes?) do
     return unless scope.user
     return unless post_custom_fields.present?

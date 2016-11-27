@@ -61,8 +61,31 @@ describe Search do
   end
 
   it 'does not search when the search term is too small' do
-    ActiveRecord::Base.expects(:exec_sql).never
-    Search.execute('evil', min_search_term_length: 5)
+    search = Search.new('evil', min_search_term_length: 5)
+    search.execute
+    expect(search.valid?).to eq(false)
+    expect(search.term).to eq('')
+  end
+
+  it 'needs at least one term that hits the length' do
+    search = Search.new('a b c d', min_search_term_length: 5)
+    search.execute
+    expect(search.valid?).to eq(false)
+    expect(search.term).to eq('')
+  end
+
+  it 'searches for quoted short terms' do
+    search = Search.new('"a b c d"', min_search_term_length: 5)
+    search.execute
+    expect(search.valid?).to eq(true)
+    expect(search.term).to eq('"a b c d"')
+  end
+
+  it 'searches for short terms if one hits the length' do
+    search = Search.new('a b c okaylength', min_search_term_length: 5)
+    search.execute
+    expect(search.valid?).to eq(true)
+    expect(search.term).to eq('a b c okaylength')
   end
 
   it 'escapes non alphanumeric characters' do
@@ -213,6 +236,10 @@ describe Search do
         # stop words should work
         results = Search.execute('this', search_context: post1.topic)
         expect(results.posts.length).to eq(4)
+
+        # phrase search works as expected
+        results = Search.execute('"fourth post I am posting"', search_context: post1.topic)
+        expect(results.posts.length).to eq(1)
       end
     end
 
@@ -294,6 +321,11 @@ describe Search do
     it 'finds something when given cyrillic query' do
       expect(result.posts).to be_present
     end
+  end
+
+  it 'does not tokenize search term' do
+    Fabricate(:post, raw: 'thing is canned should still be found!')
+    expect(Search.execute('canned').posts).to be_present
   end
 
   context 'categories' do
@@ -386,6 +418,7 @@ describe Search do
       skip("skipped until pg app installs the db correctly") if RbConfig::CONFIG["arch"] =~ /darwin/
 
       SiteSetting.default_locale = 'zh_TW'
+      SiteSetting.min_search_term_length = 1
       topic = Fabricate(:topic, title: 'My Title Discourse社區指南')
       post = Fabricate(:post, topic: topic)
 
@@ -397,6 +430,7 @@ describe Search do
       skip("skipped until pg app installs the db correctly") if RbConfig::CONFIG["arch"] =~ /darwin/
 
       SiteSetting.search_tokenize_chinese_japanese_korean = true
+      SiteSetting.min_search_term_length = 1
 
       topic = Fabricate(:topic, title: 'My Title Discourse社區指南')
       post = Fabricate(:post, topic: topic)
@@ -428,7 +462,7 @@ describe Search do
 
     it 'supports wiki' do
       topic = Fabricate(:topic)
-      wiki_post = Fabricate(:post, raw: 'this is a test 248', wiki: true, topic: topic)
+      Fabricate(:post, raw: 'this is a test 248', wiki: true, topic: topic)
 
       expect(Search.execute('test 248 in:wiki').posts.length).to eq(1)
     end
@@ -536,6 +570,11 @@ describe Search do
 
     end
 
+    it 'can tokenize dots' do
+      post = Fabricate(:post, raw: 'Will.2000 Will.Bob.Bill...')
+      expect(Search.execute('bill').posts.map(&:id)).to eq([post.id])
+    end
+
     it 'supports category slug and tags' do
       # main category
       category = Fabricate(:category, name: 'category 24', slug: 'category-24')
@@ -543,14 +582,17 @@ describe Search do
       post = Fabricate(:post, raw: 'hi this is a test 123', topic: topic)
 
       expect(Search.execute('this is a test #category-24').posts.length).to eq(1)
+      expect(Search.execute("this is a test category:#{category.id}").posts.length).to eq(1)
       expect(Search.execute('this is a test #category-25').posts.length).to eq(0)
 
       # sub category
       sub_category = Fabricate(:category, name: 'sub category', slug: 'sub-category', parent_category_id: category.id)
       second_topic = Fabricate(:topic, created_at: 3.months.ago, category: sub_category)
-      second_topic_post = Fabricate(:post, raw: 'hi testing again 123', topic: second_topic)
+      Fabricate(:post, raw: 'hi testing again 123', topic: second_topic)
 
       expect(Search.execute('testing again #category-24:sub-category').posts.length).to eq(1)
+      expect(Search.execute("testing again category:#{category.id}").posts.length).to eq(2)
+      expect(Search.execute("testing again category:#{sub_category.id}").posts.length).to eq(1)
       expect(Search.execute('testing again #sub-category').posts.length).to eq(0)
 
       # tags
@@ -562,7 +604,7 @@ describe Search do
     it "can find with tag" do
       topic1 = Fabricate(:topic, title: 'Could not, would not, on a boat')
       topic1.tags = [Fabricate(:tag, name: 'eggs'), Fabricate(:tag, name: 'ham')]
-      post1 = Fabricate(:post, topic: topic1)
+      Fabricate(:post, topic: topic1)
       post2 = Fabricate(:post, topic: topic1, raw: "It probably doesn't help that they're green...")
 
       expect(Search.execute('green tags:eggs').posts.map(&:id)).to eq([post2.id])
@@ -604,6 +646,23 @@ describe Search do
       expect(Search.word_to_date('2030')).to eq(Time.zone.parse('2030-01-01'))
       expect(Search.word_to_date('2030-01-32')).to eq(nil)
       expect(Search.word_to_date('10000')).to eq(nil)
+    end
+  end
+
+  context "#min_post_id" do
+    it "returns 0 when prefer_recent_posts is disabled" do
+      SiteSetting.search_prefer_recent_posts = false
+      expect(Search.min_post_id_no_cache).to eq(0)
+    end
+
+    it "returns a value when prefer_recent_posts is enabled" do
+      SiteSetting.search_prefer_recent_posts = true
+      SiteSetting.search_recent_posts_size = 1
+
+      Fabricate(:post)
+      p2 = Fabricate(:post)
+
+      expect(Search.min_post_id_no_cache).to eq(p2.id)
     end
   end
 

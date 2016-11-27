@@ -110,6 +110,10 @@ $tag-color: scale-color($primary, $lightness: 40%);
   }
 }
 
+.categories-list .topic-list-latest .discourse-tags {
+  display: inline-block;
+}
+
 .mobile-view .topic-list-item .discourse-tags {
   display: inline-block;
   font-size: 0.9em;
@@ -155,7 +159,7 @@ header .discourse-tag {color: $tag-color !important; }
   margin-right: 8px;
 }
 
-.tag-notification-menu {
+.notification-options.tag-notification-menu {
   float: right;
   margin-bottom: 10px;
 }
@@ -169,6 +173,7 @@ header .discourse-tag {color: $tag-color !important; }
 
 .bullet + .list-tags {
   display: block;
+  line-height: 15px;
 }
 
 .bar + .list-tags {
@@ -199,5 +204,52 @@ header .discourse-tag {color: $tag-color !important; }
 
   a {
     color: $tag-color;
+  }
+}
+
+.tags-admin-menu {
+  margin-top: 20px;
+  ul {
+    width: 320px;
+  }
+}
+
+.tag-groups-container {
+  margin-top: 20px;
+  .content-list {
+    width: 20%;
+    float: left;
+    margin: 20px 0;
+    ul {
+      margin-bottom: 10px;
+    }
+  }
+  .tag-group-content {
+    width: 75%;
+    float: right;
+    section {
+      margin-bottom: 20px;
+    }
+    label {
+      font-size: 1em;
+      display: inline-block;
+      margin-right: 10px;
+    }
+  }
+  .group-tags-list .tag-chooser {
+    height: 250px !important;
+    .select2-choices {
+      height: 250px !important; // to fight with select2.scss's important
+    }
+  }
+  .btn {margin-left: 10px;}
+  .saving {
+    margin-left: 20px;
+  }
+  .parent-tag-section {
+    .tag-chooser {
+      width: 200px;
+      margin-right: 10px;
+    }
   }
 }

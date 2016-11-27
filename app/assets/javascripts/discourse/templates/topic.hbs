@@ -98,6 +98,7 @@
               showFlags="showFlags"
               editPost="editPost"
               showHistory="showHistory"
+              showLogin="showLogin"
               showRawEmail="showRawEmail"
               deletePost="deletePost"
               recoverPost="recoverPost"
@@ -113,6 +114,7 @@
               toggleWiki="toggleWiki"
               toggleSummary="toggleSummary"
               removeAllowedUser="removeAllowedUser"
+              removeAllowedGroup="removeAllowedGroup"
               showInvite="showInvite"
               topVisibleChanged="topVisibleChanged"
               currentPostChanged="currentPostChanged"
@@ -123,6 +125,8 @@
               fillGapBefore="fillGapBefore"
               fillGapAfter="fillGapAfter"}}
           {{/unless}}
+
+          {{conditional-loading-spinner condition=model.postStream.loadingBelow}}
         </div>
         <div id="topic-bottom"></div>
 

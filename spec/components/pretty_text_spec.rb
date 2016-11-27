@@ -204,6 +204,10 @@ HTML
       expect(extract_urls("<aside class=\"quote\" data-topic=\"321\">aside</aside>")).to eq(["/t/topic/321"])
     end
 
+    it "should lazyYT videos" do
+      expect(extract_urls("<div class=\"lazyYT\" data-youtube-id=\"yXEuEUQIP3Q\" data-youtube-title=\"Mister Rogers defending PBS to the US Senate\" data-width=\"480\" data-height=\"270\" data-parameters=\"feature=oembed&amp;wmode=opaque\"></div>")).to eq(["https://www.youtube.com/watch?v=yXEuEUQIP3Q"])
+    end
+
     it "should extract links to posts" do
       expect(extract_urls("<aside class=\"quote\" data-topic=\"1234\" data-post=\"4567\">aside</aside>")).to eq(["/t/topic/1234/4567"])
     end
@@ -259,6 +263,11 @@ HTML
     it "should have an option to preserve emoji images" do
       emoji_image = "<img src='/images/emoji/emoji_one/heart.png?v=1' title=':heart:' class='emoji' alt='heart'>"
       expect(PrettyText.excerpt(emoji_image, 100, { keep_emoji_images: true })).to match_html(emoji_image)
+    end
+
+    it "should have an option to remap emoji to code points" do
+      emoji_image = "I <img src='/images/emoji/emoji_one/heart.png?v=1' title=':heart:' class='emoji' alt=':heart:'> you <img src='/images/emoji/emoji_one/heart.png?v=1' title=':unknown:' class='emoji' alt=':unknown:'> "
+      expect(PrettyText.excerpt(emoji_image, 100, { remap_emoji: true })).to match_html("I ❤  you :unknown:")
     end
 
     it "should have an option to preserve emoji codes" do
@@ -318,7 +327,7 @@ HTML
     it "adds base url to relative links" do
       html = "<p><a class=\"mention\" href=\"/users/wiseguy\">@wiseguy</a>, <a class=\"mention\" href=\"/users/trollol\">@trollol</a> what do you guys think? </p>"
       output = described_class.format_for_email(html, post)
-      expect(output).to eq("<p><a href=\"#{base_url}/users/wiseguy\">@wiseguy</a>, <a href=\"#{base_url}/users/trollol\">@trollol</a> what do you guys think? </p>")
+      expect(output).to eq("<p><a class=\"mention\" href=\"#{base_url}/users/wiseguy\">@wiseguy</a>, <a class=\"mention\" href=\"#{base_url}/users/trollol\">@trollol</a> what do you guys think? </p>")
     end
 
     it "doesn't change external absolute links" do
@@ -360,28 +369,27 @@ HTML
     SiteSetting.s3_cdn_url = "https://awesome.cdn"
 
     # add extra img tag to ensure it does not blow up
-    raw = "<img><img src='#{Discourse.store.absolute_base_url}/original/9/9/99c9384b8b6d87f8509f8395571bc7512ca3cad1.jpg'"
-    cooked = "<p><img><img src='https://awesome.cdn/original/9/9/99c9384b8b6d87f8509f8395571bc7512ca3cad1.jpg'></p>"
+    raw = <<HTML
+  <img>
+  <img src='https:#{Discourse.store.absolute_base_url}/original/9/9/99c9384b8b6d87f8509f8395571bc7512ca3cad1.jpg'>
+  <img src='http:#{Discourse.store.absolute_base_url}/original/9/9/99c9384b8b6d87f8509f8395571bc7512ca3cad1.jpg'>
+  <img src='#{Discourse.store.absolute_base_url}/original/9/9/99c9384b8b6d87f8509f8395571bc7512ca3cad1.jpg'>
+
+HTML
+
+    cooked = <<HTML
+<p>  <img><br>  <img src="https://awesome.cdn/original/9/9/99c9384b8b6d87f8509f8395571bc7512ca3cad1.jpg"><br>  <img src="https://awesome.cdn/original/9/9/99c9384b8b6d87f8509f8395571bc7512ca3cad1.jpg"><br>  <img src="https://awesome.cdn/original/9/9/99c9384b8b6d87f8509f8395571bc7512ca3cad1.jpg"></p>
+HTML
 
     expect(PrettyText.cook(raw)).to match_html(cooked)
   end
 
   describe 'tables' do
-    before do
-      PrettyText.reset_context
-    end
-
-    after do
-      PrettyText.reset_context
-    end
-
     it 'allows table html' do
       SiteSetting.allow_html_tables = true
-      PrettyText.reset_context
       table = "<table class='fa-spin'><thead><tr>\n<th class='fa-spin'>test</th></tr></thead><tbody><tr><td>a</td></tr></tbody></table>"
       match = "<table class=\"md-table\"><thead><tr> <th>test</th> </tr></thead><tbody><tr><td>a</td></tr></tbody></table>"
       expect(PrettyText.cook(table)).to match_html(match)
-
     end
 
     it 'allows no tables when not enabled' do
@@ -415,14 +423,19 @@ HTML
   end
 
   describe "tag and category links" do
-
     it "produces tag links" do
       Fabricate(:topic, {tags: [Fabricate(:tag, name: 'known')]})
       expect(PrettyText.cook(" #unknown::tag #known::tag")).to match_html("<p> <span class=\"hashtag\">#unknown::tag</span> <a class=\"hashtag\" href=\"http://test.localhost/tags/known\">#<span>known</span></a></p>")
     end
 
     # TODO does it make sense to generate hashtags for tags that are missing in action?
+  end
 
+  describe "custom emoji" do
+    it "replaces the custom emoji" do
+      Emoji.stubs(:custom).returns([ Emoji.create_from_path('trout') ])
+      expect(PrettyText.cook("hello :trout:")).to match(/<img src[^>]+trout[^>]+>/)
+    end
   end
 
 end

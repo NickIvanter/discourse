@@ -132,7 +132,8 @@ function wrapAgo(dateStr) {
 function relativeAgeTiny(date, ageOpts) {
   const format = "tiny";
   const distance = Math.round((new Date() - date) / 1000);
-  const distanceInMinutes = Math.round(distance / 60.0);
+  const dividedDistance = Math.round(distance / 60.0);
+  const distanceInMinutes = (dividedDistance < 1) ? 1 : dividedDistance;
 
   let formatted;
   const t = function(key, opts) {
@@ -140,11 +141,9 @@ function relativeAgeTiny(date, ageOpts) {
     return (ageOpts && ageOpts.addAgo) ? wrapAgo(result) : result;
   };
 
+
   switch(true) {
-    case(distanceInMinutes < 1):
-      formatted = t("less_than_x_minutes", {count: 1});
-      break;
-    case(distanceInMinutes >= 1 && distanceInMinutes <= 44):
+    case(distanceInMinutes >= 0 && distanceInMinutes <= 44):
       formatted = t("x_minutes", {count: distanceInMinutes});
       break;
     case(distanceInMinutes >= 45 && distanceInMinutes <= 89):
@@ -203,7 +202,7 @@ function relativeAgeMediumSpan(distance, leaveAgo) {
     formatted = t("x_days", {count: Math.round((distanceInMinutes - 720.0) / 1440.0)});
     break;
   }
-  return formatted || '&mdash';
+  return formatted || '&mdash;';
 }
 
 function relativeAgeMedium(date, options) {
@@ -265,4 +264,21 @@ export function number(val) {
     return I18n.t("number.short.thousands", {number: formattedNumber});
   }
   return val.toString();
+}
+
+export function ensureJSON(json) {
+  return typeof json === 'string' ? JSON.parse(json) : json;
+}
+
+export function plainJSON(val) {
+  let json = ensureJSON(val);
+  let headers = '';
+  Object.keys(json).forEach(k => {
+    headers += `${k}: ${json[k]}\n`;
+  });
+  return headers;
+}
+
+export function prettyJSON(json) {
+  return JSON.stringify(ensureJSON(json), null, 2);
 }

@@ -10,10 +10,10 @@ describe PostCreator do
   end
 
   let(:user) { Fabricate(:user) }
+  let(:topic) { Fabricate(:topic, user: user) }
 
   context "new topic" do
     let(:category) { Fabricate(:category, user: user) }
-    let(:topic) { Fabricate(:topic, user: user) }
     let(:basic_topic_params) { {title: "hello world topic", raw: "my name is fred", archetype_id: 1} }
     let(:image_sizes) { {'http://an.image.host/image.jpg' => {"width" => 111, "height" => 222}} }
 
@@ -65,6 +65,7 @@ describe PostCreator do
     end
 
     context "success" do
+      before { creator }
 
       it "doesn't return true for spam" do
         creator.create
@@ -72,6 +73,7 @@ describe PostCreator do
       end
 
       it "triggers extensibility events" do
+        creator # bypass a user_created event, can be removed when there is a UserCreator
         DiscourseEvent.expects(:trigger).with(:before_create_post, anything).once
         DiscourseEvent.expects(:trigger).with(:validate_post, anything).once
         DiscourseEvent.expects(:trigger).with(:topic_created, anything, anything, user).once
@@ -445,7 +447,7 @@ describe PostCreator do
 
   # more integration testing ... maximise our testing
   context 'existing topic' do
-    let!(:topic) { Fabricate(:topic, user: user) }
+    let(:topic) { Fabricate(:topic, user: user) }
     let(:creator) { PostCreator.new(user, raw: 'test reply', topic_id: topic.id, reply_to_post_number: 4) }
 
     it 'ensures the user can create the post' do
@@ -753,8 +755,6 @@ describe PostCreator do
   end
 
   context "events" do
-    let(:topic) { Fabricate(:topic, user: user) }
-
     before do
       @posts_created = 0
       @topics_created = 0
@@ -797,7 +797,61 @@ describe PostCreator do
       expect(topic_user.notification_level).to eq(TopicUser.notification_levels[:watching])
       expect(topic_user.notifications_reason_id).to eq(TopicUser.notification_reasons[:created_post])
     end
+  end
 
+  context "topic tracking" do
+    it "automatically watches topic based on preference" do
+      user.user_option.notification_level_when_replying = 3
+
+      admin = Fabricate(:admin)
+      topic = PostCreator.create(admin,
+                                 title: "this is the title of a topic created by an admin for watching notification",
+                                 raw: "this is the content of a topic created by an admin for keeping a watching notification state on a topic ;)"
+      )
+
+      post = PostCreator.create(user,
+                                topic_id: topic.topic_id,
+                                raw: "this is a reply to set the tracking state to watching ;)"
+      )
+      topic_user = TopicUser.find_by(user_id: user.id, topic_id: post.topic_id)
+      expect(topic_user.notification_level).to eq(TopicUser.notification_levels[:watching])
+    end
+
+    it "topic notification level remains tracking based on preference" do
+      user.user_option.notification_level_when_replying = 2
+
+      admin = Fabricate(:admin)
+      topic = PostCreator.create(admin,
+                                 title: "this is the title of a topic created by an admin for tracking notification",
+                                 raw: "this is the content of a topic created by an admin for keeping a tracking notification state on a topic ;)"
+      )
+
+      post = PostCreator.create(user,
+                                topic_id: topic.topic_id,
+                                raw: "this is a reply to set the tracking state to tracking ;)"
+      )
+      topic_user = TopicUser.find_by(user_id: user.id, topic_id: post.topic_id)
+      expect(topic_user.notification_level).to eq(TopicUser.notification_levels[:tracking])
+    end
+  end
+
+  describe '#create!' do
+    it "should return the post if it was successfully created" do
+      title = "This is a valid title"
+      raw = "This is a really awesome post"
+
+      post_creator = PostCreator.new(user, title: title, raw: raw)
+      post = post_creator.create
+
+      expect(post).to eq(Post.last)
+      expect(post.topic.title).to eq(title)
+      expect(post.raw).to eq(raw)
+    end
+
+    it "should raise an error when post fails to be created" do
+      post_creator = PostCreator.new(user, title: '', raw: '')
+      expect { post_creator.create! }.to raise_error(ActiveRecord::RecordNotSaved)
+    end
   end
 
 end

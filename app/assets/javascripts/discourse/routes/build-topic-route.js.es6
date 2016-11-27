@@ -1,4 +1,5 @@
 import { queryParams } from 'discourse/controllers/discovery-sortable';
+import { defaultHomepage } from 'discourse/lib/utilities';
 
 // A helper to build a topic route for a filter
 function filterQueryParams(params, defaultParams) {
@@ -53,6 +54,9 @@ function findTopicList(store, tracking, filter, filterParams, extras) {
       tracking.trackIncoming(list.filter);
     }
     Discourse.Session.currentProp('topicList', list);
+    if (list.topic_list && list.topic_list.tags) {
+      Discourse.Site.currentProp('top_tags', list.topic_list.tags);
+    }
     return list;
   });
 }
@@ -77,7 +81,7 @@ export default function(filter, extras) {
     },
 
     titleToken() {
-      if (filter === Discourse.Utilities.defaultHomepage()) { return; }
+      if (filter === defaultHomepage()) { return; }
 
       const filterText = I18n.t('filters.' + filter.replace('/', '.') + '.title');
       return I18n.t('filters.with_topics', {filter: filterText});

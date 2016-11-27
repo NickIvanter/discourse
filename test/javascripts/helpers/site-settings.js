@@ -60,7 +60,7 @@ Discourse.SiteSettingsOriginal = {
   "newuser_max_attachments":0,
   "display_name_on_posts":true,
   "short_progress_text_threshold":10000,
-  "default_code_lang":"lang-auto",
+  "default_code_lang":"auto",
   "autohighlight_all_code":false,
   "email_in":false,
   "authorized_extensions":".jpg|.jpeg|.png|.gif|.svg|.txt|.ico|.yml",
@@ -92,6 +92,7 @@ Discourse.SiteSettingsOriginal = {
   "available_locales":"cs|da|de|en|es|fr|he|id|it|ja|ko|nb_NO|nl|pl_PL|pt|pt_BR|ru|sv|uk|zh_CN|zh_TW",
   "highlighted_languages":"apache|bash|cs|cpp|css|coffeescript|diff|xml|http|ini|json|java|javascript|makefile|markdown|nginx|objectivec|ruby|perl|php|python|sql|handlebars",
   "enable_emoji":true,
-  "emoji_set":"emoji_one"
+  "emoji_set":"emoji_one",
+  "desktop_category_page_style":"categories_and_latest_topics"
 };
 Discourse.SiteSettings = jQuery.extend(true, {}, Discourse.SiteSettingsOriginal);

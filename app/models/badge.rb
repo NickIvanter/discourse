@@ -1,6 +1,6 @@
 class Badge < ActiveRecord::Base
-  # NOTE: These badge ids are not in order! They are grouped logically. When picking an id
-  # search for it.
+  # NOTE: These badge ids are not in order! They are grouped logically.
+  #       When picking an id, *search* for it.
 
   Welcome = 5
   NicePost = 6
@@ -17,6 +17,7 @@ class Badge < ActiveRecord::Base
   FirstMention = 40
   FirstEmoji = 41
   FirstOnebox = 42
+  FirstReplyByEmail = 43
 
   ReadGuidelines = 16
   Reader = 17
@@ -65,14 +66,14 @@ class Badge < ActiveRecord::Base
     PostRevision = 2
     TrustLevelChange = 4
     UserChange = 8
-    PostProcessed = 16
+    PostProcessed = 16 # deprecated
 
     def self.is_none?(trigger)
       [None].include? trigger
     end
 
     def self.uses_user_ids?(trigger)
-      [TrustLevelChange, UserChange, PostProcessed].include? trigger
+      [TrustLevelChange, UserChange].include? trigger
     end
 
     def self.uses_post_ids?(trigger)
@@ -203,7 +204,7 @@ SQL
   end
 
   def i18n_name
-    self.name.downcase.gsub(' ', '_')
+    self.name.downcase.tr(' ', '_')
   end
 end
 

@@ -16,9 +16,11 @@
 
 .names {
  float: left;
- .username {
+
+ span.first {
    font-weight: bold;
  }
+
  span {
    font-size: 0.929em;
    padding-right: 8px;
@@ -105,6 +107,10 @@ aside.quote {
   opacity: 0.5;
 }
 
+.topic-post.staged {
+  opacity: 0.4;
+}
+
 
 .quote-controls {
   float: right;
@@ -147,6 +153,49 @@ aside.quote {
   }
 }
 
+.topic-avatar, .user-card-avatar {
+  position: relative;
+}
+
+.topic-avatar .avatar-flair, .avatar-flair-preview .avatar-flair, .user-card-avatar .avatar-flair {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-repeat: no-repeat;
+  background-position: center;
+  position: absolute;
+  bottom: 0;
+  right: -6px;
+}
+.topic-avatar .avatar-flair, .avatar-flair-preview .avatar-flair {
+  background-size: 20px 20px;
+  width: 20px;
+  height: 20px;
+  &.rounded {
+    background-size: 18px 18px;
+    border-radius: 12px;
+    width: 24px;
+    height: 24px;
+    bottom: -2px;
+    right: -8px;
+  }
+}
+.user-card-avatar .avatar-flair {
+  background-size: 40px 40px;
+  width: 40px;
+  height: 40px;
+  &.rounded {
+    background-size: 30px 30px;
+    border-radius: 24px;
+    width: 40px;
+    height: 40px;
+    bottom: -2px;
+    right: -4px;
+  }
+  .fa {
+    font-size: 24px;
+  }
+}
 .topic-avatar .poster-avatar-extra {
   display: none;
 }
@@ -363,4 +412,10 @@ a.mention, a.mention-group {
   border-radius: 8px;
   font-weight: bold;
   font-size: 0.93em;
+}
+
+.popup-menu {
+  h3 {
+    margin-top: 0;
+  }
 }

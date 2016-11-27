@@ -52,7 +52,7 @@ gem 'ember-source', '1.12.2'
 gem 'barber'
 gem 'babel-transpiler'
 
-gem 'message_bus', '2.0.0.beta.11'
+gem 'message_bus'
 
 gem 'rails_multisite'
 
@@ -61,12 +61,12 @@ gem 'fast_xs'
 gem 'fast_xor'
 
 # while we sort out https://github.com/sdsykes/fastimage/pull/46
-gem 'discourse_fastimage', '2.0.2', require: 'fastimage'
+gem 'discourse_fastimage', '2.0.3', require: 'fastimage'
 gem 'aws-sdk', require: false
 gem 'excon', require: false
 gem 'unf', require: false
 
-gem 'email_reply_trimmer', '0.1.3'
+gem 'email_reply_trimmer', '0.1.4'
 
 # note: for image_optim to correctly work you need to follow
 # https://github.com/toy/image_optim
@@ -74,7 +74,7 @@ gem 'email_reply_trimmer', '0.1.3'
 gem 'image_optim', '0.20.2'
 gem 'multi_json'
 gem 'mustache'
-gem 'nokogiri', '1.6.8.rc3'
+gem 'nokogiri'
 gem 'omniauth'
 gem 'omniauth-openid'
 gem 'openid-redis-store'
@@ -147,6 +147,7 @@ group :test, :development do
 end
 
 group :development do
+  gem 'bullet', require: !!ENV['BULLET']
   gem 'better_errors'
   gem 'binding_of_caller'
   gem 'librarian', '>= 0.0.25', require: false

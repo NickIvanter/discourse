@@ -2,6 +2,8 @@ import { setting } from 'discourse/lib/computed';
 import CanCheckEmails from 'discourse/mixins/can-check-emails';
 import { popupAjaxError } from 'discourse/lib/ajax-error';
 import computed from "ember-addons/ember-computed-decorators";
+import { cook } from 'discourse/lib/text';
+import { NotificationLevels } from 'discourse/lib/notification-levels';
 
 export default Ember.Controller.extend(CanCheckEmails, {
 
@@ -47,14 +49,15 @@ export default Ember.Controller.extend(CanCheckEmails, {
     return this.siteSettings.enable_badges && hasTitleBadges;
   },
 
-  @computed()
-  canChangePassword() {
-    return !this.siteSettings.enable_sso && this.siteSettings.enable_local_logins;
+  @computed("model.can_change_bio")
+  canChangeBio(canChangeBio)
+  {
+    return canChangeBio;
   },
 
   @computed()
-  canReceiveDigest() {
-    return !this.siteSettings.disable_digest_emails;
+  canChangePassword() {
+    return !this.siteSettings.enable_sso && this.siteSettings.enable_local_logins;
   },
 
   @computed()
@@ -108,6 +111,10 @@ export default Ember.Controller.extend(CanCheckEmails, {
                        { name: I18n.t('user.auto_track_options.after_5_minutes'), value: 300000 },
                        { name: I18n.t('user.auto_track_options.after_10_minutes'), value: 600000 }],
 
+  notificationLevelsForReplying: [{ name: I18n.t('topic.notifications.watching.title'), value: NotificationLevels.WATCHING },
+                                  { name: I18n.t('topic.notifications.tracking.title'), value: NotificationLevels.TRACKING }],
+
+
   considerNewTopicOptions: [{ name: I18n.t('user.new_topic_duration.not_viewed'), value: -1 },
                             { name: I18n.t('user.new_topic_duration.after_1_day'), value: 60 * 24 },
                             { name: I18n.t('user.new_topic_duration.after_2_days'), value: 60 * 48 },
@@ -134,6 +141,7 @@ export default Ember.Controller.extend(CanCheckEmails, {
       this.set('saved', false);
 
       const model = this.get('model');
+
       const userFields = this.get('userFields');
 
       // Update the user fields
@@ -148,11 +156,13 @@ export default Ember.Controller.extend(CanCheckEmails, {
 
       // Cook the bio for preview
       model.set('name', this.get('newNameInput'));
-      return model.save().then(() => {
+      var options = {};
+
+      return model.save(options).then(() => {
         if (Discourse.User.currentProp('id') === model.get('id')) {
           Discourse.User.currentProp('name', model.get('name'));
         }
-        model.set('bio_cooked', Discourse.Markdown.cook(Discourse.Markdown.sanitize(model.get('bio_raw'))));
+        model.set('bio_cooked', cook(model.get('bio_raw')));
         this.set('saved', true);
       }).catch(popupAjaxError);
     },

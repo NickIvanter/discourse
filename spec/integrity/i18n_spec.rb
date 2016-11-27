@@ -23,20 +23,12 @@ describe "i18n integrity checks" do
     end
   end
 
-  it "needs an i18n key (notification_types) for each Notification type" do
-    Notification.types.each_key do |type|
-      next if type == :custom || type == :group_message_summary
-      expect(I18n.t("notification_types.#{type}")).not_to match(/translation missing/)
-    end
-  end
-
   it "has valid YAML for client" do
     Dir["#{Rails.root}/config/locales/client.*.yml"].each do |f|
       locale = /.*\.([^.]{2,})\.yml$/.match(f)[1]
       client = YAML.load_file("#{Rails.root}/config/locales/client.#{locale}.yml")
       expect(client.count).to eq(1)
       expect(client[locale]).not_to eq(nil)
-      expect(client[locale].count).to eq(2)
       expect(client[locale]["js"]).not_to eq(nil)
       expect(client[locale]["admin_js"]).not_to eq(nil)
     end
@@ -52,7 +44,8 @@ describe "i18n integrity checks" do
   end
 
   it "does not overwrite another language" do
-    Dir["#{Rails.root}/config/locales/*.yml"].each do |f|
+    all = Dir["#{Rails.root}/config/locales/client.*.yml"] + Dir["#{Rails.root}/config/locales/server.*.yml"]
+    all.each do |f|
       locale = /.*\.([^.]{2,})\.yml$/.match(f)[1] + ':'
       IO.foreach(f) do |line|
         line.strip!

@@ -1,11 +1,15 @@
-//= require ./discourse/mixins/ajax
-//= require ./discourse
-
-// Stuff we need to load first
 //= require_tree ./ember-addons/utils
 //= require ./ember-addons/decorator-alias
 //= require ./ember-addons/macro-alias
 //= require ./ember-addons/ember-computed-decorators
+//= require_tree ./discourse-common
+//= require ./discourse
+//= require ./deprecated
+
+// Stuff we need to load first
+//= require ./discourse/lib/utilities
+//= require ./discourse/lib/ajax
+//= require ./discourse/lib/text
 //= require ./discourse/lib/hash
 //= require ./discourse/lib/load-script
 //= require ./discourse/lib/notification-levels
@@ -16,11 +20,6 @@
 //= require ./discourse/lib/debounce
 //= require ./discourse/lib/quote
 //= require ./discourse/lib/key-value-store
-//= require ./discourse/lib/helpers
-//= require ./discourse/helpers/i18n
-//= require ./discourse/helpers/fa-icon
-//= require ./discourse/lib/ember_compat_handlebars
-//= require ./discourse/lib/helpers
 //= require ./discourse/lib/computed
 //= require ./discourse/lib/formatter
 //= require ./discourse/lib/eyeline
@@ -33,7 +32,6 @@
 //= require ./discourse/models/user-action-group
 //= require ./discourse/models/category
 //= require ./discourse/lib/ajax-error
-//= require ./discourse/lib/markdown
 //= require ./discourse/lib/search
 //= require ./discourse/lib/user-search
 //= require ./discourse/lib/export-csv
@@ -62,18 +60,14 @@
 //= require ./discourse/views/container
 //= require ./discourse/views/modal-body
 //= require ./discourse/views/flag
-//= require ./discourse/components/combo-box
 //= require ./discourse/components/edit-category-panel
 //= require ./discourse/views/button
 //= require ./discourse/components/dropdown-button
 //= require ./discourse/components/notifications-button
 //= require ./discourse/lib/link-mentions
 //= require ./discourse/components/site-header
-//= require ./discourse/lib/utilities
-//= require ./discourse/dialects/dialect
-//= require ./discourse/lib/emoji/emoji
-//= require ./discourse/lib/emoji/emoji-groups
-//= require ./discourse/lib/emoji/emoji-toolbar
+//= require ./discourse/lib/emoji/groups
+//= require ./discourse/lib/emoji/toolbar
 //= require ./discourse/components/d-editor
 //= require ./discourse/views/composer
 //= require ./discourse/lib/show-modal
@@ -93,9 +87,8 @@
 //= require ./discourse/helpers/category-link
 //= require ./discourse/lib/export-result
 //= require_tree ./discourse/lib
-//= require ./discourse/router
+//= require ./discourse/mapping-router
 
-//= require_tree ./discourse/dialects
 //= require_tree ./discourse/controllers
 //= require_tree ./discourse/models
 //= require_tree ./discourse/components

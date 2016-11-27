@@ -4,23 +4,22 @@ describe WebhooksController do
   before { $redis.flushall }
 
   let(:email) { "em@il.com" }
+  let(:message_id) { "12345@il.com" }
 
   context "mailgun" do
 
     it "works" do
-      SiteSetting.mailgun_api_key = "pubkey-8221462f0c915af3f6f2e2df7aa5a493"
-      token = "705a8ccd2ce932be8e98c221fe701c1b4a0afcb8bbd57726de"
+      SiteSetting.mailgun_api_key = "key-8221462f0c915af3f6f2e2df7aa5a493"
 
       user = Fabricate(:user, email: email)
-      email_log = Fabricate(:email_log, user: user, bounce_key: SecureRandom.hex)
-      return_path = "foo+verp-#{email_log.bounce_key}@bar.com"
+      email_log = Fabricate(:email_log, user: user, message_id: message_id)
 
       WebhooksController.any_instance.expects(:mailgun_verify).returns(true)
 
-      post :mailgun, "token" => token,
+      post :mailgun, "token" => "705a8ccd2ce932be8e98c221fe701c1b4a0afcb8bbd57726de",
                      "timestamp" => Time.now.to_i,
                      "event" => "dropped",
-                     "message-headers" => [["Return-Path", return_path]]
+                     "Message-Id" => "<12345@il.com>"
 
       expect(response).to be_success
 
@@ -35,7 +34,7 @@ describe WebhooksController do
 
     it "works" do
       user = Fabricate(:user, email: email)
-      email_log = Fabricate(:email_log, user: user, message_id: "12345@il.com")
+      email_log = Fabricate(:email_log, user: user, message_id: message_id)
 
       post :sendgrid, "_json" => [
         {
@@ -58,7 +57,6 @@ describe WebhooksController do
   context "mailjet" do
 
     it "works" do
-      message_id = "12345@il.com"
       user = Fabricate(:user, email: email)
       email_log = Fabricate(:email_log, user: user, message_id: message_id)
 
@@ -67,6 +65,54 @@ describe WebhooksController do
         "hard_bounce" => true,
         "CustomID"    => message_id
       }
+
+      expect(response).to be_success
+
+      email_log.reload
+      expect(email_log.bounced).to eq(true)
+      expect(email_log.user.user_stat.bounce_score).to eq(2)
+    end
+
+  end
+
+  context "mandrill" do
+
+    it "works" do
+      user = Fabricate(:user, email: email)
+      email_log = Fabricate(:email_log, user: user, message_id: message_id)
+
+      post :mandrill, mandrill_events: [{
+        "event" => "hard_bounce",
+        "msg" => {
+          "metadata" => {
+            "message_id" => message_id
+          }
+        }
+      }]
+
+      expect(response).to be_success
+
+      email_log.reload
+      expect(email_log.bounced).to eq(true)
+      expect(email_log.user.user_stat.bounce_score).to eq(2)
+    end
+
+  end
+
+  context "sparkpost" do
+
+    it "works" do
+      user = Fabricate(:user, email: email)
+      email_log = Fabricate(:email_log, user: user, message_id: message_id)
+
+      post :sparkpost, "_json" => [{
+        "msys" => {
+          "message_event" => {
+            "bounce_class" => 10,
+            "campaign_id" => message_id
+          }
+        }
+      }]
 
       expect(response).to be_success
 

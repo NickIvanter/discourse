@@ -1,6 +1,6 @@
 import DropdownButton from 'discourse/components/dropdown-button';
-import { all, buttonDetails } from 'discourse/lib/notification-levels';
-import { iconHTML } from 'discourse/helpers/fa-icon';
+import { allLevels, buttonDetails } from 'discourse/lib/notification-levels';
+import { iconHTML } from 'discourse-common/helpers/fa-icon';
 import computed from 'ember-addons/ember-computed-decorators';
 
 export default DropdownButton.extend({
@@ -16,7 +16,7 @@ export default DropdownButton.extend({
     const prefix = this.get('i18nPrefix');
     const postfix = this.get('i18nPostfix');
 
-    return all.map(l => {
+    return allLevels.map(l => {
       const start = `${prefix}.${l.key}${postfix}`;
       return {
         id: l.id,

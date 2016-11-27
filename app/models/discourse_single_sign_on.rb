@@ -49,12 +49,15 @@ class DiscourseSingleSignOn < SingleSignOn
   def lookup_or_create_user(ip_address=nil)
     sso_record = SingleSignOnRecord.find_by(external_id: external_id)
 
-    if sso_record && user = sso_record.user
+    if sso_record && (user = sso_record.user)
       sso_record.last_payload = unsigned_payload
     else
       user = match_email_or_create_user(ip_address)
       sso_record = user.single_sign_on_record
     end
+
+    # ensure it's not staged anymore
+    user.staged = false
 
     # if the user isn't new or it's attached to the SSO record we might be overriding username or email
     unless user.new_record?
@@ -77,7 +80,13 @@ class DiscourseSingleSignOn < SingleSignOn
     user.moderator = moderator unless moderator.nil?
 
     # optionally save the user and sso_record if they have changed
+    user.user_avatar.save! if user.user_avatar
     user.save!
+
+    if bio && (user.user_profile.bio_raw.blank? || SiteSetting.sso_overrides_bio)
+      user.user_profile.bio_raw = bio
+      user.user_profile.save!
+    end
 
     unless admin.nil? && moderator.nil?
       Group.refresh_automatic_groups!(:admins, :moderators, :staff)
@@ -110,11 +119,13 @@ class DiscourseSingleSignOn < SingleSignOn
         sso_record.last_payload = unsigned_payload
         sso_record.external_id = external_id
       else
+        UserAvatar.import_url_for_user(avatar_url, user) if avatar_url.present?
         user.create_single_sign_on_record(last_payload: unsigned_payload,
                                           external_id: external_id,
                                           external_username: username,
                                           external_email: email,
-                                          external_name: name)
+                                          external_name: name,
+                                          external_avatar_url: avatar_url)
       end
     end
 
@@ -134,11 +145,15 @@ class DiscourseSingleSignOn < SingleSignOn
       user.name = name || User.suggest_name(username.blank? ? email : username)
     end
 
-    if SiteSetting.sso_overrides_avatar && avatar_url.present? && (
-      avatar_force_update ||
-      sso_record.external_avatar_url != avatar_url)
+    avatar_missing = user.uploaded_avatar_id.nil? || !Upload.exists?(user.uploaded_avatar_id)
 
-      UserAvatar.import_url_for_user(avatar_url, user)
+    if (avatar_missing || avatar_force_update || SiteSetting.sso_overrides_avatar) && avatar_url.present?
+
+        avatar_changed = sso_record.external_avatar_url != avatar_url
+
+        if avatar_force_update || avatar_changed || avatar_missing
+           UserAvatar.import_url_for_user(avatar_url, user)
+        end
     end
 
     # change external attributes for sso record

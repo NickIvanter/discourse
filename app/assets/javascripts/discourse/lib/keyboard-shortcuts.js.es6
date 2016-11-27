@@ -14,6 +14,8 @@ const bindings = {
   'с':               {handler: 'createTopic'}, // cyrillic
   'ctrl+f':          {handler: 'showPageSearch', anonymous: true},
   'command+f':       {handler: 'showPageSearch', anonymous: true},
+  'ctrl+p':          {handler: 'printTopic', anonymous: true},
+  'command+p':       {handler: 'printTopic', anonymous: true},
   'd':               {postAction: 'deletePost'},
   'e':               {postAction: 'editPost'},
   'end':             {handler: 'goToLastPost', anonymous: true},
@@ -33,10 +35,10 @@ const bindings = {
   'j':               {handler: 'selectDown', anonymous: true},
   'k':               {handler: 'selectUp', anonymous: true},
   'l':               {click: '.topic-post.selected button.toggle-like'},
-  'm m':             {click: 'div.notification-options li[data-id="0"] a'}, // mark topic as muted
-  'm r':             {click: 'div.notification-options li[data-id="1"] a'}, // mark topic as regular
-  'm t':             {click: 'div.notification-options li[data-id="2"] a'}, // mark topic as tracking
-  'm w':             {click: 'div.notification-options li[data-id="3"] a'}, // mark topic as watching
+  'm m':             {handler: 'setTrackingToMuted'}, // mark topic as muted
+  'm r':             {handler: 'setTrackingToRegular'}, // mark topic as regular
+  'm t':             {handler: 'setTrackingToTracking'}, // mark topic as tracking
+  'm w':             {handler: 'setTrackingToWatching'}, // mark topic as watching
   'o,enter':         {click: '.topic-list tr.selected a.title', anonymous: true}, // open selected topic
   'p':               {handler: 'showCurrentUser'},
   'q':               {handler: 'quoteReply'},
@@ -152,6 +154,15 @@ export default {
     });
   },
 
+  printTopic(event) {
+    Ember.run(() => {
+      if ($('.container.posts').length) {
+        event.preventDefault(); // We need to stop printing the current page in Firefox
+        this.container.lookup('controller:topic').print();
+      }
+    });
+  },
+
   createTopic() {
     this.container.lookup('controller:composer').open({action: Composer.CREATE_TOPIC, draftKey: Composer.CREATE_TOPIC});
   },
@@ -178,6 +189,22 @@ export default {
 
   showHelpModal() {
     this.container.lookup('controller:application').send('showKeyboardShortcutsHelp');
+  },
+
+  setTrackingToMuted(event) {
+    this.appEvents.trigger('topic-notifications-button:keyboard-trigger', {type: 'notification', id: 0, event});
+  },
+
+  setTrackingToRegular(event) {
+    this.appEvents.trigger('topic-notifications-button:keyboard-trigger', {type: 'notification', id: 1, event});
+  },
+
+  setTrackingToTracking(event) {
+    this.appEvents.trigger('topic-notifications-button:keyboard-trigger', {type: 'notification', id: 2, event});
+  },
+
+  setTrackingToWatching(event) {
+    this.appEvents.trigger('topic-notifications-button:keyboard-trigger', {type: 'notification', id: 3, event});
   },
 
   sendToTopicListItemView(action) {
@@ -262,7 +289,9 @@ export default {
       return;
     }
 
-    const $selected = $articles.filter('.selected');
+    const $selected = ($articles.filter('.selected').length !== 0)
+      ? $articles.filter('.selected')
+      : $articles.filter('[data-islastviewedtopic=true]');
     let index = $articles.index($selected);
 
     if ($selected.length !== 0) { //boundries check

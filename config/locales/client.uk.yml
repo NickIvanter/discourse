@@ -159,7 +159,6 @@ uk:
     undo: "Скасувати"
     revert: "Повернути"
     failed: "Помилка"
-    switch_to_anon: "Потайливий перегляд"
     banner:
       close: "Сховати"
     choose_topic:
@@ -239,8 +238,6 @@ uk:
       latest_by: "Останні від"
       toggle_ordering: "показати/сховати елемент керування для впорядкування"
       subcategories: "Підкатегорії"
-      topic_stats: "Кількість нових тем."
-      post_stats: "Кількість нових дописів."
     ip_lookup:
       title: Пошук IP адреси
       hostname: Ім'я хоста
@@ -276,10 +273,8 @@ uk:
         perm_denied_btn: "Немає доступу"
         disable: "Вимкнути сповіщення"
         enable: "Увімкнути сповіщення"
-      dismiss_notifications: "Позначити все як прочитане"
       dismiss_notifications_tooltip: "Позначити всі сповіщення як прочитані"
       disable_jump_reply: "Не перескакувати до мого допису коли я відповім"
-      edit_history_public: "Дати іншим дивитися версії мого повідомлення"
       external_links_in_new_tab: "Відкривати всі зовнішні посилання у новій вкладці"
       enable_quoting: "Увімкнути відповіді на цитати для виділеного тексту"
       change: "змінити"
@@ -291,7 +286,6 @@ uk:
       suspended_notice: "Цього користувача призупинено до {{date}}."
       suspended_reason: "Причина: "
       github_profile: "Github"
-      mailing_list_mode: "Надсилати всі нові дописи мені електронною поштою (доки я це не вимкну)"
       watched_categories: "Відслідковувані"
       tracked_categories: "Відстежувані"
       muted_categories: "Ігноровані"
@@ -319,7 +313,6 @@ uk:
         title: "Змінити Про мене"
       change_username:
         title: "Зміна імені користувача"
-        confirm: "Якщо Ви зміните ім'я користувача, всі попередні цитування Ваших дописів та згадки @імені буде порушено. Ви точно абсолютно впевнені, що хочете цього?"
         taken: "Даруйте, це ім'я користувача вже зайняте."
         error: "Під час зміни імені користувача трапилася помилка."
         invalid: "Таке ім'я користувача не підійде. Воно має містити лише цифри та літери"
@@ -615,7 +608,6 @@ uk:
         category: "Більше немає тем в категорії {{category}}."
         top: "There are no more top topics."
     topic:
-      filter_to: "Показати {{post_count}} дописів в темі"
       create: 'Нова тема'
       create_long: 'Створити нову тему'
       list: 'Теми'
@@ -652,7 +644,6 @@ uk:
         jump_bottom_with_number: "перейти до допису %{post_number}"
         total: всього дописів
         current: поточний допис
-        position: "допис %{current} із %{total}"
       notifications:
         reasons:
           '3_6': 'Ви будете отримувати сповіщення, бо Ви слідкуєте за цією категорією.'
@@ -750,7 +741,6 @@ uk:
       show_full: "Показати Увесь Допис"
       show_hidden: 'Показати схований зміст.'
       expand_collapse: "розгорнути/згорнути"
-      more_links: "{{count}} ще..."
       unread: "Допис не прочитаний"
       errors:
         create: "Даруйте, під час створення допису трапилася помилка. Будь ласка, спробуйте ще раз."
@@ -782,14 +772,6 @@ uk:
           no_value: "Ні, тільки цей допис"
       actions:
         flag: 'Поскаржитися'
-        it_too:
-          off_topic: "Також поскаржитися"
-          spam: "Також поскаржитися"
-          inappropriate: "Також поскаржитися"
-          custom_flag: "Також поскаржитися"
-          bookmark: "Також лишити закладку"
-          like: "Також вподобати"
-          vote: "Також проголосувати за"
         undo:
           off_topic: "Відкликати скаргу"
           spam: "Відкликати скаргу"
@@ -872,18 +854,12 @@ uk:
       action: 'Поскаржитися на допис'
       take_action: "Вжити заходів"
       delete_spammer: "Видалити спамера"
-      delete_confirm: "Ви збираєтеся видалити <b>%{posts}</b> дописів і <b>%{topics}</b> тем цього користувача, видалити його обліковий запис, заблокувати реєстрації з його IP-адреси <b>%{ip_address}</b> та додати його електронну скриньку <b>%{email}</b> до чорного списку заблокованих адрес. Ви впевнені, що цей користувач дійсно спамер?"
       yes_delete_spammer: "Так, видалити спамера"
       cant: "Даруйте, зараз Ви не можете поскаржитися на цей допис."
-      custom_message:
-        at_least: "введіть принаймні {{n}} символів"
-        more: "ще {{n}}..."
-        left: "залишилось {{n}}"
     flagging_topic:
       action: "Flag Topic"
     topic_map:
       title: "Підсумок теми"
-      links_shown: "показати всі {{totalLinks}} посилання..."
     topic_statuses:
       locked:
         help: "цю тему закрито; нові відповіді більше не приймаються"
@@ -894,7 +870,6 @@ uk:
       pinned:
         title: "Закріплені"
     posts: "Дописи"
-    posts_lowercase: "дописи"
     posts_long: "тема містить {{number}} дописів"
     original_post: "Перший допис"
     views: "Перегляди"
@@ -1228,7 +1203,6 @@ uk:
         suspend_reason: "Причина"
         suspended_by: "Призупинено"
         delete_all_posts: "Видалити всі дописи"
-        delete_all_posts_confirm: "Ви збираєтеся видалити %{posts} дописів і %{topics} тем. Ви впевнені?"
         suspend: "Призупинити"
         unsuspend: "Скасувати призупинення"
         suspended: "Призупинено?"
@@ -1357,43 +1331,3 @@ uk:
         delete_confirm: Ви впевнені, що хочете видалити це постійне посилання?
         form:
           add: "Додати"
-    lightbox:
-      download: "звантажити"
-    keyboard_shortcuts_help:
-      title: 'Поєднання клавіш'
-      jump_to:
-        title: 'Перейти до'
-        categories: '<b>g</b>,  <b>c</b> Категорії'
-      navigation:
-        title: 'Навігація'
-        back: '<b>u</b> Назад'
-        open: '<b>o</b> або <b>Enter</b> Відкрити обрану тему'
-      application:
-        title: 'Застосунок'
-        create: '<b>c</b> Створити нову тему'
-        notifications: '<b>n</b> Відкрити сповіщення'
-        search: '<b>/</b> Пошук'
-      actions:
-        title: 'Дії'
-        share_post: '<b>s</b> Поширити допис'
-        reply_post: '<b>r</b> Відповісти на допис'
-        quote_post: '<b>q</b> Цитувати допис'
-        like: '<b>l</b> Вподобати допис'
-        flag: '<b>!</b> Поскаржитися на допис'
-        bookmark: '<b>b</b> Лишити закладку в дописі'
-        edit: '<b>e</b> Редагувати допис'
-        delete: '<b>d</b> Видалити допис'
-        mark_muted: '<b>m</b>, <b>m</b> Ігнорувати сповіщення з теми'
-        mark_tracking: '<b>m</b>, <b>t</b> Стежити за темою'
-    badges:
-      title: Значок
-      badge_count:
-        one: "Значок"
-        few: "Значків: %{count} "
-        other: "Значків %{count}"
-      select_badge_for_title: Оберіть значок, що буде вашим званням
-      badge_grouping:
-        community:
-          name: Спільнота
-        other:
-          name: Інше

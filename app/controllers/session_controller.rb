@@ -4,20 +4,23 @@ require_dependency 'single_sign_on'
 class SessionController < ApplicationController
 
   skip_before_filter :redirect_to_login_if_required
-  skip_before_filter :preload_json, :check_xhr, only: ['sso', 'sso_login', 'become', 'sso_provider']
+  skip_before_filter :preload_json, :check_xhr, only: ['sso', 'sso_login', 'become', 'sso_provider', 'destroy']
 
   def csrf
     render json: {csrf: form_authenticity_token }
   end
 
   def sso
-    return_path = if params[:return_path]
-      params[:return_path]
-    elsif session[:destination_url]
-      URI::parse(session[:destination_url]).path
-    else
-      path('/')
+    destination_url = cookies[:destination_url] || session[:destination_url]
+    return_path = params[:return_path] || path('/')
+
+    if destination_url && return_path == path('/')
+      uri = URI::parse(destination_url)
+      return_path = "#{uri.path}#{uri.query ? "?" << uri.query : ""}"
     end
+
+    session.delete(:destination_url)
+    cookies.delete(:destination_url)
 
     if SiteSetting.enable_sso?
       sso = DiscourseSingleSignOn.generate_sso(return_path)
@@ -126,6 +129,14 @@ class SessionController < ApplicationController
         render text: I18n.t("sso.not_found"), status: 500
       end
     rescue ActiveRecord::RecordInvalid => e
+      if SiteSetting.verbose_sso_logging
+        Rails.logger.warn(<<-EOF)
+          Verbose SSO log: Record was invalid: #{e.record.class.name} #{e.record.id}\n
+          #{e.record.errors.to_h}\n
+          \n
+          #{sso.diagnostics}
+        EOF
+      end
       render text: I18n.t("sso.unknown_error"), status: 500
     rescue => e
       message = "Failed to create or lookup user: #{e}."
@@ -237,7 +248,11 @@ class SessionController < ApplicationController
   def destroy
     reset_session
     log_off_user
-    render nothing: true
+    if request.xhr?
+      render nothing: true
+    else
+      redirect_to (params[:return_url] || path("/"))
+    end
   end
 
   private
@@ -279,7 +294,8 @@ class SessionController < ApplicationController
     message = user.suspend_reason ? "login.suspended_with_reason" : "login.suspended"
 
     render json: {
-      error: I18n.t(message, { date: I18n.l(user.suspended_till, format: :date_only), reason: user.suspend_reason}),
+      error: I18n.t(message, { date: I18n.l(user.suspended_till, format: :date_only),
+                               reason: Rack::Utils.escape_html(user.suspend_reason) }),
       reason: 'suspended'
     }
   end

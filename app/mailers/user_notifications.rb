@@ -83,18 +83,21 @@ class UserNotifications < ActionMailer::Base
     return unless @posts_by_topic.present?
 
     build_summary_for(user)
-    build_email @user.email,
-                from_alias: I18n.t('user_notifications.mailing_list.from', site_name: SiteSetting.title),
-                subject: I18n.t('user_notifications.mailing_list.subject_template',
-                                site_name: @site_name,
-                                date: @date)
+    opts = {
+      from_alias: I18n.t('user_notifications.mailing_list.from', site_name: SiteSetting.title),
+      subject: I18n.t('user_notifications.mailing_list.subject_template', site_name: @site_name, date: @date),
+      mailing_list_mode: true,
+      add_unsubscribe_link: true,
+      unsubscribe_url: "#{Discourse.base_url}/email/unsubscribe/#{@unsubscribe_key}",
+    }
+    apply_notification_styles(build_email(@user.email, opts))
   end
 
   def digest(user, opts={})
     build_summary_for(user)
-    min_date = opts[:since] || @user.last_emailed_at || @user.last_seen_at || 1.month.ago
+    min_date = opts[:since] || user.last_emailed_at || user.last_seen_at || 1.month.ago
 
-    @last_seen_at = short_date(@user.last_seen_at || @user.created_at)
+    @last_seen_at = short_date(user.last_seen_at || user.created_at)
 
     # A list of topics to show the user
     @featured_topics = Topic.for_digest(user, min_date, limit: SiteSetting.digest_topics, top_order: true).to_a
@@ -118,11 +121,14 @@ class UserNotifications < ActionMailer::Base
 
       @featured_topics, @new_topics = @featured_topics[0..4], @featured_topics[5..-1]
 
-      build_email @user.email,
-                  from_alias: I18n.t('user_notifications.digest.from', site_name: SiteSetting.title),
-                  subject: @featured_topics.length > 0 ? @featured_topics[0].title : I18n.t('user_notifications.digest.subject_template',
-                                                                                             site_name: @site_name,
-                                                                                             date: short_date(Time.now))
+      opts = {
+        from_alias: I18n.t('user_notifications.digest.from', site_name: SiteSetting.title),
+        subject: @featured_topics.length > 0 ? @featured_topics[0].title : I18n.t('user_notifications.digest.subject_template', site_name: @site_name, date: short_date(Time.now)),
+        add_unsubscribe_link: true,
+        unsubscribe_url: "#{Discourse.base_url}/email/unsubscribe/#{@unsubscribe_key}",
+      }
+
+      build_email(user.email, opts)
     end
   end
 
@@ -194,6 +200,10 @@ class UserNotifications < ActionMailer::Base
     notification_email(user, opts)
   end
 
+  def user_watching_first_post(user, opts)
+    user_posted(user, opts)
+  end
+
   def mailing_list_notify(user, post)
     opts = {
       post: post,
@@ -231,13 +241,12 @@ class UserNotifications < ActionMailer::Base
   end
 
   def self.get_context_posts(post, topic_user, user)
-
     if user.user_option.email_previous_replies == UserOption.previous_replies_type[:never]
       return []
     end
 
     allowed_post_types = [Post.types[:regular]]
-    allowed_post_types << Post.types[:whisper] if user.staff?
+    allowed_post_types << Post.types[:whisper] if topic_user.try(:user).try(:staff?)
 
     guardian = Guardian.new(user) if NewPostManager.queued_preview_enabled? && user.present?
     context_posts = Post.hide_queued_preview(guardian)
@@ -343,7 +352,7 @@ class UserNotifications < ActionMailer::Base
       else
         invite_template = "user_notifications.invited_to_topic_body"
       end
-      topic_excerpt = post.excerpt.gsub("\n", " ") if post.is_first_post? && post.excerpt
+      topic_excerpt = post.excerpt.tr("\n", " ") if post.is_first_post? && post.excerpt
       message = I18n.t(invite_template, username: username, topic_title: title, topic_excerpt: topic_excerpt, site_title: SiteSetting.title, site_description: SiteSetting.site_description)
       html = UserNotificationRenderer.new(Rails.configuration.paths["app/views"]).render(
         template: 'email/invite',
@@ -373,7 +382,6 @@ class UserNotifications < ActionMailer::Base
       template << "_staged" if user.staged?
     end
 
-
     email_opts = {
       topic_title: title,
       message: message,
@@ -384,7 +392,7 @@ class UserNotifications < ActionMailer::Base
       username: username,
       add_unsubscribe_link: !user.staged,
       mailing_list_mode: user.user_option.mailing_list_mode,
-      unsubscribe_url: post.topic.unsubscribe_url,
+      unsubscribe_url: post.unsubscribe_url(user),
       allow_reply_by_email: allow_reply_by_email,
       only_reply_by_email: allow_reply_by_email && user.staged,
       use_site_subject: use_site_subject,
@@ -418,6 +426,14 @@ class UserNotifications < ActionMailer::Base
     @header_color    = ColorScheme.hex_for_name('header_background')
     @anchor_color    = ColorScheme.hex_for_name('tertiary')
     @markdown_linker = MarkdownLinker.new(@base_url)
-    @unsubscribe_key = DigestUnsubscribeKey.create_key_for(@user)
+    @unsubscribe_key = UnsubscribeKey.create_key_for(@user, "digest")
+  end
+
+  def apply_notification_styles(email)
+    email.html_part.body = Email::Styles.new(email.html_part.body.to_s).tap do |styles|
+      styles.format_basic
+      styles.format_notification
+    end.to_html
+    email
   end
 end

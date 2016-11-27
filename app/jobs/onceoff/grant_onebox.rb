@@ -4,15 +4,15 @@ module Jobs
     sidekiq_options queue: 'low'
 
     def execute_onceoff(args)
+      return unless SiteSetting.enable_badges
       to_award = {}
 
       Post.secured(Guardian.new)
           .select(:id, :created_at, :raw, :user_id)
           .visible
           .public_posts
-          .where("raw like '%http%'")
+          .where("raw LIKE '%http%'")
           .find_in_batches do |group|
-
         group.each do |p|
           begin
             # Note we can't use `p.cooked` here because oneboxes have been cooked out
@@ -28,11 +28,14 @@ module Jobs
 
       end
 
-      badge = Badge.find(Badge::FirstOnebox)
       to_award.each do |user_id, opts|
         user = User.where(id: user_id).first
         BadgeGranter.grant(badge, user, opts) if user
       end
+    end
+
+    def badge
+      @badge ||= Badge.find(Badge::FirstOnebox)
     end
 
   end

@@ -532,6 +532,22 @@ describe TopicsController do
     end
   end
 
+  describe 'show unlisted' do
+    it 'returns 404 unless exact correct URL' do
+      topic = Fabricate(:topic, visible: false)
+      Fabricate(:post, topic: topic)
+
+      xhr :get, :show, topic_id: topic.id, slug: topic.slug
+      expect(response).to be_success
+
+      xhr :get, :show, topic_id: topic.id, slug: "just-guessing"
+      expect(response.code).to eq("404")
+
+      xhr :get, :show, id: topic.slug
+      expect(response.code).to eq("404")
+    end
+  end
+
   describe 'show' do
 
     let(:topic) { Fabricate(:post).topic }
@@ -550,6 +566,15 @@ describe TopicsController do
 
     it 'can find a topic given a slug in the id param' do
       xhr :get, :show, id: topic.slug
+      expect(response).to redirect_to(topic.relative_url)
+    end
+
+    it 'can find a topic when a slug has a number in front' do
+      another_topic = Fabricate(:post).topic
+
+      topic.update_column(:slug, "#{another_topic.id}-reasons-discourse-is-awesome")
+      xhr :get, :show, id: "#{another_topic.id}-reasons-discourse-is-awesome"
+
       expect(response).to redirect_to(topic.relative_url)
     end
 
@@ -720,6 +745,21 @@ describe TopicsController do
       get :show, topic_id: topic.id, slug: topic.slug, u: user.username
 
       expect(IncomingLink.count).to eq(1)
+    end
+
+    context 'print' do
+
+      it "doesn't renders the print view when disabled" do
+        SiteSetting.max_prints_per_hour_per_user = 0
+        get :show, topic_id: topic.id, slug: topic.slug, print: true
+        expect(response).to be_forbidden
+      end
+
+      it 'renders the print view when enabled' do
+        SiteSetting.max_prints_per_hour_per_user = 10
+        get :show, topic_id: topic.id, slug: topic.slug, print: true
+        expect(response).to be_successful
+      end
     end
 
     it 'records redirects' do
@@ -931,6 +971,35 @@ describe TopicsController do
         end
 
       end
+    end
+  end
+
+  describe 'invite_group' do
+    let :admins do
+      Group[:admins]
+    end
+
+    let! :admin do
+      log_in :admin
+    end
+
+    before do
+      admins.alias_level = Group::ALIAS_LEVELS[:everyone]
+      admins.save!
+    end
+
+    it "disallows inviting a group to a topic" do
+      topic = Fabricate(:topic)
+      xhr :post, :invite_group, topic_id: topic.id, group: 'admins'
+      expect(response.status).to eq(422)
+    end
+
+    it "allows inviting a group to a PM" do
+      topic = Fabricate(:private_message_topic)
+      xhr :post, :invite_group, topic_id: topic.id, group: 'admins'
+
+      expect(response.status).to eq(200)
+      expect(topic.allowed_groups.first.id).to eq(admins.id)
     end
   end
 

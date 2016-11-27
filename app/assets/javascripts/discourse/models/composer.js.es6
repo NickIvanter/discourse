@@ -4,6 +4,7 @@ import { throwAjaxError } from 'discourse/lib/ajax-error';
 import Quote from 'discourse/lib/quote';
 import Draft from 'discourse/models/draft';
 import computed from 'ember-addons/ember-computed-decorators';
+import { escapeExpression, tinyAvatar } from 'discourse/lib/utilities';
 
 const CLOSED = 'closed',
       SAVING = 'saving',
@@ -21,6 +22,7 @@ const CLOSED = 'closed',
       _create_serializer = {
         raw: 'reply',
         title: 'title',
+        unlist_topic: 'unlistTopic',
         category: 'categoryId',
         topic_id: 'topic.id',
         is_warning: 'isWarning',
@@ -40,6 +42,7 @@ const CLOSED = 'closed',
 
 const Composer = RestModel.extend({
   _categoryId: null,
+  unlistTopic: false,
 
   archetypes: function() {
     return this.site.get('archetypes');
@@ -145,8 +148,8 @@ const Composer = RestModel.extend({
       const postNumber = this.get('post.post_number');
       postLink = "<a href='" + (topic.get('url')) + "/" + postNumber + "'>" +
         I18n.t("post.post_number", { number: postNumber }) + "</a>";
-      topicLink = "<a href='" + (topic.get('url')) + "'> " + Discourse.Utilities.escapeExpression(topic.get('title')) + "</a>";
-      usernameLink = "<a href='" + (topic.get('url')) + "/" + postNumber + "'>" + username + "</a>";
+      topicLink = "<a href='" + (topic.get('url')) + "'> " + escapeExpression(topic.get('title')) + "</a>";
+      usernameLink = "<a href='" + (topic.get('url')) + "/" + postNumber + "'>" + this.get('post.username') + "</a>";
     }
 
     let postDescription;
@@ -155,8 +158,8 @@ const Composer = RestModel.extend({
     if (post) {
       postDescription = I18n.t('post.' +  this.get('action'), {
         link: postLink,
-        replyAvatar: Discourse.Utilities.tinyAvatar(post.get('avatar_template')),
-        username: username,
+        replyAvatar: tinyAvatar(post.get('avatar_template')),
+        username: this.get('post.username'),
         usernameLink
       });
 
@@ -165,7 +168,7 @@ const Composer = RestModel.extend({
         const replyDisplayname = post.get('reply_to_user.display_username');
         const replyAvatarTemplate = post.get('reply_to_user.avatar_template');
         if (replyUsername && replyAvatarTemplate && this.get('action') === EDIT) {
-          postDescription += " <i class='fa fa-mail-forward reply-to-glyph'></i> " + Discourse.Utilities.tinyAvatar(replyAvatarTemplate) + " " + replyDisplayname ? replyDisplayname : replyUsername;
+          postDescription += " <i class='fa fa-mail-forward reply-to-glyph'></i> " + tinyAvatar(replyAvatarTemplate) + " " + replyUsername;
         }
       }
     }
@@ -508,6 +511,7 @@ const Composer = RestModel.extend({
       reply: null,
       post: null,
       title: null,
+      unlistTopic: false,
       editReason: null,
       stagedPost: false,
       typingTime: 0,
@@ -543,7 +547,7 @@ const Composer = RestModel.extend({
       cooked: this.getCookedHtml()
     };
 
-    this.set('composeState', CLOSED);
+    this.set('composeState', SAVING);
 
     var rollback = throwAjaxError(function(){
       post.set('cooked', oldCooked);
@@ -551,6 +555,8 @@ const Composer = RestModel.extend({
     });
 
     return promise.then(function() {
+      // rest model only sets props after it is saved
+      post.set("cooked", props.cooked);
       return post.save(props).then(function(result) {
         self.clearState();
         return result;
@@ -648,6 +654,11 @@ const Composer = RestModel.extend({
       if (result.responseJson.action === "enqueued") {
         if (postStream) { postStream.undoPost(createdPost); }
         return result;
+      }
+
+      // We sometimes want to hide the `reply_to_user` if the post contains a quote
+      if (result.responseJson && result.responseJson.post && !result.responseJson.post.reply_to_user) {
+        createdPost.set('reply_to_user', null);
       }
 
       if (topic) {

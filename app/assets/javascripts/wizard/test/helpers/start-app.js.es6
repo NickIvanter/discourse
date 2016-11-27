@@ -8,7 +8,7 @@ export default function() {
   Ember.run(() => app = Wizard.create({ rootElement: '#ember-testing' }));
 
   if (!started) {
-    initializer.initialize();
+    initializer.initialize(app);
     app.start();
     started = true;
   }

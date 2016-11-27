@@ -508,10 +508,7 @@ sv:
       apps: "Appar"
       revoke_access: "Återkalla åtkomst"
       undo_revoke_access: "Ångra återkallelse av åtkomst"
-      api_permissions: "Rättigheter:"
       api_approved: "Godkända:"
-      api_read: "läs"
-      api_read_write: "läs och skriv"
       staff_counters:
         flags_given: "hjälpsamma flaggor"
         flagged_posts: "flaggade inlägg"
@@ -687,7 +684,6 @@ sv:
         account_age_days: "Kontoålder i dagar"
         create: "Skicka en inbjudan"
         generate_link: "Kopiera inbjudningslänken"
-        generated_link_message: '<p>Inbjudningslänken genererades utan problem!</p><p><input class="invite-link-input" style="width: 75%;" type="text" value="%{inviteLink}"></p><p>Inbjudningslänken är endast giltig för den här e-postadressen: <b>%{invitedEmail}</b></p>'
         bulk_invite:
           none: "Du har inte skickat några inbjudningar. Du kan skicka individuella inbjudningar, eller så kan du bjuda in flera på en gång genom att <a href='https://meta.discourse.org/t/send-bulk-invites/16468'>ladda upp en bulkfil.</a>"
           text: "Massinbjudan från fil"
@@ -1088,7 +1084,6 @@ sv:
       title: "sök efter ämnen, inlägg, användare, eller kategorier"
       no_results: "Inga resultat hittades."
       no_more_results: "Inga fler resultat hittades."
-      search_help: Sökhjälp
       searching: "Söker ..."
       post_format: "#{{post_number}} av {{username}}"
       context:
@@ -1868,8 +1863,6 @@ sv:
       readonly: "se"
     lightbox:
       download: "ladda ned"
-    search_help:
-      title: 'Sökhjälp'
     keyboard_shortcuts_help:
       title: 'Tangentbordsgenvägar'
       jump_to:
@@ -2333,7 +2326,6 @@ sv:
             title: "Gör en tillbakarullning på databasen till ett tidigare fungerande tillstånd."
             confirm: "Är du säker på att du vill göra en tillbakarullning på databasen till det tidigare fungerande tillståndet?"
       export_csv:
-        user_archive_confirm: "Är du säker på att du vill ladda ner dina inlägg?"
         success: "Export påbörjad, du får en notis via meddelande när processen är genomförd."
         failed: "Exporteringen misslyckades. Kontrollera loggarna."
         rate_limit_error: "Inlägg kan bara laddas ner en gång per dag, var vänlig och försök imorgon istället."

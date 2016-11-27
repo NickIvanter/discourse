@@ -4,7 +4,7 @@ import { scrollTopFor } from 'discourse/lib/offset-calculator';
 
 const bindings = {
   '!':               {postAction: 'showFlags'},
-  '#':               {handler: 'toggleProgress', anonymous: true},
+  '#':               {handler: 'goToPost', anonymous: true},
   '/':               {handler: 'toggleSearch', anonymous: true},
   '=':               {handler: 'toggleHamburgerMenu', anonymous: true},
   '?':               {handler: 'showHelpModal', anonymous: true},
@@ -171,8 +171,8 @@ export default {
     this.container.lookup('controller:topic').togglePinnedState();
   },
 
-  toggleProgress() {
-    this.appEvents.trigger('topic-progress:keyboard-trigger', { type: 'jump' });
+  goToPost() {
+    this.appEvents.trigger('topic:keyboard-trigger', { type: 'jump' });
   },
 
   toggleSearch(event) {
@@ -210,8 +210,11 @@ export default {
   sendToTopicListItemView(action) {
     const elem = $('tr.selected.topic-list-item.ember-view')[0];
     if (elem) {
-      const view = Ember.View.views[elem.id];
-      view.send(action);
+      const registry = this.container.lookup('-view-registry:main');
+      if (registry) {
+        const view = registry[elem.id];
+        view.send(action);
+      }
     }
   },
 

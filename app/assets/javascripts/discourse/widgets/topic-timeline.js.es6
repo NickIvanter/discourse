@@ -2,6 +2,7 @@ import { createWidget } from 'discourse/widgets/widget';
 import { h } from 'virtual-dom';
 import { relativeAge } from 'discourse/lib/formatter';
 import { iconNode } from 'discourse/helpers/fa-icon-node';
+import RawHtml from 'discourse/widgets/raw-html';
 
 const SCROLLAREA_HEIGHT = 300;
 const SCROLLER_HEIGHT = 50;
@@ -58,7 +59,13 @@ createWidget('timeline-scroller', {
       contents.push(h('div.timeline-ago', timelineDate(date)));
     }
 
-    return [ h('div.timeline-handle'), h('div.timeline-scroller-content', contents) ];
+    let result = [ h('div.timeline-handle'), h('div.timeline-scroller-content', contents) ];
+
+    if (attrs.fullScreen) {
+      result = [result[1], result[0]];
+    }
+
+    return result;
   },
 
   drag(e) {
@@ -124,6 +131,13 @@ createWidget('timeline-scrollarea', {
       result.lastReadPercentage = this._percentFor(topic, idx);
     }
 
+
+    if (this.state.position !== result.current) {
+      this.state.position = result.current;
+      const timeline = this._findAncestorWithProperty('updatePosition');
+      timeline.updatePosition.call(timeline, result.current);
+    }
+
     return result;
   },
 
@@ -139,7 +153,7 @@ createWidget('timeline-scrollarea', {
 
     const result = [
       this.attach('timeline-padding', { height: before }),
-      this.attach('timeline-scroller', position),
+      this.attach('timeline-scroller', _.merge(position, {fullScreen: attrs.fullScreen})),
       this.attach('timeline-padding', { height: after })
     ];
 
@@ -182,6 +196,13 @@ createWidget('timeline-scrollarea', {
 createWidget('topic-timeline-container', {
   tagName: 'div.timeline-container',
   buildClasses(attrs) {
+    if (attrs.fullScreen) {
+      if (attrs.addShowClass) {
+        return 'timeline-fullscreen show';
+      } else {
+        return 'timeline-fullscreen';
+      }
+    }
     if (attrs.dockAt) {
       const result = ['timeline-docked'];
       if (attrs.dockBottom) {
@@ -192,7 +213,9 @@ createWidget('topic-timeline-container', {
   },
 
   buildAttributes(attrs) {
-    return { style: `top: ${attrs.top}px` };
+    if (attrs.top) {
+      return { style: `top: ${attrs.top}px` };
+    }
   },
 
   html(attrs) {
@@ -203,15 +226,81 @@ createWidget('topic-timeline-container', {
 export default createWidget('topic-timeline', {
   tagName: 'div.topic-timeline',
 
+  buildKey: () => 'topic-timeline-area',
+
+  defaultState() {
+    return { position: null, excerpt: null };
+  },
+
+  updatePosition(pos) {
+    if (!this.attrs.fullScreen) {
+      return;
+    }
+
+    this.state.position = pos;
+    this.state.excerpt = "";
+    this.scheduleRerender();
+
+    const stream = this.attrs.topic.get('postStream');
+
+    // a little debounce to avoid flashing
+    setTimeout(()=>{
+      if (!this.state.position === pos) {
+        return;
+      }
+
+      // we have an off by one, stream is zero based,
+      // pos is 1 based
+      stream.excerpt(pos-1).then(info => {
+
+        if (info && this.state.position === pos) {
+          let excerpt = "";
+
+          if (info.username) {
+            excerpt = "<span class='username'>" + info.username + ":</span> ";
+          }
+
+          excerpt += info.excerpt;
+
+          this.state.excerpt = excerpt;
+          this.scheduleRerender();
+        }
+      });
+    }, 50);
+  },
+
   html(attrs) {
     const { topic } = attrs;
     const createdAt = new Date(topic.created_at);
     const stream = attrs.topic.get('postStream.stream');
     const { currentUser } = this;
 
-
     let result = [];
-    if (currentUser && currentUser.get('canManageTopic')) {
+
+    if (attrs.fullScreen) {
+      let titleHTML = "";
+      if (attrs.mobileView) {
+        titleHTML = new RawHtml({ html: `<span>${topic.get('fancyTitle')}</span>` });
+      }
+
+      let elems = [h('h2', this.attach('link', {
+              contents: ()=>titleHTML,
+              className: 'fancy-title',
+              action: 'jumpTop'}))];
+
+
+      if (this.state.excerpt) {
+        elems.push(
+            new RawHtml({
+              html: "<div class='post-excerpt'>" + this.state.excerpt + "</div>"
+            }));
+      }
+
+      result.push(h('div.title', elems));
+    }
+
+
+    if (!attrs.fullScreen && currentUser && currentUser.get('canManageTopic')) {
       result.push(h('div.timeline-controls', this.attach('topic-admin-menu-button', { topic })));
     }
 
@@ -220,20 +309,22 @@ export default createWidget('topic-timeline', {
     }
 
     const bottomAge = relativeAge(new Date(topic.last_posted_at), { addAgo: true, defaultFormat: timelineDate });
-    result = result.concat([this.attach('link', {
+    let scroller = [h('div.timeline-date-wrapper', this.attach('link', {
                               className: 'start-date',
                               rawLabel: timelineDate(createdAt),
                               action: 'jumpTop'
-                            }),
+                            })),
                             this.attach('timeline-scrollarea', attrs),
-                            this.attach('link', {
+                            h('div.timeline-date-wrapper', this.attach('link', {
                               className: 'now-date',
                               rawLabel: bottomAge,
                               action: 'jumpBottom'
-                            })]);
+                            }))];
 
-    if (currentUser) {
-      const controls = [];
+    result = result.concat([h('div.timeline-scrollarea-wrapper', scroller)]);
+
+    const controls = [];
+    if (currentUser && !attrs.fullScreen) {
       if (attrs.topic.get('details.can_create_post')) {
         controls.push(this.attach('button', {
           className: 'btn create',
@@ -246,6 +337,18 @@ export default createWidget('topic-timeline', {
       if (currentUser) {
         controls.push(this.attach('topic-notifications-button', { topic }));
       }
+    }
+
+    if (attrs.fullScreen) {
+      controls.push(this.attach('button', {
+        className: 'btn jump-to-post',
+        title: 'topic.progress.jump_prompt_long',
+        label: 'topic.progress.jump_prompt',
+        action: 'jumpToPostPrompt'
+      }));
+    }
+
+    if (controls.length > 0) {
       result.push(h('div.timeline-footer-controls', controls));
     }
 

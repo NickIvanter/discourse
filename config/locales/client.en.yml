@@ -499,6 +499,7 @@ en:
       mute: "Mute"
       edit: "Edit Preferences"
       download_archive: "Download My Posts"
+      download_archive_confirm: "Are you sure you want to download your posts?"
       new_private_message: "New Message"
       private_message: "Message"
       private_messages: "Messages"
@@ -524,6 +525,7 @@ en:
         each_browser_note: "Note: You have to change this setting on every browser you use."
       dismiss_notifications: "Dismiss All"
       dismiss_notifications_tooltip: "Mark all unread notifications as read"
+      first_notification: "Your first notification! Select it to begin."
       disable_jump_reply: "Don't jump to my post after I reply"
       dynamic_favicon: "Show new / updated topic count on browser icon"
       external_links_in_new_tab: "Open all external links in a new tab"
@@ -546,6 +548,7 @@ en:
           Muted topics and categories are not included in these emails.
         daily: "Send daily updates"
         individual: "Send an email for every new post"
+        individual_no_echo: "Send an email for every new post except my own"
         many_per_day: "Send me an email for every new post (about {{dailyEmailEstimate}} per day)"
         few_per_day: "Send me an email for every new post (about 2 per day)"
       tag_settings: "Tags"
@@ -581,10 +584,7 @@ en:
       apps: "Apps"
       revoke_access: "Revoke Access"
       undo_revoke_access: "Undo Revoke Access"
-      api_permissions: "Permissions:"
       api_approved: "Approved:"
-      api_read: "read"
-      api_read_write: "read and write"
 
       staff_counters:
         flags_given: "helpful flags"
@@ -783,7 +783,8 @@ en:
         account_age_days: "Account age in days"
         create: "Send an Invite"
         generate_link: "Copy Invite Link"
-        generated_link_message: '<p>Invite link generated successfully!</p><p><input class="invite-link-input" style="width: 75%;" type="text" value="%{inviteLink}"></p><p>Invite link is only valid for this email address: <b>%{invitedEmail}</b></p>'
+        link_generated: "Invite link generated successfully!"
+        valid_for: "Invite link is only valid for this email address: %{email}"
         bulk_invite:
           none: "You haven't invited anyone here yet. You can send individual invites, or invite a bunch of people at once by <a href='https://meta.discourse.org/t/send-bulk-invites/16468'>uploading a bulk invite file</a>."
           text: "Bulk Invite from File"
@@ -957,6 +958,7 @@ en:
     search_hint: 'username, email or IP address'
 
     create_account:
+      disclaimer: "By registering, you agree to the <a href='{{privacy_link}}'>privacy policy</a> and <a href='{{tos_link}}'>terms of service</a>."
       title: "Create New Account"
       failed: "Something went wrong, perhaps this email is already registered, try the forgot password link"
 
@@ -1055,6 +1057,9 @@ en:
       group_mentioned:
         one: "By mentioning {{group}}, you are about to notify <a href='{{group_link}}'>1 person</a> – are you sure?"
         other: "By mentioning {{group}}, you are about to notify <a href='{{group_link}}'>{{count}} people</a> – are you sure?"
+      cannot_see_mention:
+        category: "You mentioned {{username}} but they won't be notified because they do not have access to this category. You will need to add them to a group that has access to this category."
+        private: "You mentioned {{username}} but they won't be notified because they are unable to see this personal message. You will need to invite them to this PM."
       duplicate_link: "It looks like your link to <b>{{domain}}</b> was already posted in the topic by <b>@{{username}}</b> in <a href='{{post_url}}'>a reply {{ago}}</a> – are you sure you want to post it again?"
 
       error:
@@ -1279,6 +1284,8 @@ en:
     topics:
       new_messages_marker: "last visit"
       bulk:
+        select_all: "Select All"
+        clear_all: "Clear All"
         unlist_topics: "Unlist Topics"
         reset_read: "Reset Read"
         delete: "Delete Topics"
@@ -1645,7 +1652,7 @@ en:
     post:
       reply: "<i class='fa fa-mail-forward'></i> {{replyAvatar}} {{usernameLink}}"
       reply_topic: "<i class='fa fa-mail-forward'></i> {{link}}"
-      quote_reply: "quote reply"
+      quote_reply: "Quote"
       edit: "Editing {{link}} {{replyAvatar}} {{username}}"
       edit_reason: "Reason: "
       post_number: "post {{number}}"
@@ -1898,6 +1905,7 @@ en:
       email_in_disabled: "Posting new topics via email is disabled in the Site Settings. To enable posting new topics via email, "
       email_in_disabled_click: 'enable the "email in" setting.'
       suppress_from_homepage: "Suppress this category from the homepage."
+      sort_order: "Default Sort:"
       allow_badges_label: "Allow badges to be awarded in this category"
       edit_permissions: "Edit Permissions"
       add_permission: "Add Permission"
@@ -1923,6 +1931,18 @@ en:
         muted:
           title: "Muted"
           description: "You will never be notified of anything about new topics in these categories, and they will not appear in latest."
+      sort_options:
+        default: "default"
+        likes: "Likes"
+        op_likes: "Original Post Likes"
+        views: "Views"
+        posts: "Posts"
+        activity: "Activity"
+        posters: "Posters"
+        category: "Category"
+        created: "Created"
+      sort_ascending: 'Ascending'
+      sort_descending: 'Descending'
 
     flagging:
       title: 'Thanks for helping to keep our community civil!'
@@ -2301,6 +2321,10 @@ en:
       custom_message_template_forum: "Hey, you should join this forum!"
       custom_message_template_topic: "Hey, I thought you might enjoy this topic!"
 
+    safe_mode:
+      enabled: "Safe mode is enabled, to exit safe mode close this browser window"
+
+
   # This section is exported to the javascript for i18n in the admin section
   admin_js:
     type_to_filter: "type to filter..."
@@ -2623,7 +2647,6 @@ en:
             confirm: "Are you sure you want to rollback the database to the previous working state?"
 
       export_csv:
-        user_archive_confirm: "Are you sure you want to download your posts?"
         success: "Export initiated, you will be notified via message when the process is complete."
         failed: "Export failed. Please check the logs."
         rate_limit_error: "Posts can be downloaded once per day, please try again tomorrow."
@@ -2752,10 +2775,14 @@ en:
         delivery_method: "Delivery Method"
         preview_digest_desc: "Preview the content of the digest emails sent to inactive users."
         refresh: "Refresh"
+        send_digest_label: "Send this result to:"
+        send_digest: "Send"
+        sending_email: "Sending email..."
         format: "Format"
         html: "html"
         text: "text"
         last_seen_user: "Last Seen User:"
+        no_result: "No results found for digest."
         reply_key: "Reply Key"
         skipped_reason: "Skip Reason"
         incoming_emails:
@@ -3304,5 +3331,3 @@ en:
           admin: "Admin"
           moderator: "Moderator"
           regular: "Regular User"
-
-

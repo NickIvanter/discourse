@@ -94,10 +94,37 @@ class DiscourseSingleSignOn < SingleSignOn
 
     sso_record.save!
 
+    if sso_record.user
+      apply_group_rules(sso_record.user)
+    end
+
     sso_record && sso_record.user
   end
 
   private
+
+  def apply_group_rules(user)
+    if add_groups
+      split = add_groups.split(",")
+      if split.length > 0
+        Group.where('name in (?) AND NOT automatic', split).pluck(:id).each do |id|
+          unless GroupUser.where(group_id: id, user_id: user.id).exists?
+            GroupUser.create(group_id: id, user_id: user.id)
+          end
+        end
+      end
+    end
+
+    if remove_groups
+      split = remove_groups.split(",")
+      if split.length > 0
+        GroupUser
+            .where(user_id: user.id)
+            .where('group_id IN (SELECT id FROM groups WHERE name in (?))',split)
+            .destroy_all
+      end
+    end
+  end
 
   def match_email_or_create_user(ip_address)
     unless user = User.find_by_email(email)
@@ -119,13 +146,15 @@ class DiscourseSingleSignOn < SingleSignOn
         sso_record.last_payload = unsigned_payload
         sso_record.external_id = external_id
       else
-        UserAvatar.import_url_for_user(avatar_url, user) if avatar_url.present?
-        user.create_single_sign_on_record(last_payload: unsigned_payload,
-                                          external_id: external_id,
-                                          external_username: username,
-                                          external_email: email,
-                                          external_name: name,
-                                          external_avatar_url: avatar_url)
+        Jobs.enqueue(:download_avatar_from_url, url: avatar_url, user_id: user.id) if avatar_url.present?
+        user.create_single_sign_on_record(
+          last_payload: unsigned_payload,
+          external_id: external_id,
+          external_username: username,
+          external_email: email,
+          external_name: name,
+          external_avatar_url: avatar_url
+        )
       end
     end
 
@@ -148,12 +177,11 @@ class DiscourseSingleSignOn < SingleSignOn
     avatar_missing = user.uploaded_avatar_id.nil? || !Upload.exists?(user.uploaded_avatar_id)
 
     if (avatar_missing || avatar_force_update || SiteSetting.sso_overrides_avatar) && avatar_url.present?
+      avatar_changed = sso_record.external_avatar_url != avatar_url
 
-        avatar_changed = sso_record.external_avatar_url != avatar_url
-
-        if avatar_force_update || avatar_changed || avatar_missing
-           UserAvatar.import_url_for_user(avatar_url, user)
-        end
+      if avatar_force_update || avatar_changed || avatar_missing
+        Jobs.enqueue(:download_avatar_from_url, url: avatar_url, user_id: user.id)
+      end
     end
 
     # change external attributes for sso record

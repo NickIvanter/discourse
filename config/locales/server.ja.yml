@@ -53,7 +53,6 @@ ja:
       has_already_been_used: "は既に使用されています"
       inclusion: は一覧にありません
       invalid: は正しくありません
-      is_invalid: "に問題があります。長さなど、不備が無いか確認してください。"
       less_than: は%{count}より小さい値にしてください
       less_than_or_equal_to: は%{count}以下の値にしてください
       not_a_number: は数値で入力してください
@@ -110,7 +109,6 @@ ja:
   topic_not_found: "問題が発生しました。トピックがクローズしたか、閲覧中に削除された可能性があります。"
   just_posted_that: "は最近の投稿と内容がほぼ一緒です"
   invalid_characters: "は不正な文字を含んでいます"
-  is_invalid: "に問題があります。長さなど、不備が無いか確認してください。"
   next_page: "次のページ →"
   prev_page: "← 前のページ"
   page_num: "%{num} ページ"
@@ -567,7 +565,6 @@ ja:
     s3_config_warning: 'サーバが S3 にファイルをアップロードするように設定されていますが、次のうち少なくとも1つが設定されていません: s3_access_key_id, s3_secret_access_key or s3_upload_bucket。<a href="/admin/site_settings">サイトの設定</a> にて設定を更新してください。<a href="http://meta.discourse.org/t/how-to-set-up-image-uploads-to-s3/7229" target="_blank">詳しくは "How to set up image uploads to S3?" を参考にしてください</a>。'
     s3_backup_config_warning: 'サーバが S3 にバックアップをアップロードするように設定されていますが、次のうち少なくとも1つが設定されていません: s3_access_key_id, s3_secret_access_key or s3_upload_bucket。<a href="/admin/site_settings">サイトの設定</a> にて設定を更新してください。<a href="http://meta.discourse.org/t/how-to-set-up-image-uploads-to-s3/7229" target="_blank">詳しくは "How to set up image uploads to S3?" を参考にしてください</a>'
     image_magick_warning: 'サーバが大きな画像のサムネイルを作成する設定になっていますが、ImageMagick がインストールされていません。お好きなパッケージマネージャを使って ImageMagick をインストールするか、<a href="http://www.imagemagick.org/script/binary-releases.php" target="_blank">最新のリリースをダウンロードしてください</a>。'
-    consumer_email_warning: "サイトはメール送信に Gmail (または他のカスタムメールサービス) を利用するように設定されています。<a href='http://support.google.com/a/bin/answer.py?hl=en&answer=166852' target='_blank'>Gmail で送信可能なメール数には制限があります</a>。メールを確実に送信するために mandrill.com などのメールサービスプロバイダーの利用を検討してください。"
   site_settings:
     censored_words: "自動的に &#9632;&#9632;&#9632;&#9632; で置換されます"
     delete_old_hidden_posts: "30日以上非表示になっている投稿を自動で削除します"
@@ -607,7 +604,6 @@ ja:
     exclude_rel_nofollow_domains: "nofollowを付与すべきではないドメインのリスト。tld.comは、sub.tld.com も許可します。最低でもクローラーが全てのコンテンツを見つけるために、このサイトのトップレベルドメインを追加する必要があります。このサイトの他の部分が別ドメインに存在している場合、それも追加します"
     post_excerpt_maxlength: "投稿の引用/サマリの最大文字数"
     post_onebox_maxlength: "Discourse OneBox投稿の最大文字数"
-    onebox_domains_whitelist: "OneBoxを許可するドメインのリスト。これらのドメインはOpenGraphかoEmbedをサポートしている必要があります。http://iframely.com/debug でテストできます"
     logo_url: "サイトの左上に表示されるロゴ画像です。横幅の大きい長方形にする必要があります。空欄の場合、サイトタイトルが表示されます"
     logo_small_url: "サイトの左上に表示される小さいロゴ画像です。正方形である必要があります。下にスクロールすると表示されます。空欄の場合、ホームアイコンが表示されます"
     mobile_logo_url: "モバイルサイトの左上に固定で表示されるロゴ画像です。正方形である必要があります。空欄の場合 `logo_url` が利用されます 例: http://example.com/uploads/default/logo.png"
@@ -1154,6 +1150,7 @@ ja:
       new_activity: "あなたのトピックおよびポストにおけるアクティビティ:"
       top_topics: "人気の投稿"
       other_new_topics: "人気のトピック"
+      unsubscribe: "このお知らせは%{site_link}から送信されました。購読を解除したい場合は%{unsubscribe_link}してください。"
       click_here: "ここをクリック"
       read_more: "もっと読む"
       more_topics: " %{new_topics_since_seen}個の新しいトピックがありました"
@@ -1278,35 +1275,6 @@ ja:
     title: "利用規約"
   privacy_topic:
     title: "プライバシーポリシー"
-  static:
-    search_help: |
-      <h3>Tips</h3>
-      <p>
-      <ul>
-      <li>タイトルが優先されます &ndash; わからない時はタイトルで調べてみましょう</li>
-      <li>かぶりにくい単語、調べたいものに近い言葉を使うとピッタリな検索結果が出てきます。</li>
-      <li>カテゴリ、トピック、またはユーザ単位で検索してみましょう</li>
-      </ul>
-      </p>
-      <h3>オプション</h3>
-      <p>
-      <table>
-      <tr><td><code>order:views</code></td><td><code>order:latest</code></td><td><code>order:likes</code></td><td><code>@username</code></td><td><code>user:foo</code></td></tr>
-      <tr><td><code>status:open</code></td><td><code>status:closed</code></td><td><code>status:archived</code></td><td><code>status:noreplies</code></td><td><code>status:single_user</code></td></tr>
-      <tr><td><code>#category-slug</code></td><td><code>category:foo</code></td><td><code>group:foo</code></td><td><code>badge:foo</code></td><td></td></tr>
-      <tr><td><code>in:likes</code></td><td><code>in:posted</code></td><td><code>in:watching</code></td><td><code>in:tracking</code></td><td><code>in:private</code></td></tr>
-      <tr><td><code>in:bookmarks</code></td><td><code>in:first</code></td><td><code>in:pinned</code></td><td><code>in:unpinned</code></td><td><code>in:wiki</code></td></tr>
-      <tr><td><code>posts_count:num</code></td><td><code>before:days or date</code></td><td><code>after:days or date</code></td><td><code>tags:one,two</code></td><td></td></tr>
-      </table>
-      </p>
-      <h3>例</h3>
-      <p>
-      <ul>
-      <li><code>rainbows #parks</code> では"parks"のカテゴリから"rainbows"という単語を検索します。</li>
-      <li><code>rainbows category:parks status:open order:latest</code> では"parks"のカテゴリ、"rainbows"という単語を検索し、最後の投稿の日付順に並べ、クローズ/アーカイブされていないトピックを検索します。</li>
-      <li><code>rainbows category:"parks and gardens" in:bookmarks</code> では、ブックマークしている"parks and gardens"カテゴリから、"rainbows"という単語を含むトピックを検索します。</li>
-      </ul>
-      </p>
   badges:
     editor:
       name: 編集者

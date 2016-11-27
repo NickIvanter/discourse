@@ -71,7 +71,7 @@ fi:
       has_already_been_used: "on jo käytetty"
       inclusion: ei ole listalla
       invalid: ei kelpaa
-      is_invalid: "ei kelpaa; yritä olla kuvailevampi"
+      is_invalid: "vaikuttaa epäselvältä, olihan se kokonainen virke?"
       less_than: täytyy olla vähemmän kuin %{count}
       less_than_or_equal_to: täytyy olla yhtä suuri tai pienempi kuin %{count}
       not_a_number: ei ole numero
@@ -159,7 +159,7 @@ fi:
   topic_not_found: "Jotain on mennyt pieleen. Ehkä tämä ketju on suljettu tai poistettu sillä välin, kun katselit sitä?"
   just_posted_that: "on liian samanlainen kuin aiempi viestisi"
   invalid_characters: "sisältää epäkelpoja merkkejä"
-  is_invalid: "ei kelpaa; yritä olla kuvailevampi"
+  is_invalid: "vaikuttaa epäselvältä, olihan se kokonainen virke?"
   next_page: "seuraava sivu →"
   prev_page: "← edellinen sivu"
   page_num: "Sivu %{num}"
@@ -198,9 +198,9 @@ fi:
       email_already_used_in_category: "'%{email}' on jo käytössä alueella '%{category_name}'."
     default_names:
       everyone: "kaikki"
-      admins: "ylläpitäjät"
+      admins: "yllapitajat"
       moderators: "valvojat"
-      staff: "henkilökunta"
+      staff: "henkilokunta"
       trust_level_0: "luottamustaso_0"
       trust_level_1: "luottamustaso_1"
       trust_level_2: "luottamustaso_2"
@@ -574,6 +574,21 @@ fi:
     different_user_description: "Olet kirjautunut sisään eri käyttäjänä kuin jolle sähköposti lähetettiin. Ole hyvä ja kirjaudu ulos tai siirry anonyymitilaan, ja yritä sitten uudelleen."
     not_found_description: "Pahoittelut, tätä tilauksen perumista ei löytynyt. Kenties sinulle lähetetty linkki on vanhentunut?"
     log_out: "Kirjaudu ulos"
+  user_api_key:
+    title: "Anna sovellukselle käyttöoikeus"
+    authorize: "Anna käyttöoikeus"
+    read: "luku"
+    read_write: "luku/kirjoitus"
+    description: "\"%{application_name}\" pyytää seuraavaa käyttöoikeutta tunnukseesi:"
+    no_trust_level: "Pahoittelut, luottamustasosi ei ole riittävä käyttäjärajapinnan käyttämiseen"
+    generic_error: "Pahoittelut, API-salausavainta ei muodostettu; sivuston ylläpitäjä on saattanut ottaa ominaisuuden pois käytöstä"
+    scopes:
+      message_bus: "Reaaliaikaiset päivitykset"
+      notifications: "Ilmoitusten lukeminen ja kuittaaminen"
+      push: "Push-ilmoitukset ulkoisiin palveluihin"
+      session_info: "Tiedot käyttäjän istunnosta"
+      read: "Kaikkien luku"
+      write: "Kaikkiin kirjaittaminen"
   reports:
     visits:
       title: "Vierailut"
@@ -729,7 +744,6 @@ fi:
     s3_backup_config_warning: 'Palvelin on konfiguroitu lataamaan varmuuskopiot s3:een, mutta vähintään yksi arvoista s3_access_key_id, s3_secret_access_key tai s3_backup_bucket ei ole asetettu. Päivitä arvot <a href="/admin/site_settings">sivuston asetuksissa</a>.Voit lukea lisätietoja oppaasta <a href="http://meta.discourse.org/t/how-to-set-up-image-uploads-to-s3/7229" target="_blank">"How to set up image uploads to S3?"</a>.'
     image_magick_warning: 'Palvelin on konfiguroitu luomaan esikatselukuvia suurista kuvista, mutta ImageMagickia ei ole asennettu. Asenna ImageMagick paketinhallinnasta tai <a href="http://www.imagemagick.org/script/binary-releases.php" target="_blank">lataamalla uusin versio</a>.'
     failing_emails_warning: 'Epäonnistuneiden sähköpostitehtävien määrä on %{num_failed_jobs}. Tarkista app.yml ja varmista, että palvelimen asetukset ovat kunnossa. <a href="/sidekiq/retries" target="_blank">Katsele epäonnistuneita tehtäviä Sidekiqissa</a>.'
-    consumer_email_warning: "Sivusto on konfiguroitu käyttämään Gmailia (tai muuta yksityishenkilöille suunnattua sähköpostipalvelua) sähköpostin lähettämiseen. <a href='http://support.google.com/a/bin/answer.py?hl=en&answer=166852' target='_blank'>Gmail rajoittaa lähetettävien sähköpostien määrää</a>. Harkitse sähköpostipalveluntarjoajaa, kuten mandrill.com varmistaaksesi sähköpostin lähetyksen."
     subfolder_ends_in_slash: "Alihakemiston asetuksesi ei kelpaa; DISCOURSE_RELATIVE_URL_ROOT päättyy vinoviivaan."
     email_polling_errored_recently:
       one: "Sähköpostin pollaus on aiheuttanut virheen edellisen 24 tunnin aikana. Tarkastele <a href='/logs' target='_blank'>lokeja</a> saadaksesi lisätietoja."
@@ -740,6 +754,7 @@ fi:
     poll_pop3_auth_error: "Yhteys POP3-palvelimelle epäonnistuu autentikaatiovirheen vuoksi. Tarkista <a href='/admin/site_settings/category/email'>POP3-asetukset</a>."
   site_settings:
     censored_words: "Sanat, jotka korvataan automaattisesti merkeillä &#9632;&#9632;&#9632;&#9632;"
+    censored_pattern: "Merkkijono, joka korvataan automaattisesti &#9632;&#9632;&#9632;&#9632;"
     delete_old_hidden_posts: "Poista automaattisesti kaikki yli 30 päivää piilotettuna olleet viestit."
     default_locale: "Sivuston oletuskieli (ISO 639-1 koodi)"
     allow_user_locale: "Salli käyttäjien vaihtaa käyttöliittymän kieli omista asetuksista"
@@ -782,7 +797,8 @@ fi:
     show_pinned_excerpt_mobile: "Näytä katkelma kiinnitetyistä ketjuista mobiilinäkymässä."
     show_pinned_excerpt_desktop: "Näytä katkelma kiinnitetyistä ketjuista työpöytänäkymässä."
     post_onebox_maxlength: "Discourse-viestin Onebox-esikatselun merkkien maksimimäärä."
-    onebox_domains_whitelist: "Lista verkkotunnuksista, joilta sallitaan onebox-esikatselut; näiden tunnusten pitäisi tukea OpenGraphia tai oEmbedia. Testaa ne osoitteessa http://iframely.com/debug"
+    onebox_domains_blacklist: "Verkko-osoitteet, joista ei luoda Onebox-esikatselua"
+    max_oneboxes_per_post: "Oneboxien enimmäismäärä yhdessä viestissä"
     logo_url: "Logo sivustosi vasemmassa yläkulmassa. Sen pitäisi olla leveä suorakulmio muodoltaan. Jos jätetään tyhjäksi, näytetään sivuston otsikkoteksti."
     digest_logo_url: "Vaihtoehtoinen logo, jota käytetään sähköpostikoosteessa. Muodoltaan sen tulisi olla leveä suorakulmio, eikä se saa olla SVG-muodossa. Jos ei aseteta, käytetään `logo_url`-kuvaa."
     logo_small_url: "Pieni logo sivuston vasemmassa reunassa, joka näytettään rullattaessa alaspäin. Sen pitäisi olla neliö muodoltaan. Jos jätetään tyhjäksi, näytetään sen tilalla koti-merkki."
@@ -823,6 +839,8 @@ fi:
     must_approve_users: "Henkilökunnan täytyy hyväksyä kaikki uudet tilit, ennen uusien käyttäjien päästämistä sivustolle. VAROITUS: tämän asetuksen valitseminen poistaa pääsyn kaikilta jo olemassa olevilta henkilökuntaan kuulumattomilta käyttäjiltä."
     pending_users_reminder_delay: "Ilmoita valvojille, jos uusi käyttäjä on odottanut hyväksyntää kauemmin kuin näin monta tuntia. Aseta -1, jos haluat kytkeä ilmoitukset pois päältä."
     maximum_session_age: "Käyttäjä pysyy sisäänkirjautuneena n tuntia vierailunsa jälkeen"
+    ga_tracking_code: "VANHENTUNUT: Google Analytics (ga.js) -seurantatunnus, esim. UA-12345678-9; ks. http://google.com/analytics"
+    ga_domain_name: "VANHENTUNUT: Google Analytics (ga.js) -verkkotunnus, esim. mysite.com; ks. http://google.com/analytics"
     ga_universal_tracking_code: "Google Universal analytics (analytics.js) seurantakoodi, esim.: UA-12345678-9; katso http://google.com/analytics"
     ga_universal_domain_name: "Google Universal analytics (analytics.js) verkkotunnus, esim.: osoite.fi; katso http://google.com/analytics"
     enable_escaped_fragments: "Käytä Googlen Ajax-sivustoille tarkoitettua API:a, jos webcrawleria ei tunnisteta. Katso https://developers.google.com/webmasters/ajax-crawling/docs/learn-more"
@@ -981,6 +999,7 @@ fi:
     tl3_links_no_follow: "Älä poista rel=nofollow -attribuuttia linkeistä luottamustason 3 käyttäjiltä."
     min_trust_to_create_topic: "Ketjun luomiseksi vaadittava luottamustaso."
     min_trust_to_edit_wiki_post: "Wikiviestin muokkaamiseen vaadittava luottamustaso."
+    min_trust_to_edit_post: "Viestin muokkaamiseen vaadittava luottamustaso."
     min_trust_to_allow_self_wiki: "Minimiluottamustaso, jolla käyttäjä voi tehdä omasta viestistään wiki-viestin."
     min_trust_to_send_messages: "Yksityisviestien luomiseen vaadittava luottamustaso"
     newuser_max_links: "Kuinka monta linkkiä uusi käyttäjä voi lisätä viestiin."
@@ -1145,6 +1164,7 @@ fi:
     enforce_square_emoji: "Pakota neliö kuvasuhteeksi kaikille emojille."
     approve_post_count: "Viestien lukumäärä, joka tarkastetaan uusilta käyttäjiltä ja haastajilta."
     approve_unless_trust_level: "Tätä luottamustasoa alhaisempien käyttäjien viestit tarkastetaan"
+    approve_new_topics_unless_trust_level: "Tätä luottamustasoa alhaisempien käyttäjien luomat ketjut tarkastetaan"
     notify_about_queued_posts_after: "Jos viesti on odottanut hyväksyntää kauemmin kuin näin monta tuntia, sähköpostiviesti lähetetään contact_email osoitteeseen. Aseta 0 ottaaksesi pois käytöstä."
     auto_close_messages_post_count: "Maksimimäärä viestejä yksityisketjussa, kunnes se suljetaan automaattisesti (0 poistaaksesi käytöstä)"
     auto_close_topics_post_count: "Maksimimäärä viestejä ketjussa, kunnes se suljetaan automaattisesti (0 poistaaksesi käytöstä)"
@@ -1161,6 +1181,7 @@ fi:
     default_email_in_reply_to: "Sisällytä lyhennelmä vastattavasta viestistä sähköpostiin oletuksena."
     default_other_new_topic_duration_minutes: "Yleinen oletusarvo sille, koska ketju tulkitaan uudeksi."
     default_other_auto_track_topics_after_msecs: "Yleinen oletusarvo sille, missä ajassa ketjua aletaan seurata."
+    default_other_notification_level_when_replying: "Yleinen oletusasetus ilmoitusasetukselle, kun käyttäjä vastaa ketjuun."
     default_other_external_links_in_new_tab: "Avaa oletuksena ulkopuoliset linkit uudessa välilehdessä."
     default_other_enable_quoting: "Ota oletuksena käyttöön lainaaminen valitsemalla tekstiä."
     default_other_dynamic_favicon: "Näytä oletuksena uusien/päivittyneiden ketjujen määrä selaimen ikonissa."
@@ -1170,6 +1191,12 @@ fi:
     default_categories_watching: "Lista oletuksena tarkkailtavista alueista."
     default_categories_tracking: "Lista oletuksena seurattavista alueista."
     default_categories_muted: "Lista oletuksena vaimennetuista alueista."
+    max_user_api_reqs_per_day: "Rajapintapyyntöjen päivittäinen enimmäismäärä rajapinnan avainta kohden"
+    max_user_api_reqs_per_minute: "Rajapintapyyntöjen enimmäismäärä minuuttia kohden rajapinnan avainta kohden"
+    allow_user_api_keys: "Salli rajapinnan käyttäjäavainten muodostaminen"
+    allow_user_api_key_scopes: "Lista rajapinnan käyttäjäavaimiin liittyvistä oikeuksista"
+    max_api_keys_per_user: "Enimmäismäärä rajapinnan käyttäjäavaimia käyttäjää kohden"
+    min_trust_level_for_user_api_key: "Vähimmäisluottamustaso, joka vaaditaan rajapinnan käyttäjäavainten muodostamiseen"
     tagging_enabled: "Ota käyttöön ketjujen tunnisteet?"
     min_trust_to_create_tag: "Vähimmäisluottamustaso, jolla voi luoda tunnisteita."
     max_tags_per_topic: "Suurin tunnisteiden määrä, joka voi liittyä ketjuun."
@@ -1183,6 +1210,9 @@ fi:
     min_trust_level_to_tag_topics: "Vähimmäisluottamustaso, jolla voi lisätä tunnisteita ketjuihin"
     suppress_overlapping_tags_in_list: "Jos tunniste esiintyy sanana täsmälleen ketjun otsikossa, älä näytä tunnistetta"
     remove_muted_tags_from_latest: "Jos tunniste on vaimennettu, älä näytä ketjua Tuoreimmissa."
+    company_short_name: "Yrityksen nimi (lyhyesti)"
+    company_full_name: "Yrityksen nimi (virallisesti)"
+    company_domain: "Yrityksen verkkotunnus"
     errors:
       invalid_email: "Sähköpostiosoite ei kelpaa."
       invalid_username: "Tällä nimellä ei löydy käyttäjää."
@@ -1663,6 +1693,7 @@ fi:
 
         Käyttäjätili tällä sähköpostiosoitteella on estetty.
     email_reject_reply_user_not_matching:
+      subject_template: "[%{site_name}] Sähköpostiongelma -- Odottamaton vastausosoite"
       text_body_template: |
         Pahoittelut, sähköpostiviestisi lähetys kohteeseen %{destination} (titled %{former_title}) ei onnistunut.
 
@@ -1683,6 +1714,7 @@ fi:
         Jos saat tämän viestin ja viestisi _sisälsi_ sisältöä, yritä uudestaan yksinkertaisemmalla muotoilulla.
 
     email_reject_parsing:
+      subject_template: "[%{site_name}] Sähköpostiongelma -- Sisältöä ei tunnistettu"
       text_body_template: |
         Pahoittelemme, mutta sähköpostin lähettäminen tänne %{destination} (otsikolla %{former_title}) ei onnistunut.
 
@@ -2153,6 +2185,7 @@ fi:
     message_to_blank: "message.to on tyhjä"
     text_part_body_blank: "text_part.body on tyhjä"
     body_blank: "body on tyhjä"
+    no_echo_mailing_list_mode: "Postitustilassa ei sähköposti-ilmoituksia käyttäjän omista viesteistä"
   color_schemes:
     base_theme_name: "Pohja"
   about: "Tietoja"
@@ -2268,36 +2301,6 @@ fi:
     title: "Käyttöehdot"
   privacy_topic:
     title: "Rekisteriseloste"
-  static:
-    search_help: |+
-      <h3>Vinkkejä</h3>
-      <p>
-      <ul>
-      <li>Otsikon vastaavuudet ovat etusijalla &ndash; jos olet epävarma, hae otsikkoa</li>
-      <li>Parhaat tulokset saa uniikeilla ja harvinaisilla sanoilla</li>
-      <li>Voit kokeilla etsiä tietyn alueen, ketjun tai käyttäjän viesteistä</li>
-      </ul>
-      </p>
-      <h3>Valinnat</h3>
-      <p>
-      <table>
-      <tr><td><code>order:views</code></td><td><code>order:latest</code></td><td><code>order:likes</code></td><td><code>@username</code></td><td><code>user:foo</code></td></tr>
-      <tr><td><code>status:open</code></td><td><code>status:closed</code></td><td><code>status:archived</code></td><td><code>status:noreplies</code></td><td><code>status:single_user</code></td></tr>
-      <tr><td><code>#category-slug</code></td><td><code>category:foo</code></td><td><code>group:foo</code></td><td><code>badge:foo</code></td><td></td></tr>
-      <tr><td><code>in:likes</code></td><td><code>in:posted</code></td><td><code>in:watching</code></td><td><code>in:tracking</code></td><td><code>in:private</code></td></tr>
-      <tr><td><code>in:bookmarks</code></td><td><code>in:first</code></td><td><code>in:pinned</code></td><td><code>in:unpinned</code></td><td><code>in:wiki</code></td></tr>
-      <tr><td><code>posts_count:num</code></td><td><code>before:days or date</code></td><td><code>after:days or date</code></td><td><code>tags:one,two</code></td><td></td></tr>
-      </table>
-      </p>
-      <h3>Esimerkkejä</h3>
-      <p>
-      <ul>
-      <li><code>rainbows #parks</code> hakee alueelta "parks" ketjuja, joissa esiintyy sana "rainbows".</li>
-      <li><code>rainbows category:parks status:open order:latest</code> etsii alueelta "parks" ketjuja, joissa esiintyy sana "rainbows" ja joita ei suljettu tai arkistoitu, ja esittää ylimmäisinä ne ketjut, joihin on viimeksi kirjoitettu.</li>
-      <li><code>rainbows category:"parks and gardens" in:bookmarks</code> etsii alueelta "parks and gardens" kirjanmerkkeihin lisäämiäsi ketjuja, joissa esiintyy sana "rainbows".</li>
-      </ul>
-      </p>
-
   badges:
     editor:
       name: Muokkaaja
@@ -2531,6 +2534,12 @@ fi:
     staff_tag_disallowed: "Tunnisteen \"%{tag}\" voi lisätä vain henkilökunta"
     staff_tag_remove_disallowed: "Tunnisteen \"%{tag}\" voi poistaa vain henkilökunta"
   rss_by_tag: "Ketjut tunnisteella %{tag}"
+  finish_installation:
+    congratulations: "Onneksi olkoon, asensit Discoursen!"
+    register:
+      button: "Rekisteröidy"
+      title: "Rekisteröi ylläpitäjätunnus"
+      help: "aloita rekisteröimällä uusi tunnus"
   wizard:
     title: "Discoursen asennus"
     step:
@@ -2577,7 +2586,6 @@ fi:
           contact_url:
             label: "Internet-sivu"
             placeholder: "http://www.example.com/contact-us"
-            description: "Internet-sivu, jonka kautta sinuun tai organisaatioosi voi ottaa yhteyttä. Näytetään <a href='/about' target='_blank'>Tietoja-sivulla</a>."
           site_contact:
             label: "Automaattiset viestit"
             description: "Tämän käyttäjän nimissä Discourse lähettää kaikki automaattiset yksityisviestit käyttäjälle. Tärkeimpänä, käyttäjä on uudelle käyttäjälle lähetettävän tervetuloviestin lähettäjä."

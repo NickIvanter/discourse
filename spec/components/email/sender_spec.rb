@@ -139,6 +139,26 @@ describe Email::Sender do
       Then { expect(message.header['X-Discourse-Reply-Key']).not_to be_present }
     end
 
+    context "merges custom mandrill header" do
+      before do
+        ActionMailer::Base.smtp_settings[:address] = "smtp.mandrillapp.com"
+        message.header['X-MC-Metadata'] = { foo: "bar" }.to_json
+      end
+
+      When { email_sender.send }
+      Then { expect(message.header['X-MC-Metadata'].to_s).to match(message.message_id) }
+    end
+
+    context "merges custom sparkpost header" do
+      before do
+        ActionMailer::Base.smtp_settings[:address] = "smtp.sparkpostmail.com"
+        message.header['X-MSYS-API'] = { foo: "bar" }.to_json
+      end
+
+      When { email_sender.send }
+      Then { expect(message.header['X-MSYS-API'].to_s).to match(message.message_id) }
+    end
+
     context 'email logs' do
       let(:email_log) { EmailLog.last }
 
@@ -160,9 +180,6 @@ describe Email::Sender do
       When { email_sender.send }
       Then { expect(email_log.post_id).to eq(3344) }
       Then { expect(email_log.topic_id).to eq(5577) }
-      Then { expect(message.header['In-Reply-To']).to be_present }
-      Then { expect(message.header['References']).to be_present }
-
     end
 
     context "email log with a reply key" do

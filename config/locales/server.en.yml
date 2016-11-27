@@ -94,7 +94,7 @@ en:
       has_already_been_used: "has already been used"
       inclusion: is not included in the list
       invalid: is invalid
-      is_invalid: "is invalid; try to be a little more descriptive"
+      is_invalid: "seems unclear, is it a complete sentence?"
       less_than: must be less than %{count}
       less_than_or_equal_to: must be less than or equal to %{count}
       not_a_number: is not a number
@@ -196,7 +196,7 @@ en:
 
   just_posted_that: "is too similar to what you recently posted"
   invalid_characters: "contains invalid characters"
-  is_invalid: "is invalid; try to be a little more descriptive"
+  is_invalid: "seems unclear, is it a complete sentence?"
   next_page: "next page →"
   prev_page: "← previous page"
   page_num: "Page %{num}"
@@ -650,9 +650,16 @@ en:
     authorize: "Authorize"
     read: "read"
     read_write: "read/write"
-    description: "Would you like to grant \"%{application_name}\" %{access} access to your account?"
+    description: "\"%{application_name}\" is requesting the following access to your account:"
     no_trust_level: "Sorry, you do not have the required trust level to access the user API"
     generic_error: "Sorry, we are unable to issue user API keys, this feature may be disabled by the site admin"
+    scopes:
+      message_bus: "Live updates"
+      notifications: "Read and clear notifications"
+      push: "Push notifications to external services"
+      session_info: "Read user session info"
+      read: "Read all"
+      write: "Write all"
 
   reports:
     visits:
@@ -810,7 +817,6 @@ en:
     s3_backup_config_warning: 'The server is configured to upload backups to s3, but at least one the following setting is not set: s3_access_key_id, s3_secret_access_key or s3_backup_bucket. Go to <a href="/admin/site_settings">the Site Settings</a> and update the settings. <a href="http://meta.discourse.org/t/how-to-set-up-image-uploads-to-s3/7229" target="_blank">See "How to set up image uploads to S3?" to learn more</a>.'
     image_magick_warning: 'The server is configured to create thumbnails of large images, but ImageMagick is not installed. Install ImageMagick using your favorite package manager or <a href="http://www.imagemagick.org/script/binary-releases.php" target="_blank">download the latest release</a>.'
     failing_emails_warning: 'There are %{num_failed_jobs} email jobs that failed. Check your app.yml and ensure that the mail server settings are correct. <a href="/sidekiq/retries" target="_blank">See the failed jobs in Sidekiq</a>.'
-    consumer_email_warning: "Your site is configured to use Gmail (or another consumer email service) to send email. <a href='http://support.google.com/a/bin/answer.py?hl=en&answer=166852' target='_blank'>Gmail limits how many emails you can send</a>. Consider using an email service provider like mandrill.com to ensure email deliverability."
     subfolder_ends_in_slash: "Your subfolder setup is incorrect; the DISCOURSE_RELATIVE_URL_ROOT ends in a slash."
     email_polling_errored_recently:
       one: "Email polling has generated an error in the past 24 hours. Look at <a href='/logs' target='_blank'>the logs</a> for more details."
@@ -822,6 +828,7 @@ en:
 
   site_settings:
     censored_words: "Words that will be automatically replaced with &#9632;&#9632;&#9632;&#9632;"
+    censored_pattern: "Regex pattern that will be automatically replaced with &#9632;&#9632;&#9632;&#9632;"
     delete_old_hidden_posts: "Auto-delete any hidden posts that stay hidden for more than 30 days."
     default_locale: "The default language of this Discourse instance (ISO 639-1 Code)"
     allow_user_locale: "Allow users to choose their own language interface preference"
@@ -868,7 +875,8 @@ en:
     show_pinned_excerpt_mobile: "Show excerpt on pinned topics in mobile view."
     show_pinned_excerpt_desktop: "Show excerpt on pinned topics in desktop view."
     post_onebox_maxlength: "Maximum length of a oneboxed Discourse post in characters."
-    onebox_domains_whitelist: "A list of domains to allow oneboxing for; these domains should support OpenGraph or oEmbed. Test them at http://iframely.com/debug"
+    onebox_domains_blacklist: "A list of domains that will never be oneboxed."
+    max_oneboxes_per_post: "Maximum number of oneboxes in a post."
 
     logo_url: "The logo image at the top left of your site, should be a wide rectangle shape. If left blank site title text will be shown."
     digest_logo_url: "The alternate logo image used at the top of your site's email summary. Should be a wide rectangle shape. Should not be an SVG image. If left blank `logo_url` will be used."
@@ -1238,9 +1246,13 @@ en:
     attachment_content_type_blacklist: "List of keywords used to blacklist attachments based on the content type."
     attachment_filename_blacklist: "List of keywords used to blacklist attachments based on the filename."
 
+    enable_forwarded_emails: "[BETA] Allow users to create a topic by forwarding an email in."
+    always_show_trimmed_content: "Always show trimmed part of incoming emails. WARNING: might reveal email addresses."
+
     manual_polling_enabled: "Push emails using the API for email replies."
     pop3_polling_enabled: "Poll via POP3 for email replies."
     pop3_polling_ssl: "Use SSL while connecting to the POP3 server. (Recommended)"
+    pop3_polling_openssl_verify: "Verify TLS server certificate (Default: enabled)"
     pop3_polling_period_mins: "The period in minutes between checking the POP3 account for email. NOTE: requires restart."
     pop3_polling_port: "The port to poll a POP3 account on."
     pop3_polling_host: "The host to poll for email via POP3."
@@ -1267,6 +1279,7 @@ en:
     default_avatars: "URLs to avatars that will be used by default for new users until they change them."
     automatically_download_gravatars: "Download Gravatars for users upon account creation or email change."
     digest_topics: "The maximum number of topics to display in the email summary."
+    digest_posts: "The maximum number of popular posts to display in the email summary."
     digest_min_excerpt_length: "Minimum post excerpt in the email summary, in characters."
     delete_digest_email_after_days: "Suppress summary emails for users not seen on the site for more than (n) days."
     digest_suppress_categories: "Suppress these categories from summary emails."
@@ -1326,6 +1339,7 @@ en:
     embed_username_key_from_feed: "Key to pull discourse username from feed."
     embed_title_scrubber: "Regular expression for scrubbing embeddable titles."
     embed_truncate: "Truncate the embedded posts."
+    allowed_href_schemes: "Schemes allowed in links in addition to http and https."
     embed_post_limit: "Maximum number of posts to embed."
     embed_username_required: "The username for topic creation is required."
     embed_whitelist_selector: "CSS selector for elements that are allowed in embeds."
@@ -1385,13 +1399,13 @@ en:
     default_categories_watching: "List of categories that are watched by default."
     default_categories_tracking: "List of categories that are tracked by default."
     default_categories_muted: "List of categories that are muted by default."
+    default_categories_watching_first_post: "List of categories in which first post in each new topic will be watched by default."
     hellban_mode: "Use soft bloking for users"
 
     max_user_api_reqs_per_day: "Maximum number of user API requests per key per day"
     max_user_api_reqs_per_minute: "Maximum number of user API requests per key per minute"
-    allow_read_user_api_keys: "Allow generation of readonly user API keys"
-    allow_write_user_api_keys: "Allow generation of write user API keys"
-    allow_push_user_api_keys: "Allow generation of push user API keys"
+    allow_user_api_keys: "Allow generation of user API keys"
+    allow_user_api_key_scopes: "List of scopes allowed for user API keys"
     max_api_keys_per_user: "Maximum number of user API keys per user"
     min_trust_level_for_user_api_key: "Trust level required for generation of user API keys"
     allowed_user_api_auth_redirects: "Allowed URL for authentication redirect for user API keys"
@@ -1437,6 +1451,7 @@ en:
       reply_by_email_address_is_empty: "You must set a 'reply by email address' before enabling reply by email."
       email_polling_disabled: "You must enable either manual or POP3 polling before enabling reply by email."
       user_locale_not_enabled: "You must first enable 'allow user locale' before enabling this setting."
+      invalid_regex: "Regex is invalid or not allowed."
 
   search:
     within_post: "#%{post_number} by %{username}"
@@ -2415,16 +2430,23 @@ en:
 
     digest:
       why: "A brief summary of %{site_link} since your last visit on %{last_seen_at}"
+      since_last_visit: "Since your last visit"
+      new_topics: "New Topics"
+      unread_messages: "Unread Messages"
+      unread_notifications: "Unread Notifications"
+      new_posts: "New Posts"
+      new_users: "New Users"
+      popular_topics: "Popular Topics"
+      follow_topic: "Follow this topic"
+      join_the_discussion: "Read More"
+      popular_posts: "Popular Posts"
+      from_topic_label: "From"
+      more_new: "New in topics and categories you follow"
       subject_template: "[%{site_name}] Summary"
-      new_activity: "New activity on your topics and posts:"
-      top_topics: "Popular posts"
-      other_new_topics: "Popular topics"
       unsubscribe: "This summary is sent from %{site_link} when we haven't seen you in a while. To unsubscribe %{unsubscribe_link}."
       click_here: "click here"
       from: "%{site_name} summary"
-      read_more: "Read More"
-      more_topics: "There were %{new_topics_since_seen} other new topics."
-      more_topics_category: "More new topics:"
+      preheader: "A brief summary since your last visit on %{last_seen_at}"
       custom:
         html:
           header: ''
@@ -2610,6 +2632,7 @@ en:
     message_to_blank: "message.to is blank"
     text_part_body_blank: "text_part.body is blank"
     body_blank: "body is blank"
+    no_echo_mailing_list_mode: "Mailing list notifications disabled for user's own posts"
 
   color_schemes:
     base_theme_name: "Base"
@@ -3189,6 +3212,27 @@ en:
     staff_tag_remove_disallowed: "The tag \"%{tag}\" may only be removed by staff."
   rss_by_tag: "Topics tagged %{tag}"
 
+  finish_installation:
+    congratulations: "Congratulations, you installed Discourse!"
+    register:
+      button: "Register"
+      title: "Register Admin Account"
+      help: "register a new account to get started"
+      no_emails: "Unfortunately, no administrator emails were defined during setup, so finalizing the configuration <a href='https://meta.discourse.org/t/how-to-create-an-administrator-account-after-install/14046'>may be difficult</a>."
+    confirm_email:
+      title: "Confirm your Email"
+      message: "<p>We sent an activation mail to <b>%{email}</b>. Please follow the instructions in the email to activate your account.</p><p>If it doesn't arrive, ensure you have set up email correctly for your Discourse and check your spam folder.</p>"
+    resend_email:
+      title: "Resend Activation Email"
+      message: "<p>We've re-sent the activation email to <b>%{email}</b>"
+
+  safe_mode:
+    title: "Enter safe mode"
+    description: "Safe mode allows you to test your site without loading plugins or site customizations."
+    no_customizations: "Disable all site customizations"
+    only_official: "Disable unofficial plugins"
+    no_plugins: "Disable all plugins"
+    enter: "Enter Safe Mode"
   wizard:
     title: "Discourse Setup"
     step:
@@ -3250,7 +3294,7 @@ en:
           contact_url:
             label: "Web Page"
             placeholder: "http://www.example.com/contact-us"
-            description: "General contact web page for you or your oganization. Will be displayed on <a href='/about' target='_blank'>your about page</a>."
+            description: "General contact web page for you or your organization. Will be displayed on <a href='/about' target='_blank'>your about page</a>."
           site_contact:
             label: "Automated Messages"
             description: "All automated Discourse personal messages will be sent from this user. Most importantly, this user will be the designated sender of every welcome message automatically sent to new users."

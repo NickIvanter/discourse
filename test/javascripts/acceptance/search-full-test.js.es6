@@ -43,6 +43,8 @@ test("perform various searches", assert => {
   visit("/search");
 
   andThen(() => {
+    ok($('body.search-page').length, "has body class");
+    ok(exists('.search-container'), "has container class");
     assert.ok(find('input.search').length > 0);
     assert.ok(find('.fps-topic').length === 0);
   });
@@ -71,19 +73,22 @@ test("open advanced search", assert => {
 
 test("validate population of advanced search", assert => {
   visit("/search");
-  fillIn('.search input.full-page-search', 'test user:admin #bug group:moderators badge:Reader tags:monkey in:likes status:open after:5 posts_count:10');
+  fillIn('.search input.full-page-search', 'test user:admin #bug group:moderators badge:Reader tags:monkey in:likes in:private in:wiki in:bookmarks status:open after:2016-10-05 posts_count:10');
   click('.search-advanced-btn');
 
   andThen(() => {
     assert.ok(exists('.search-advanced-options span:contains("admin")'), 'has "admin" pre-populated');
-    assert.ok(exists('.search-advanced-options .category-combobox .select2-choice .select2-chosen:contains("bug")'), 'has "bug" pre-populated');
+    assert.ok(exists('.search-advanced-options .badge-category:contains("bug")'), 'has "bug" pre-populated');
     //assert.ok(exists('.search-advanced-options span:contains("moderators")'), 'has "moderators" pre-populated');
     //assert.ok(exists('.search-advanced-options span:contains("Reader")'), 'has "Reader" pre-populated');
     assert.ok(exists('.search-advanced-options .tag-chooser .tag-monkey'), 'has "monkey" pre-populated');
-    assert.ok(exists('.search-advanced-options .combobox .select2-choice .select2-chosen:contains("I liked")'), 'has "I liked" pre-populated');
+    assert.ok(exists('.search-advanced-options .in-likes:checked'), 'has "I liked" pre-populated');
+    assert.ok(exists('.search-advanced-options .in-private:checked'), 'has "are in my messages" pre-populated');
+    assert.ok(exists('.search-advanced-options .in-wiki:checked'), 'has "are wiki" pre-populated');
+    assert.ok(exists('.search-advanced-options .combobox .select2-choice .select2-chosen:contains("I\'ve bookmarked")'), 'has "I\'ve bookmarked" pre-populated');
     assert.ok(exists('.search-advanced-options .combobox .select2-choice .select2-chosen:contains("are open")'), 'has "are open" pre-populated');
     assert.ok(exists('.search-advanced-options .combobox .select2-choice .select2-chosen:contains("after")'), 'has "after" pre-populated');
-    assert.equal(find('.search-advanced-options #search-post-date').val(), "5", 'has "5" pre-populated');
+    assert.equal(find('.search-advanced-options #search-post-date').val(), "2016-10-05", 'has "2016-10-05" pre-populated');
     assert.equal(find('.search-advanced-options #search-posts-count').val(), "10", 'has "10" pre-populated');
   });
 });
@@ -115,11 +120,13 @@ test("update category through advanced search ui", assert => {
   visit("/search");
   fillIn('.search input.full-page-search', 'none');
   click('.search-advanced-btn');
-  selectDropdown('.search-advanced-options .category-combobox', 4);
-  click('.search-advanced-options'); // need to click off the combobox for the search-term to get updated
+  fillIn('.search-advanced-options .category-selector', 'faq');
+  click('.search-advanced-options .category-selector');
+  keyEvent('.search-advanced-options .category-selector', 'keydown', 8);
+  keyEvent('.search-advanced-options .category-selector', 'keydown', 9);
 
   andThen(() => {
-    assert.ok(exists('.search-advanced-options .category-combobox .select2-choice .select2-chosen:contains("faq")'), 'has "faq" populated');
+    assert.ok(exists('.search-advanced-options .badge-category:contains("faq")'), 'has "faq" populated');
     assert.equal(find('.search input.full-page-search').val(), "none #faq", 'has updated search term to "none #faq"');
   });
 });
@@ -190,16 +197,52 @@ test("update category through advanced search ui", assert => {
 //   });
 // });
 
+test("update in:likes filter through advanced search ui", assert => {
+  visit("/search");
+  fillIn('.search input.full-page-search', 'none');
+  click('.search-advanced-btn');
+  click('.search-advanced-options .in-likes');
+
+  andThen(() => {
+    assert.ok(exists('.search-advanced-options .in-likes:checked'), 'has "I liked" populated');
+    assert.equal(find('.search input.full-page-search').val(), "none in:likes", 'has updated search term to "none in:likes"');
+  });
+});
+
+test("update in:private filter through advanced search ui", assert => {
+  visit("/search");
+  fillIn('.search input.full-page-search', 'none');
+  click('.search-advanced-btn');
+  click('.search-advanced-options .in-private');
+
+  andThen(() => {
+    assert.ok(exists('.search-advanced-options .in-private:checked'), 'has "are in my messages" populated');
+    assert.equal(find('.search input.full-page-search').val(), "none in:private", 'has updated search term to "none in:private"');
+  });
+});
+
+test("update in:wiki filter through advanced search ui", assert => {
+  visit("/search");
+  fillIn('.search input.full-page-search', 'none');
+  click('.search-advanced-btn');
+  click('.search-advanced-options .in-wiki');
+
+  andThen(() => {
+    assert.ok(exists('.search-advanced-options .in-wiki:checked'), 'has "are wiki" populated');
+    assert.equal(find('.search input.full-page-search').val(), "none in:wiki", 'has updated search term to "none in:wiki"');
+  });
+});
+
 test("update in filter through advanced search ui", assert => {
   visit("/search");
   fillIn('.search input.full-page-search', 'none');
   click('.search-advanced-btn');
-  selectDropdown('.search-advanced-options #s2id_in', 'likes');
-  fillIn('.search-advanced-options #in', 'likes');
+  selectDropdown('.search-advanced-options #s2id_in', 'bookmarks');
+  fillIn('.search-advanced-options #in', 'bookmarks');
 
   andThen(() => {
-    assert.ok(exists('.search-advanced-options #s2id_in .select2-choice .select2-chosen:contains("I liked")'), 'has "I liked" populated');
-    assert.equal(find('.search input.full-page-search').val(), "none in:likes", 'has updated search term to "none in:likes"');
+    assert.ok(exists('.search-advanced-options #s2id_in .select2-choice .select2-chosen:contains("I\'ve bookmarked")'), 'has "I\'ve bookmarked" populated');
+    assert.equal(find('.search input.full-page-search').val(), "none in:bookmarks", 'has updated search term to "none in:bookmarks"');
   });
 });
 
@@ -220,14 +263,14 @@ test("update post time through advanced search ui", assert => {
   visit("/search");
   fillIn('.search input.full-page-search', 'none');
   click('.search-advanced-btn');
-  fillIn('#search-post-date', '5');
+  fillIn('#search-post-date', '2016-10-05');
   selectDropdown('.search-advanced-options #s2id_postTime', 'after');
   fillIn('.search-advanced-options #postTime', 'after');
 
   andThen(() => {
     assert.ok(exists('.search-advanced-options #s2id_postTime .select2-choice .select2-chosen:contains("after")'), 'has "after" populated');
-    assert.equal(find('.search-advanced-options #search-post-date').val(), "5", 'has "5" populated');
-    assert.equal(find('.search input.full-page-search').val(), "none after:5", 'has updated search term to "none after:5"');
+    assert.equal(find('.search-advanced-options #search-post-date').val(), "2016-10-05", 'has "2016-10-05" populated');
+    assert.equal(find('.search input.full-page-search').val(), "none after:2016-10-05", 'has updated search term to "none after:2016-10-05"');
   });
 });
 
@@ -240,5 +283,15 @@ test("update posts count through advanced search ui", assert => {
   andThen(() => {
     assert.equal(find('.search-advanced-options #search-posts-count').val(), "5", 'has "5" populated');
     assert.equal(find('.search input.full-page-search').val(), "none posts_count:5", 'has updated search term to "none posts_count:5"');
+  });
+});
+
+test("validate advanced search when initially empty", assert => {
+  visit("/search?expanded=true");
+  click('.search-advanced-options .in-likes');
+
+  andThen(() => {
+    assert.ok(exists('.search-advanced-options .in-likes:checked'), 'has "I liked" populated');
+    assert.equal(find('.search input.full-page-search').val(), "in:likes", 'has updated search term to "in:likes"');
   });
 });

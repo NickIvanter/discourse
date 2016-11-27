@@ -1,5 +1,6 @@
-import StringBuffer from 'discourse/mixins/string-buffer';
 import computed from 'ember-addons/ember-computed-decorators';
+import { bufferedRender } from 'discourse-common/lib/buffered-render';
+import { getOwner } from 'discourse-common/lib/get-owner';
 
 export function showEntrance(e) {
   let target = $(e.target);
@@ -11,22 +12,29 @@ export function showEntrance(e) {
         target = target.end();
       }
     }
-    this.container.lookup('controller:application').send("showTopicEntrance", {topic: this.get('topic'), position: target.offset()});
+
+    this.appEvents.trigger('topic-entrance:show', { topic: this.get('topic'), position: target.offset() });
     return false;
   }
 }
 
-export default Ember.Component.extend(StringBuffer, {
+export default Ember.Component.extend(bufferedRender({
   rerenderTriggers: ['bulkSelectEnabled', 'topic.pinned'],
   tagName: 'tr',
-  rawTemplate: 'list/topic-list-item.raw',
   classNameBindings: [':topic-list-item', 'unboundClassNames'],
   attributeBindings: ['data-topic-id'],
   'data-topic-id': Em.computed.alias('topic.id'),
 
   actions: {
     toggleBookmark() {
-      this.get('topic').toggleBookmark().finally(() => this.rerender());
+      this.get('topic').toggleBookmark().finally(() => this.rerenderBuffer());
+    }
+  },
+
+  buildBuffer(buffer) {
+    const template = getOwner(this).lookup('template:list/topic-list-item.raw');
+    if (template) {
+      buffer.push(template(this));
     }
   },
 
@@ -142,4 +150,4 @@ export default Ember.Component.extend(StringBuffer, {
     }
   }.on('didInsertElement')
 
-});
+}));

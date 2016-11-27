@@ -4,8 +4,8 @@ import Draft from 'discourse/models/draft';
 import Composer from 'discourse/models/composer';
 import { default as computed, observes } from 'ember-addons/ember-computed-decorators';
 import { relativeAge } from 'discourse/lib/formatter';
-import { escapeExpression } from 'discourse/lib/utilities';
 import InputValidation from 'discourse/models/input-validation';
+import { getOwner } from 'discourse-common/lib/get-owner';
 
 function loadDraft(store, opts) {
   opts = opts || {};
@@ -51,7 +51,9 @@ export function addPopupMenuOptionsCallback(callback) {
 }
 
 export default Ember.Controller.extend({
-  needs: ['modal', 'topic', 'application'],
+  topicController: Ember.inject.controller('topic'),
+  application: Ember.inject.controller(),
+
   replyAsNewTopicDraft: Em.computed.equal('model.draftKey', Composer.REPLY_AS_NEW_TOPIC_KEY),
   checkedMessages: false,
   messageCount: null,
@@ -83,8 +85,8 @@ export default Ember.Controller.extend({
   },
 
   showToolbar: Em.computed({
-    get(){
-      const keyValueStore = this.container.lookup('key-value-store:main');
+    get() {
+      const keyValueStore = getOwner(this).lookup('key-value-store:main');
       const storedVal = keyValueStore.get("toolbar-enabled");
       if (this._toolbarEnabled === undefined && storedVal === undefined) {
         // iPhone 6 is 375, anything narrower and toolbar should
@@ -95,14 +97,14 @@ export default Ember.Controller.extend({
       return this._toolbarEnabled || storedVal === "true";
     },
     set(key, val){
-      const keyValueStore = this.container.lookup('key-value-store:main');
+      const keyValueStore = getOwner(this).lookup('key-value-store:main');
       this._toolbarEnabled = val;
       keyValueStore.set({key: "toolbar-enabled", value: val ? "true" : "false"});
       return val;
     }
   }),
 
-  topicModel: Ember.computed.alias('controllers.topic.model'),
+  topicModel: Ember.computed.alias('topicController.model'),
 
   @computed('model.canEditTitle', 'model.creatingPrivateMessage')
   canEditTags(canEditTitle, creatingPrivateMessage) {
@@ -194,6 +196,17 @@ export default Ember.Controller.extend({
   }.property('model.creatingPrivateMessage', 'model.targetUsernames'),
 
   actions: {
+
+    typed() {
+      this.checkReplyLength();
+      this.get('model').typing();
+    },
+
+    cancelled() {
+      this.send('hitEsc');
+      this.send('hideOptions');
+    },
+
     addLinkLookup(linkLookup) {
       this.set('linkLookup', linkLookup);
     },
@@ -342,6 +355,22 @@ export default Ember.Controller.extend({
           });
         });
       }
+    },
+
+    cannotSeeMention(mentions) {
+      mentions.forEach(mention => {
+        const translation = (this.get('topic.isPrivateMessage')) ?
+          'composer.cannot_see_mention.private' :
+          'composer.cannot_see_mention.category';
+        const body = I18n.t(translation, {
+          username: "@" + mention.name
+        });
+        this.appEvents.trigger('composer-messages:create', {
+          extraClass: 'custom-body',
+          templateName: 'custom-body',
+          body
+        });
+      });
     }
 
   },
@@ -404,7 +433,7 @@ export default Ember.Controller.extend({
 
         if (currentTopic) {
           buttons.push({
-            "label": I18n.t("composer.reply_here") + "<br/><div class='topic-title overflow-ellipsis'>" + escapeExpression(currentTopic.get('title')) + "</div>",
+            "label": I18n.t("composer.reply_here") + "<br/><div class='topic-title overflow-ellipsis'>" + currentTopic.get('fancyTitle') + "</div>",
             "class": "btn btn-reply-here",
             "callback": function() {
               composer.set('topic', currentTopic);
@@ -415,7 +444,7 @@ export default Ember.Controller.extend({
         }
 
         buttons.push({
-          "label": I18n.t("composer.reply_original") + "<br/><div class='topic-title overflow-ellipsis'>" + escapeExpression(this.get('model.topic.title')) + "</div>",
+          "label": I18n.t("composer.reply_original") + "<br/><div class='topic-title overflow-ellipsis'>" + this.get('model.topic.fancyTitle') + "</div>",
           "class": "btn-primary btn-reply-on-original",
           "callback": function() {
             self.save(true);
@@ -484,7 +513,7 @@ export default Ember.Controller.extend({
       self.appEvents.one('composer:will-open', () => bootbox.alert(error));
     });
 
-    if (this.get('controllers.application.currentRouteName').split('.')[0] === 'topic' &&
+    if (this.get('application.currentRouteName').split('.')[0] === 'topic' &&
         composer.get('topic.id') === this.get('topicModel.id')) {
       staged = composer.get('stagedPost');
     }
@@ -616,10 +645,10 @@ export default Ember.Controller.extend({
       let category;
 
       if (!splitCategory[1]) {
-        category = this.site.get('categories').findProperty('nameLower', splitCategory[0].toLowerCase());
+        category = this.site.get('categories').findBy('nameLower', splitCategory[0].toLowerCase());
       } else {
         const categories = Discourse.Category.list();
-        const mainCategory = categories.findProperty('nameLower', splitCategory[0].toLowerCase());
+        const mainCategory = categories.findBy('nameLower', splitCategory[0].toLowerCase());
         category = categories.find(function(item) {
           return item && item.get('nameLower') === splitCategory[1].toLowerCase() && item.get('parent_category_id') === mainCategory.id;
         });

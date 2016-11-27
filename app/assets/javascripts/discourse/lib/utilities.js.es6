@@ -85,37 +85,27 @@ export function extractDomainFromUrl(url) {
 }
 
 export function selectedText() {
-  var html = '';
+  const selection = window.getSelection();
+  if (selection.isCollapsed) { return ""; }
 
-  if (typeof window.getSelection !== "undefined") {
-    var sel = window.getSelection();
-    if (sel.rangeCount) {
-      var container = document.createElement("div");
-      for (var i = 0, len = sel.rangeCount; i < len; ++i) {
-        container.appendChild(sel.getRangeAt(i).cloneContents());
-      }
-      html = container.innerHTML;
-    }
-  } else if (typeof document.selection !== "undefined") {
-    if (document.selection.type === "Text") {
-      html = document.selection.createRange().htmlText;
-    }
+  const $div = $("<div>");
+  for (let r = 0; r < selection.rangeCount; r++) {
+    const range = selection.getRangeAt(r);
+    const $ancestor = $(range.commonAncestorContainer);
+
+    // ensure we never quote text in the post menu area
+    const $postMenuArea = $ancestor.find(".post-menu-area")[0];
+    if ($postMenuArea) { range.setEndBefore($postMenuArea); }
+
+    $div.append(range.cloneContents());
   }
 
-  html = html.replace(/<br>/g, "\n");
+  // strip click counters
+  $div.find(".clicks").remove();
+  // replace emojis
+  $div.find("img.emoji").replaceWith(function() { return this.title; });
 
-  // Strip out any .click elements from the HTML before converting it to text
-  const div = document.createElement('div');
-  div.innerHTML = html;
-
-  const $div = $(div);
-
-  // Find all emojis and replace with its title attribute.
-  $div.find('img.emoji').replaceWith(function() { return this.title; });
-  $('.clicks', $div).remove();
-  const text = div.textContent || div.innerText || "";
-
-  return String(text).trim();
+  return String($div.text()).trim();
 }
 
 // Determine the row and col of the caret in an element
@@ -190,10 +180,8 @@ export function validateUploadedFiles(files, bypassNewUserRestriction) {
 
 export function validateUploadedFile(file, type, bypassNewUserRestriction) {
   // check that the uploaded file is authorized
-  if (!authorizesAllExtensions() &&
-      !isAuthorizedUpload(file)) {
-    var extensions = authorizedExtensions();
-    bootbox.alert(I18n.t('post.errors.upload_not_authorized', { authorized_extensions: extensions }));
+  if (!authorizesAllExtensions() && !isAuthorizedUpload(file)) {
+    bootbox.alert(I18n.t('post.errors.upload_not_authorized', { authorized_extensions: authorizedExtensions() }));
     return false;
   }
 
@@ -217,23 +205,24 @@ export function authorizesAllExtensions() {
   return Discourse.SiteSettings.authorized_extensions.indexOf("*") >= 0;
 }
 
+function extensions() {
+  return Discourse.SiteSettings.authorized_extensions
+                               .toLowerCase()
+                               .replace(/[\s\.]+/g, "")
+                               .split("|")
+                               .filter(ext => ext.indexOf("*") === -1);
+}
+
+function extensionsRegex() {
+  return new RegExp("\\.(" + extensions().join("|") + ")$", "i");
+}
+
 export function isAuthorizedUpload(file) {
-  if (file && file.name) {
-    var extensions = _.chain(Discourse.SiteSettings.authorized_extensions.split("|"))
-      .reject(function(extension) { return extension.indexOf("*") >= 0; })
-      .map(function(extension) { return (extension.indexOf(".") === 0 ? extension.substring(1) : extension).replace(".", "\\."); })
-      .value();
-    return new RegExp("\\.(" + extensions.join("|") + ")$", "i").test(file.name);
-  }
-  return false;
+  return file && file.name && extensionsRegex().test(file.name);
 }
 
 export function authorizedExtensions() {
-  return _.chain(Discourse.SiteSettings.authorized_extensions.split("|"))
-    .reject(function(extension) { return extension.indexOf("*") >= 0; })
-    .map(function(extension) { return extension.toLowerCase(); })
-    .value()
-    .join(", ");
+  return extensions().join(", ");
 }
 
 export function uploadLocation(url) {
@@ -272,7 +261,7 @@ export function allowsImages() {
 
 export function allowsAttachments() {
   return authorizesAllExtensions() ||
-    !(/((png|jpe?g|gif|bmp|tiff?|svg|web|ico)(,\s)?)+$/i).test(authorizedExtensions());
+    !/^((png|jpe?g|gif|bmp|tiff?|svg|webp|ico)(,\s)?)+$/i.test(authorizedExtensions());
 }
 
 export function displayErrorForUpload(data) {

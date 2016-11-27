@@ -500,10 +500,7 @@ sq:
       apps: "Aplikimet"
       revoke_access: "Hiqi aksesin"
       undo_revoke_access: "Anullo heqjen e aksesit"
-      api_permissions: "Të drejtat"
       api_approved: "Aprovuar më:"
-      api_read: "lexuar"
-      api_read_write: "lexim e shkrim"
       staff_counters:
         flags_given: "sinjalizime të dobishme"
         flagged_posts: "postimet e sinjalizuara"
@@ -679,7 +676,6 @@ sq:
         account_age_days: "Jetëgjatësia e llogarisë (ditë)"
         create: "Dërgo një ftesë"
         generate_link: "Kopjo lidhjen e ftesës"
-        generated_link_message: '<p>Lidhja e ftesës u krijua!</p><p><input class="invite-link-input" style="width: 75%;" type="text" value="%{inviteLink}"></p><p>Kjo ftesë është e vlefshme veto për adresën email: <b>%{invitedEmail}</b></p>'
         bulk_invite:
           none: "Ju nuk keni ftuar askënd deri tani. Mund të dërgoni ftesa individuale ose mund të ftoni një grup personash duke <a href='https://meta.discourse.org/t/send-bulk-invites/16468'>ngarkuar skedarin</a>."
           text: "Skedari për ftesat në grup"
@@ -753,7 +749,7 @@ sq:
         the_topic: "tema"
     loading: "Duke ngarkuar..."
     errors:
-      prev_page: "duku u munduar të ngarkohet"
+      prev_page: "duke u munduar të ngarkohet"
       reasons:
         network: "Gabim në rrjet"
         server: "Gabim në server"
@@ -1078,7 +1074,6 @@ sq:
       title: "kërko në faqe"
       no_results: "Nuk u gjet asnjë rezultat."
       no_more_results: "Nuk gjetëm rezultate të tjera. "
-      search_help: Ndihmë për kërkimin
       searching: "Duke kërkuar..."
       post_format: "#{{post_number}} nga {{username}}"
       context:
@@ -1825,8 +1820,6 @@ sq:
       readonly: "Shiko"
     lightbox:
       download: "shkarko"
-    search_help:
-      title: 'Opsionet e kërkimit'
     keyboard_shortcuts_help:
       title: 'Shkurtimet e tastierës '
       jump_to:
@@ -2188,7 +2181,6 @@ sq:
           rollback:
             label: "Rikthe mbrapa"
       export_csv:
-        user_archive_confirm: "Vërtet doni t'i shkarkoni postimet tuaja?"
         failed: "Eksporti dështoi. Kontrolloni log-et. "
         button_text: "Eksporto"
         button_title:

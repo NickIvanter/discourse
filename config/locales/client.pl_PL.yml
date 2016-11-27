@@ -527,10 +527,7 @@ pl_PL:
       apps: "Aplikacje"
       revoke_access: "Zablokuj dostęp"
       undo_revoke_access: "Cofnij zablokowanie dostępu"
-      api_permissions: "Uprawnienia:"
       api_approved: "Zatwierdzony:"
-      api_read: "odczyt"
-      api_read_write: "odczyt i zapis"
       staff_counters:
         flags_given: "uczynnych oflagowań"
         flagged_posts: "oflagowane wpisy"
@@ -703,7 +700,6 @@ pl_PL:
         account_age_days: "Wiek konta w dniach"
         create: "Wyślij zaproszenie"
         generate_link: "Skopiuj link z zaproszeniem"
-        generated_link_message: '<p>Link z zaproszeniem został wygenerowany pomyślnie!</p><p><input class="invite-link-input" style="width: 75%;" type="text" value="%{inviteLink}"></p><p>Link zaproszenia jest ważny jedynie dla tego adresu e-mail: <b>%{invitedEmail}</b></p>'
         bulk_invite:
           none: "Jeszcze nikogo nie zaproszono. Możesz wysłać pojedyncze zaproszenie lub <a href='https://meta.discourse.org/t/send-bulk-invites/16468'>zaprosić wiele osób na raz wysyłając odpowiedni plik</a>."
           text: "Zaproszenia hurtowe z pliku"
@@ -1085,7 +1081,6 @@ pl_PL:
       title: "szukaj tematów, wpisów, użytkowników lub kategorii"
       no_results: "Brak wyników wyszukiwania"
       no_more_results: "Nie znaleziono więcej wyników."
-      search_help: Wyszukaj w pomocy
       searching: "Szukam…"
       post_format: "#{{post_number}} za {{username}}"
       context:
@@ -1869,8 +1864,6 @@ pl_PL:
       readonly: "przeglądać"
     lightbox:
       download: "pobierz"
-    search_help:
-      title: 'Wyszukiwanie pomocy'
     keyboard_shortcuts_help:
       title: 'Skróty klawiszowe'
       jump_to:
@@ -2250,7 +2243,6 @@ pl_PL:
             label: "Wycofaj"
             title: "Wycofaj bazę danych do poprzedniego poprawnego stanu"
       export_csv:
-        user_archive_confirm: "Czy na pewno chcesz pobrać swoje wszystkie wpisy?"
         success: "Rozpoczęto eksport: otrzymasz wiadomość, gdy proces zostanie zakończony."
         failed: "Eksport zakończył się niepowodzeniem. Sprawdź logi."
         rate_limit_error: "Wpisy mogą być pobierane raz dziennie, spróbuj ponownie jutro."

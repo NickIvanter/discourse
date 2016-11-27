@@ -68,7 +68,7 @@ function initializeRecentlyUsedIcons() {
 
     recent.forEach(emoji => recentlyUsedIcons.push(emoji.title));
 
-    const recentGroup = groups.findProperty('name', 'recent');
+    const recentGroup = groups.findBy('name', 'recent');
     if (recentGroup) {
       recentGroup.icons = recentlyUsedIcons;
     } else {
@@ -151,7 +151,7 @@ function render(page, offset, options) {
   };
 
   $('.emoji-modal', options.appendTo).remove();
-  const template = options.container.lookup('template:emoji-toolbar.raw');
+  const template = options.register.lookup('template:emoji-toolbar.raw');
   options.appendTo.append(template(model));
 
   bindEvents(page, offset, options);

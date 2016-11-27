@@ -168,7 +168,7 @@ de:
     admin_title: "Administration"
     flags_title: "Meldungen"
     show_more: "mehr anzeigen"
-    show_help: "Optionen"
+    show_help: "Erweiterte Suche"
     links: "Links"
     links_lowercase:
       one: "Link"
@@ -471,7 +471,7 @@ de:
         enabled: "Mailinglisten-Modus aktivieren"
         instructions: |
           Diese Einstellung überschreibt die Aktivitäts-Übersicht.<br />
-          Stummgeschaltete Themen und Kategorien werden in diesen E-Mails nicht eingeschlossen.
+          Stummgeschaltete Themen und Kategorien werden in diese E-Mails nicht eingeschlossen.
         daily: "Aktualisierungen täglich senden"
         individual: "Für jeden Beitrag eine E-Mail senden"
         many_per_day: "Sende mir für jeden neuen Beitrag eine E-Mail (etwa {{dailyEmailEstimate}} pro Tag)"
@@ -508,10 +508,7 @@ de:
       apps: "Apps"
       revoke_access: "Entziehe Zugriffsrecht"
       undo_revoke_access: "Entziehe Zugriffsrecht widerrufen"
-      api_permissions: "Berechtigungen:"
       api_approved: "Genehmigt:"
-      api_read: "Lesen"
-      api_read_write: "Lesen und Schreiben"
       staff_counters:
         flags_given: "hilfreiche Meldungen"
         flagged_posts: "gemeldete Beiträge"
@@ -657,6 +654,7 @@ de:
         after_4_minutes: "nach 4 Minuten"
         after_5_minutes: "nach 5 Minuten"
         after_10_minutes: "nach 10 Minuten"
+      notification_level_when_replying: "Wenn ich in einem Thema antworte, setze das Thema auf"
       invited:
         search: "zum Suchen nach Einladungen hier eingeben…"
         title: "Einladungen"
@@ -687,7 +685,6 @@ de:
         account_age_days: "Konto-Alter in Tagen"
         create: "Einladung versenden"
         generate_link: "Einladungslink kopieren"
-        generated_link_message: '<p>Einladungslink erfolgreich generiert!</p><p><input class="invite-link-input" style="width: 75%;" type="text" value="%{inviteLink}"></p><p>Der Einladungslink ist nur für folgende E-Mail-Adresse gültig: <b>%{invitedEmail}</b></p>'
         bulk_invite:
           none: "Du hast noch niemanden hierher eingeladen. Du kannst individuelle Einladungen verschicken oder eine Masseneinladung an eine Gruppe von Leuten verschicken indem du <a href='https://meta.discourse.org/t/send-bulk-invites/16468'>eine Datei für Masseneinladung</a> hochlädst."
           text: "Masseneinladung aus Datei"
@@ -1088,7 +1085,6 @@ de:
       title: "suche nach Themen, Beiträgen, Benutzern oder Kategorien"
       no_results: "Keine Ergebnisse gefunden."
       no_more_results: "Es wurde keine weiteren Ergebnisse gefunden."
-      search_help: Hilfe zur Suche
       searching: "Suche …"
       post_format: "#{{post_number}} von {{username}}"
       context:
@@ -1096,12 +1092,28 @@ de:
         category: "Kategorie #{{category}} durchsuchen"
         topic: "Dieses Thema durchsuchen"
         private_messages: "Nachrichten durchsuchen"
+      advanced:
+        title: Erweiterte Suche
+        posted_by:
+          label: Verfasst von
+        in_category:
+          label: In der Kategorie
+        in_group:
+          label: In der Gruppe
+        with_badge:
+          label: Mit dem Abzeichen
+        with_tags:
+          label: Mit den Schlagwörtern
+        filters:
+          label: Zeige nur Beiträge an, die...
+          likes: Mir gefallen
     hamburger_menu: "zu einer anderen Themenliste oder Kategorie wechseln"
     new_item: "neu"
     go_back: 'zurückgehen'
     not_logged_in_user: 'Benutzerseite mit einer Zusammenfassung der Benutzeraktivitäten und Einstellungen'
     current_user: 'zu deiner Benutzerseite gehen'
     topics:
+      new_messages_marker: "letzter Besuch"
       bulk:
         unlist_topics: "Themen unsichtbar machen"
         reset_read: "Gelesene zurücksetzen"
@@ -1863,8 +1875,6 @@ de:
       readonly: "Ansehen"
     lightbox:
       download: "herunterladen"
-    search_help:
-      title: 'Suche'
     keyboard_shortcuts_help:
       title: 'Tastenkombinationen'
       jump_to:
@@ -2200,6 +2210,15 @@ de:
         info_html: "Dein API-Key erlaubt dir das Erstellen und Bearbeiten von Themen via JSON-Aufrufen."
         all_users: "Alle Benutzer"
         note_html: "Halte diesen Schlüssel <strong>geheim</strong>. Alle Benutzer, die diesen Schlüssel besitzen, können beliebige Beiträge als jeder Benutzer erstellen."
+      web_hooks:
+        save: "Speichern"
+        destroy: "Löschen"
+        description: "Beschreibung"
+        go_back: "Zurück zur Liste"
+        delivery_status:
+          inactive: "Inaktiv"
+          failed: "Fehlgeschlagen"
+          successful: "Erfolgreich"
       plugins:
         title: "Plug-ins"
         installed: "Installierte Plug-ins"
@@ -2265,7 +2284,6 @@ de:
             title: "Die Datenbank auf den letzten funktionierenden Zustand zurücksetzen"
             confirm: "Möchtest du wirklich die Datenbank auf den letzten funktionierenden Stand zurücksetzen?"
       export_csv:
-        user_archive_confirm: "Möchtest du wirklich deine Beiträge herunterladen?"
         success: "Der Export wurde gestartet. Du erhältst eine Nachricht, sobald der Vorgang abgeschlossen ist."
         failed: "Der Export ist fehlgeschlagen. Bitte überprüfe die Logs."
         rate_limit_error: "Beiträge können pro Tag nur einmal heruntergeladen werden. Bitte versuch es morgen wieder."
@@ -2902,3 +2920,12 @@ de:
           label: "Neu:"
           add: "Hinzufügen"
           filter: "Suche (URL oder externe URL)"
+  wizard_js:
+    wizard:
+      done: "Erledigt"
+      back: "Zurück"
+      invites:
+        roles:
+          admin: "Administration"
+          moderator: "Moderator"
+          regular: "Normaler Anwender"

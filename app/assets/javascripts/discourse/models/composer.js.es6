@@ -5,6 +5,7 @@ import Quote from 'discourse/lib/quote';
 import Draft from 'discourse/models/draft';
 import computed from 'ember-addons/ember-computed-decorators';
 import { escapeExpression, tinyAvatar } from 'discourse/lib/utilities';
+import { emojiUnescape } from 'discourse/lib/text';
 
 const CLOSED = 'closed',
       SAVING = 'saving',
@@ -118,7 +119,7 @@ const Composer = RestModel.extend({
   }.property().volatile(),
 
   archetype: function() {
-    return this.get('archetypes').findProperty('id', this.get('archetypeId'));
+    return this.get('archetypes').findBy('id', this.get('archetypeId'));
   }.property('archetypeId'),
 
   archetypeChanged: function() {
@@ -179,7 +180,7 @@ const Composer = RestModel.extend({
       case REPLY:
       case EDIT:
         if (postDescription) return postDescription;
-        if (topic) return I18n.t('post.reply_topic', { link: topicLink });
+        if (topic) return emojiUnescape(I18n.t('post.reply_topic', { link: topicLink }));
     }
 
   }.property('action', 'post', 'topic', 'topic.title'),
@@ -383,14 +384,14 @@ const Composer = RestModel.extend({
 
     // If the user didn't change the template, clear it
     if (oldCategoryId) {
-      const oldCat = this.site.categories.findProperty('id', oldCategoryId);
+      const oldCat = this.site.categories.findBy('id', oldCategoryId);
       if (oldCat && (oldCat.get('topic_template') === reply)) {
         reply = "";
       }
     }
 
     if (!Ember.isEmpty(reply)) { return; }
-    const category = this.site.categories.findProperty('id', categoryId);
+    const category = this.site.categories.findBy('id', categoryId);
     if (category) {
       this.set('reply', category.get('topic_template') || "");
     }
@@ -690,6 +691,10 @@ const Composer = RestModel.extend({
     }).catch(throwAjaxError(function() {
       if (postStream) {
         postStream.undoPost(createdPost);
+
+        if (post) {
+          post.set('reply_count', post.get('reply_count') - 1);
+        }
       }
       Ember.run.next(() => composer.set('composeState', OPEN));
     }));

@@ -81,14 +81,14 @@ fr:
         date_year: "D MMM 'YY"
       medium_with_ago:
         x_minutes:
-          one: "Il y a 1 min"
-          other: "Il y a %{count} mins"
+          one: "il y a 1 min"
+          other: "il y a %{count} mins"
         x_hours:
-          one: "Il y a 1 heure"
-          other: "Il y a %{count} heures"
+          one: "il y a 1 heure"
+          other: "il y a %{count} heures"
         x_days:
-          one: "Il y a 1 jour"
-          other: "Il y a %{count} jours"
+          one: "il y a 1 jour"
+          other: "il y a %{count} jours"
       later:
         x_days:
           one: "1 jour plus tard"
@@ -429,6 +429,7 @@ fr:
       mute: "Silencieux"
       edit: "Modifier les préférences"
       download_archive: "Télécharger mes messages"
+      download_archive_confirm: "Êtes-vous sûr de vouloir télécharger vos messages ?"
       new_private_message: "Créer un message privé"
       private_message: "Message privé"
       private_messages: "Messages privés"
@@ -452,6 +453,7 @@ fr:
         each_browser_note: "Note : Vous devez changer ce paramètre sur chaque navigateur que vous utilisez."
       dismiss_notifications: "Tout ignorer"
       dismiss_notifications_tooltip: "Marquer les notifications comme lues"
+      first_notification: "Votre première notification ! Cliquez-la pour démarrer."
       disable_jump_reply: "Ne pas aller à mon nouveau message après avoir répondu"
       dynamic_favicon: "Faire apparaître le nombre de sujets récemment créés ou mis à jour sur l'icône navigateur"
       external_links_in_new_tab: "Ouvrir tous les liens externes dans un nouvel onglet"
@@ -474,6 +476,7 @@ fr:
           Les sujets et catégories passés en silencieux ne sont pas inclus dans ces courriels.
         daily: "Envoyer des informations quotidiennes"
         individual: "Envoyer un courriel pour chaque nouveau message"
+        individual_no_echo: "Envoyer un courriel pour chaque nouveau message sauf les miens"
         many_per_day: "M'envoyer un courriel pour chaque nouveau message (environ {{dailyEmailEstimate}} par jour)"
         few_per_day: "M'envoyer un courriel pour chaque nouveau message (environ 2 par jour)"
       tag_settings: "Tags"
@@ -508,10 +511,7 @@ fr:
       apps: "Applications"
       revoke_access: "Révoquer l'accès"
       undo_revoke_access: "Annuler la révocation d'accès"
-      api_permissions: "Permissions :"
       api_approved: "Approuvé :"
-      api_read: "lecture"
-      api_read_write: "lecture et écriture"
       staff_counters:
         flags_given: "signalements utiles"
         flagged_posts: "messages signalés"
@@ -600,6 +600,7 @@ fr:
         title: "Langue de l'interface"
         instructions: "Langue de l'interface utilisateur.  Le changement sera pris en compte lorsque vous actualiserez la page."
         default: "(par défaut)"
+        any: "tous"
       password_confirmation:
         title: "Confirmation du mot de passe"
       last_posted: "Dernier message"
@@ -657,6 +658,7 @@ fr:
         after_4_minutes: "après 4 minutes"
         after_5_minutes: "après 5 minutes"
         after_10_minutes: "après 10 minutes"
+      notification_level_when_replying: "Quand j'ai répondu dans un sujet, le régler sur"
       invited:
         search: "commencer à saisir pour rechercher vos invitations…"
         title: "Invitations"
@@ -687,7 +689,8 @@ fr:
         account_age_days: "Âge du compte en jours"
         create: "Envoyer une invitation"
         generate_link: "Copier le lien d'invitation"
-        generated_link_message: '<p>Le lien d''invitation a été généré avec succès !</p><p><input class="invite-link-input" style="width: 75%;" type="text" value="%{inviteLink}"></p><p>Le lien d''invitation est valide uniquement pour cette adresse : <b>%{invitedEmail}</b></p>'
+        link_generated: "Lien d'invitation généré avec succés !"
+        valid_for: "Le lien d'invitation est seulement valide pour cette adresse courriel : %{email}"
         bulk_invite:
           none: "Vous n'avez encore invité personne. Vous pouvez envoyé des invitations individuelles, ou en masse en <a href='https://meta.discourse.org/t/send-bulk-invites/16468'>envoyant un fichier d'invitation contenant la liste des courriels</a>."
           text: "Invitation massive depuis un fichier"
@@ -845,6 +848,7 @@ fr:
     trust_level: 'Niveau de confiance'
     search_hint: 'pseudo, courriel ou adresse IP'
     create_account:
+      disclaimer: "En vous s'inscrivant, vous acceptez la <a href='{{privacy_link}}'>politique de confidentialité</a> et les <a href='{{tos_link}}'>conditions générales d'utilisation</a>."
       title: "Créer un nouveau compte"
       failed: "Quelque chose s'est mal passé, peut-être que cette adresse de courriel est déjà enregistrée, essayez le lien Mot de passe oublié."
     forgot_password:
@@ -935,6 +939,9 @@ fr:
       group_mentioned:
         one: "En mentionnant {{group}}, vous êtes sur le point de notifier <a href='{{group_link}}'>1 personne</a> – êtes-vous sûr ?"
         other: "En mentionnant {{group}}, vous êtes sur le point de notifier <a href='{{group_link}}'>{{count}} personnes</a> – êtes-vous sûr ?"
+      cannot_see_mention:
+        category: "Vous avez mentionné {{username}} mais il ne sera pas notifié car il n'a pas accès à cette catégorie. Vous devez ajouter cet utilisateur à un groupe ayant accès à cette catégorie."
+        private: "Vous avez mentionné {{username}} mais il ne sera pas notifié car il ne peut pas voir ce message privé. Vous devez inviter cet utilisateur à la discussion."
       duplicate_link: "Il semblerait que votre lien vers <b>{{domain}}</b> a déjà été partagé par <b>@{{username}}</b> dans <a href='{{post_url}}'>une réponse {{ago}}</a> – êtes vous sûr de vouloir le partager à nouveau ?"
       error:
         title_missing: "Le titre est obligatoire."
@@ -953,7 +960,7 @@ fr:
       create_pm: "Message privé"
       title: "ou appuyez sur Ctrl+Entrée"
       users_placeholder: "Ajouter un utilisateur"
-      title_placeholder: "Quel est votre sujet en une phrase descriptive ?"
+      title_placeholder: "Quel est le sujet en une courte phrase ?"
       edit_reason_placeholder: "pourquoi modifiez-vous le message ?"
       show_edit_reason: "(ajouter la raison de la modification)"
       reply_placeholder: "Écrivez ici. Utilisez Markdown, BBCode, ou HTML pour mettre en forme. Glissez ou collez des images."
@@ -1088,7 +1095,6 @@ fr:
       title: "rechercher des sujets, messages, utilisateurs ou catégories"
       no_results: "Aucun résultat."
       no_more_results: "Aucun résultat supplémentaire."
-      search_help: Aide à la recherche
       searching: "Recherche en cours…"
       post_format: "#{{post_number}} par {{username}}"
       context:
@@ -1096,6 +1102,44 @@ fr:
         category: "Rechercher dans la catégorie #{{category}}"
         topic: "Rechercher dans ce sujet"
         private_messages: "Rechercher des messages privés"
+      advanced:
+        title: Recherche avancée
+        posted_by:
+          label: Rédigé par
+        in_category:
+          label: Dans la catégorie
+        in_group:
+          label: Dans le groupe
+        with_badge:
+          label: Avec le badge
+        with_tags:
+          label: Avec les tags
+        filters:
+          label: Seulement retourner les sujets/messages...
+          likes: que j'ai aimé
+          posted: auxquels j'ai participé
+          watching: que je surveille
+          tracking: que je suis
+          private: qui sont dans mes messages privés
+          bookmarks: auxquels j'ai mis un signet
+          first: qui sont les premiers messages
+          pinned: qui sont épinglés
+          unpinned: qui ne sont pas épinglés
+          wiki: qui sont des wikis
+        statuses:
+          label: Dont les sujets
+          open: sont ouverts
+          closed: sont fermés
+          archived: sont archivés
+          noreplies: n'ont aucune réponse
+          single_user: contiennent un unique utilisateur
+        post:
+          count:
+            label: Nombre minimum de messages
+          time:
+            label: Quand
+            before: avant
+            after: après
     hamburger_menu: "aller à une autre catégorie ou liste de sujets"
     new_item: "nouveau"
     go_back: 'retour'
@@ -1289,8 +1333,8 @@ fr:
         unpin: "Désépingler le sujet…"
         unarchive: "Désarchiver le sujet"
         archive: "Archiver le sujet"
-        invisible: "Retirer de la liste des sujets"
-        visible: "Afficher dans la liste des sujets"
+        invisible: "Rendre invisible"
+        visible: "Rendre visible"
         reset_read: "Réinitialiser les données de lecture"
         make_public: "Rendre le sujet public"
         make_private: "Rendre le sujet privé"
@@ -1309,6 +1353,9 @@ fr:
       share:
         title: 'Partager'
         help: 'partager ce sujet'
+      print:
+        title: 'Imprimer'
+        help: 'Ouvrir une version de ce sujet adaptée à l''impression'
       flag_topic:
         title: 'Signaler'
         help: 'signaler secrètement ce sujet pour attirer l''attention ou envoyer une notification privée à son propos.'
@@ -1659,6 +1706,7 @@ fr:
       email_in_disabled: "La possibilité de créer des nouveaux sujets via courriel est désactivé dans les Paramètres. Pour l'activer,"
       email_in_disabled_click: 'activer le paramètre "email in".'
       suppress_from_homepage: "Retirer cette catégorie de la page d'accueil"
+      sort_order: "Tri par défaut :"
       allow_badges_label: "Autoriser les badges à être accordé dans cette catégorie"
       edit_permissions: "Modifier les permissions"
       add_permission: "Ajouter la permission"
@@ -1684,6 +1732,18 @@ fr:
         muted:
           title: "Silencieux"
           description: "Vous ne serez jamais notifié de rien concernant les nouveaux sujets dans ces catégories, et elles n'apparaîtront pas dans les dernières catégories."
+      sort_options:
+        default: "standard"
+        likes: "J'aime"
+        op_likes: "J'aime du premier message"
+        views: "Vues"
+        posts: "Messages"
+        activity: "Activité"
+        posters: "Auteurs"
+        category: "Catégorie"
+        created: "Création"
+      sort_ascending: 'Croissant'
+      sort_descending: 'Décroissant'
     flagging:
       title: 'Merci d''aider à garder notre communauté civilisée !'
       action: 'Signaler ce message'
@@ -1868,8 +1928,6 @@ fr:
       readonly: "Voir"
     lightbox:
       download: "télécharger"
-    search_help:
-      title: 'Aide à la recherche'
     keyboard_shortcuts_help:
       title: 'Raccourcis clavier'
       jump_to:
@@ -1921,6 +1979,7 @@ fr:
         mark_regular: '<b>m</b>, <b>r</b> Notifications par défaut pour le sujet'
         mark_tracking: '<b>m</b>, <b>t</b> Suivre le sujet'
         mark_watching: '<b>m</b>, <b>w</b> Surveiller le sujet'
+        print: '<b>Ctrl</b>+<b>p</b> Imprimer le sujet'
     badges:
       earned_n_times:
         one: "A reçu ce badge 1 fois"
@@ -2345,7 +2404,6 @@ fr:
             title: "Restaurer (RollBack) la base de données à l'état de travail précédent"
             confirm: "Êtes-vous sûr de vouloir restaurer la base de données à l'état de fonctionnement précédent?"
       export_csv:
-        user_archive_confirm: "Êtes-vous sûr de vouloir télécharger vos messages?"
         success: "L'exportation a été démarrée. Vous serez notifié par message lorsque le traitement sera terminé."
         failed: "L'exportation a échoué. Veuillez consulter les journaux."
         rate_limit_error: "Les messages peuvent être téléchargés une fois par jour, veuillez ressayer demain."
@@ -2670,7 +2728,7 @@ fr:
         moderator: "Modérateur ?"
         admin: "Administrateur ?"
         blocked: "Bloqué ?"
-        staged: "En attente?"
+        staged: "En attente ?"
         show_admin_profile: "Administration"
         edit_title: "Modifier le titre"
         save_title: "Sauvegarder le titre"

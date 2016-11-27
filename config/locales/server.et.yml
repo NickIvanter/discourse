@@ -71,7 +71,6 @@ et:
       has_already_been_used: "on juba kasutusel"
       inclusion: puudub nimekirjas
       invalid: pole korrektne
-      is_invalid: "pole korrektne; katsu olla pisut täpsem"
       less_than: peab olema väiksem kui %{count}
       less_than_or_equal_to: peab olema väiksem või võrdne kui %{count}
       not_a_number: ei ole number
@@ -158,7 +157,6 @@ et:
   topic_not_found: "Midagi on valesti. Kas on võimalik, et antud teema suleti või kustutati samal ajal, kui te seda vaatasite?"
   just_posted_that: "on liiga sarnane sellele, mida sa hiljuti postitasid"
   invalid_characters: "sisaldab ebasobivaid tähemärke"
-  is_invalid: "pole korrektne, püüa kirjeldada täpsemalt"
   next_page: "järgmine leht →"
   prev_page: "← eelmine leht"
   page_num: "Leht %{num}"
@@ -534,7 +532,7 @@ et:
       xaxis: "Päev"
       yaxis: "Uute meeldimiste arv"
     flags:
-      title: "Lipud"
+      title: "Tähised"
       xaxis: "Päev"
     bookmarks:
       title: "Järjehoidjad"
@@ -682,8 +680,22 @@ et:
   privacy_topic:
     title: "Puutumatusnormid"
   badges:
+    editor:
+      description: Esimene redigeerimine
+    basic_user:
+      name: Tavakasutaja
+    member:
+      name: Liige
+    regular:
+      name: Püsiliige
+    leader:
+      name: Vedaja
     welcome:
       name: Teretulemast
+    autobiographer:
+      name: Autobiograaf
+    anniversary:
+      name: Tähtpäev
     nice_post:
       name: Mõnus vastus
     good_post:
@@ -697,19 +709,28 @@ et:
     great_topic:
       name: Suurepärane teema
     nice_share:
-      name: Mõnus jagmaine
+      name: Mõnus jagamine
     good_share:
-      name: Hea jagmaine
+      name: Hea jagamine
     great_share:
       name: Suurepärane jagamine
     first_like:
       name: Esimene meeldimine
+    first_flag:
+      name: Esimene tähis
+      description: Teatas lipuga postitusest
+    promoter:
+      name: Promootor
+    campaigner:
+      name: Aktiivne promootor
+    champion:
+      name: Tšempion
     first_share:
       name: Esimene jagamine
       description: Jagas postitust
     first_link:
       name: Esimene viide
-      description: Lisas teise postitusele viite
+      description: Lisas teise postituse viite
     first_quote:
       name: Esimene tsitaat
       description: Tsiteeris postitust
@@ -736,13 +757,17 @@ et:
     crazy_in_love:
       name: Hullult armunud
     thank_you:
-      name: Tänamine
+      name: Tänud
+    gives_back:
+      name: Annab tagasi
     empathetic:
       name: Empaatiline
     first_emoji:
       name: Esimene emotikon
     first_mention:
       name: Esimene mainimine
+    first_reply_by_email:
+      name: Esimene vastamine meiliga
   admin_login:
     success: "Kiri saadetud"
     error: "Viga!"

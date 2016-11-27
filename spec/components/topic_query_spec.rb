@@ -379,6 +379,26 @@ describe TopicQuery do
         ).to eq([topic_in_cat2.id, topic_category.id, topic_in_cat1.id])
       end
     end
+
+    describe "category default sort order" do
+      it "can use category's default sort order" do
+        category.update_attributes!(sort_order: 'created', sort_ascending: true)
+        topic_ids = TopicQuery.new(user, category: category.id).list_latest.topics.map(&:id)
+        expect(topic_ids - [topic_category.id]).to eq([topic_in_cat1.id, topic_in_cat2.id])
+      end
+
+      it "ignores invalid order value" do
+        category.update_attributes!(sort_order: 'funny')
+        topic_ids = TopicQuery.new(user, category: category.id).list_latest.topics.map(&:id)
+        expect(topic_ids - [topic_category.id]).to eq([topic_in_cat2.id, topic_in_cat1.id])
+      end
+
+      it "can be overridden" do
+        category.update_attributes!(sort_order: 'created', sort_ascending: true)
+        topic_ids = TopicQuery.new(user, category: category.id, order: 'activity').list_latest.topics.map(&:id)
+        expect(topic_ids - [topic_category.id]).to eq([topic_in_cat2.id, topic_in_cat1.id])
+      end
+    end
   end
 
   context 'unread / read topics' do
@@ -622,9 +642,12 @@ describe TopicQuery do
   end
 
   context 'suggested_for' do
+    def clear_cache!
+      $redis.keys('random_topic_cache*').each{|k| $redis.del k}
+    end
 
     before do
-      RandomTopicSelector.clear_cache!
+      clear_cache!
     end
 
     context 'when anonymous' do
@@ -654,7 +677,7 @@ describe TopicQuery do
       let(:suggested_topics) {
         tt = topic
         # lets clear cache once category is created - working around caching is hard
-        RandomTopicSelector.clear_cache!
+        clear_cache!
         topic_query.list_suggested_for(tt).topics.map{|t| t.id}
       }
 
@@ -671,11 +694,11 @@ describe TopicQuery do
           SiteSetting.suggested_topics_max_days_old = 1365
           tt = topic
 
-          RandomTopicSelector.clear_cache!
+          clear_cache!
           expect(topic_query.list_suggested_for(tt).topics.length).to eq(2)
 
           SiteSetting.suggested_topics_max_days_old = 365
-          RandomTopicSelector.clear_cache!
+          clear_cache!
 
           expect(topic_query.list_suggested_for(tt).topics.length).to eq(1)
         end

@@ -31,19 +31,19 @@ class PostMover
         title: title,
         category_id: category_id,
         created_at: post.created_at
-      ), true
+      )
     end
   end
 
   private
 
-  def move_posts_to(topic, is_new_topic = false)
+  def move_posts_to(topic)
     Guardian.new(user).ensure_can_see! topic
     @destination_topic = topic
 
     moving_all_posts = (@original_topic.posts.pluck(:id).sort == @post_ids.sort)
 
-    move_each_post is_new_topic
+    move_each_post
     notify_users_that_posts_have_moved
     update_statistics
     update_user_actions
@@ -57,7 +57,7 @@ class PostMover
     destination_topic
   end
 
-  def move_each_post(is_new_topic = false)
+  def move_each_post
     max_post_number = destination_topic.max_post_number + 1
 
     @move_map = {}
@@ -77,6 +77,12 @@ class PostMover
       post.is_first_post? ? create_first_post(post) : move(post)
     end
 
+    PostReply.where("reply_id in (:post_ids) OR post_id in (:post_ids)", post_ids: post_ids).each do |post_reply|
+      if post_reply.post && post_reply.reply && post_reply.reply.topic_id != post_reply.post.topic_id
+        PostReply.delete_all(reply_id: post_reply.reply.id, post_id: post_reply.post.id)
+      end
+    end
+
     if NewPostManager.queued_preview_enabled?
       destination_topic.posts.each do |post| # Somewhat suboptimal
         if post.queued_preview?
@@ -85,7 +91,6 @@ class PostMover
         end
       end
     end
-
   end
 
   def update_queued_post(post)

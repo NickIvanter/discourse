@@ -145,7 +145,7 @@ class QueuedPost < ActiveRecord::Base
 
   def approve!(approved_by)
     created_post = nil
-    post = nill
+    post = nil
     new_topic = false
     reapprove = rejected?
     doubleApprove = false;

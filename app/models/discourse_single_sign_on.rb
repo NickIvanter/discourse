@@ -110,6 +110,7 @@ class DiscourseSingleSignOn < SingleSignOn
         sso_record.last_payload = unsigned_payload
         sso_record.external_id = external_id
       else
+        SingleSignOnRecord.delete_all(external_id: external_id)
         user.create_single_sign_on_record(last_payload: unsigned_payload,
                                           external_id: external_id,
                                           external_username: username,

@@ -60,7 +60,7 @@ class TopicViewSerializer < ApplicationSerializer
              :featured_link,
              :topic_timer,
              :unicode_title,
-             :message_bus_last_id
+             :message_bus_last_id,
              :last_posted_at,
              :posts_count
 

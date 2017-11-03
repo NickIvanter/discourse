@@ -170,7 +170,7 @@ class TopicTrackingState
     #  cycles from usual requests
     #
     #
-    guardian = Guardian.new(User.find(user_id))
+    guardian = Guardian.new(user)
 
     sql = report_raw_sql(topic_id: topic_id, skip_unread: true, skip_order: true, staff: user.staff?, guardian: guardian)
     sql << "\nUNION ALL\n\n"

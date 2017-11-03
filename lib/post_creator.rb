@@ -157,14 +157,11 @@ class PostCreator
     end
 
     if @post && errors.blank?
-      # update counters etc.
-      @post.topic.reload
-
-      publish
+      publish if queued_preview_approving?
 
       track_latest_on_category
-      enqueue_jobs unless @opts[:skip_jobs]
-      BadgeGranter.queue_badge_grant(Badge::Trigger::PostRevision, post: @post)
+      enqueue_jobs if queued_preview_approving? || !@opts[:skip_jobs]
+      BadgeGranter.queue_badge_grant(Badge::Trigger::PostRevision, post: @post) if queued_preview_approving?
 
       trigger_after_events(@post)
 
@@ -195,6 +192,13 @@ class PostCreator
       import_mode: @opts[:import_mode],
       post_alert_options: @opts[:post_alert_options]
     ).enqueue_jobs
+  end
+
+  # For actions on approving or when queued_preview posts disabled
+  def queued_preview_approving?
+    !NewPostManager.queued_preview_enabled? || @opts[:queued_preview_approving] || guardian.is_staff? ||
+      (opts[:archetype] && opts[:archetype] == Archetype.private_message) ||
+      (@topic && @topic.private_message?)
   end
 
   def self.track_post_stats
@@ -493,7 +497,7 @@ class PostCreator
                                msecs: 5000)
     end
 
-    if @user.staged
+    if true || @user.staged
       TopicUser.auto_notification_for_staging(@user.id, @topic.id, TopicUser.notification_reasons[:auto_watch])
     elsif @user.user_option.notification_level_when_replying === NotificationLevels.topic_levels[:watching]
       TopicUser.auto_notification(@user.id, @topic.id, TopicUser.notification_reasons[:created_post], NotificationLevels.topic_levels[:watching])

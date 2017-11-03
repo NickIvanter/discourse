@@ -134,10 +134,12 @@ export default function transformPost(currentUser, site, post, prevPost, nextPos
     postAtts.showTopicMap = true;
     postAtts.topicCreatedAt = topic.created_at;
     postAtts.createdByUsername = createdBy.username;
+    postAtts.createdByUserRealname = createdBy.name;
     postAtts.createdByAvatarTemplate = createdBy.avatar_template;
 
     postAtts.lastPostUrl = topic.get('lastPostUrl');
     postAtts.lastPostUsername = details.last_poster.username;
+    postAtts.lastPostUserRealname = details.last_poster.name;
     postAtts.lastPostAvatarTemplate = details.last_poster.avatar_template;
     postAtts.lastPostAt = topic.last_posted_at;
 
@@ -169,6 +171,7 @@ export default function transformPost(currentUser, site, post, prevPost, nextPos
 
   const replyToUser = post.get('reply_to_user');
   if (replyToUser) {
+    postAtts.replyToDisplayName = replyToUser.display_username;
     postAtts.replyToUsername = replyToUser.username;
     postAtts.replyToAvatarTemplate = replyToUser.avatar_template;
   }

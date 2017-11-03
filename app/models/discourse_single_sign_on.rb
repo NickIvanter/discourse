@@ -136,7 +136,7 @@ class DiscourseSingleSignOn < SingleSignOn
       user_params = {
         email: email,
         name: try_name || User.suggest_name(try_username || email),
-        username: UserNameSuggester.suggest(try_username || try_name || email),
+        username: UserNameSuggester.suggest(try_name || try_username || email),
         ip_address: ip_address
       }
 
@@ -149,6 +149,7 @@ class DiscourseSingleSignOn < SingleSignOn
         sso_record.external_id = external_id
       else
         Jobs.enqueue(:download_avatar_from_url, url: avatar_url, user_id: user.id, override_gravatar: SiteSetting.sso_overrides_avatar) if avatar_url.present?
+        SingleSignOnRecord.delete_all(external_id: external_id)
         user.create_single_sign_on_record(
           last_payload: unsigned_payload,
           external_id: external_id,

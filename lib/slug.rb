@@ -28,14 +28,13 @@ module Slug
   end
 
   def self.encoded_generator(string)
-    # This generator will sanitize almost all special characters,
-    # including reserved characters from RFC3986.
-    # See also URI::REGEXP::PATTERN.
     string.strip
+          .gsub("'", "")
           .gsub(/\s+/, '-')
-          .gsub(CHAR_FILTER_REGEXP, '')
+          .gsub(/\P{Alnum}/, '-') # replace any non-alphanumeric with a dash
           .gsub(/\A-+|-+\z/, '') # remove possible trailing and preceding dashes
           .squeeze('-') # squeeze continuous dashes to prettify slug
+          .mb_chars.to_s
   end
 
   def self.none_generator(string)

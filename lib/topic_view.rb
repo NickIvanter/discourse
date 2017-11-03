@@ -224,7 +224,7 @@ class TopicView
 
   # Find the sort order for a post in the topic
   def sort_order_for_post_number(post_number)
-    posts = Post.where(topic_id: @topic.id, post_number: post_number).with_deleted
+    posts = Post.hide_queued_preview(@guardian).where(topic_id: @topic.id, post_number: post_number).with_deleted
     posts = filter_post_types(posts)
     posts.select(:sort_order).first.try(:sort_order)
   end
@@ -275,9 +275,10 @@ class TopicView
 
   def post_counts_by_user
     @post_counts_by_user ||= Post.where(topic_id: @topic.id)
+                                 .hide_queued_preview(@guardian)
                                  .where("user_id IS NOT NULL")
                                  .group(:user_id)
-                                 .order("count_all DESC")
+                                 .order(if NewPostManager.queued_preview_enabled? && !@guardian.can_see_queued_preview? then "count_id DESC" else "count_all DESC" end)
                                  .limit(24)
                                  .count
   end
@@ -343,7 +344,7 @@ class TopicView
     @filtered_post_stream ||= @filtered_posts.order(:sort_order)
                                              .pluck(:id,
                                                     :post_number,
-                                                    'EXTRACT(DAYS FROM CURRENT_TIMESTAMP - created_at)::INT AS days_ago')
+                                                    'EXTRACT(DAYS FROM CURRENT_TIMESTAMP - posts.created_at)::INT AS days_ago')
   end
 
   def filtered_post_ids
@@ -382,7 +383,8 @@ class TopicView
 
   def filter_posts_by_ids(post_ids)
     # TODO: Sort might be off
-    @posts = Post.where(id: post_ids, topic_id: @topic.id)
+    @posts = Post.hide_queued_preview(@guardian)
+                 .where(id: post_ids, topic_id: @topic.id)
                  .includes(:user, :reply_to_user, :incoming_email)
                  .order('sort_order')
     @posts = filter_post_types(@posts)
@@ -421,6 +423,9 @@ class TopicView
     # Certain filters might leave gaps between posts. If that's true, we can return a gap structure
     @contains_gaps = false
     @filtered_posts = unfiltered_posts
+
+    # TODO: filter out queued_preview posts
+    @filtered_posts = @filtered_posts.hide_queued_preview(@guardian)
 
     # Filters
     if @filter == 'summary'

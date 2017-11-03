@@ -1,3 +1,4 @@
+# coding: utf-8
 require_dependency 'enum'
 
 class Notification < ActiveRecord::Base
@@ -19,6 +20,14 @@ class Notification < ActiveRecord::Base
   # TODO: Revert back to default in Rails 5
   after_commit :refresh_notification_count, on: :destroy
   after_commit :refresh_notification_count, on: [:create, :update]
+
+  scope :with_queued_preview_map, -> { joins('LEFT JOIN queued_preview_post_maps ON notifications.topic_id = queued_preview_post_maps.topic_id') }
+  scope :hide_queued_preview, -> (guardian) {
+    guardian.queued_preview_actions(
+      user_action: ->{with_queued_preview_map.where("queued_preview_post_maps.topic_id is null OR (topics.user_id = ? AND queued_preview_post_maps.topic_id is not null)", guardian.user.id)},
+      anon_action: ->{with_queued_preview_map.where("queued_preview_post_maps.topic_id is null")}
+    )
+  }
 
   def self.ensure_consistency!
     Notification.exec_sql <<-SQL
@@ -55,7 +64,8 @@ class Notification < ActiveRecord::Base
                         group_mentioned: 15,
                         group_message_summary: 16,
                         watching_first_post: 17,
-                        topic_reminder: 18
+                        topic_reminder: 18,
+                        queued: 999
                        )
   end
 
@@ -144,7 +154,9 @@ class Notification < ActiveRecord::Base
     return unless user && user.user_option
 
     count ||= 10
+    guardian = Guardian.new(user)
     notifications = user.notifications
+                        .hide_queued_preview(guardian)
                         .visible
                         .recent(count)
                         .includes(:topic)
@@ -211,6 +223,48 @@ class Notification < ActiveRecord::Base
     NotificationEmailer.process_notification(self) if !skip_send_email
   end
 
+  # Real name
+  before_save :add_real_name
+  private
+  def add_real_name
+    unless self.data.blank?
+      data = JSON.parse(self.data);
+      if data.is_a? Hash
+        originalUsername = data['original_username'];
+        displayUsername = data['display_username'];
+
+        # *) Плагин Solved не заполняет original_username.
+        # *) Зачастую display_username не является системным именем пользователя.
+        # Например: {
+        # 	"topic_title":"Test Email Notifications",
+        # 	"original_post_id":61,
+        # 	"original_username":"crazydog",
+        # 	"display_username":"2 replies"
+        # }
+        # *) В то же время original_username, похоже,
+        # всегда является системным именем пользователя (если, конечно, присутствует).
+        # *) Может отсутствовать как original_username, так и display_username, например:
+        # {"badge_id":3,"badge_name":"Regular"}
+        username = originalUsername.blank? ? displayUsername : originalUsername;
+        if username
+          user = User.find_by username: username
+          if user && !user.name.blank?
+            data['real_name'] = user.name;
+            self.data = data.to_json
+          end
+        end
+
+        username2 = data['username2']
+        if username2
+          user2 = User.find_by username: username2
+          if user2 && !user2.name.blank?
+            data['real_name2'] = user2.name
+            self.data = data.to_json
+          end
+        end
+      end
+    end
+  end
 end
 
 # == Schema Information

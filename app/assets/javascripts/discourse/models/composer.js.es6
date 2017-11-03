@@ -164,6 +164,10 @@ const Composer = RestModel.extend({
   actionTitle: function() {
     const topic = this.get('topic');
 
+    var username = this.get('post.username');
+    var real_name = this.get('post.name');
+    if (real_name) username = real_name;
+
     let postLink, topicLink, usernameLink;
     if (topic) {
       const postNumber = this.get('post.post_number');
@@ -173,7 +177,7 @@ const Composer = RestModel.extend({
       let title = topic.get('fancy_title') || escapeExpression(topic.get('title'));
 
       topicLink = "<a href='" + (topic.get('url')) + "'> " + title + "</a>";
-      usernameLink = "<a href='" + (topic.get('url')) + "/" + postNumber + "'>" + this.get('post.username') + "</a>";
+      usernameLink = "<a href='" + (topic.get('url')) + "/" + postNumber + "'>" + username + "</a>";
     }
 
     let postDescription;
@@ -183,15 +187,16 @@ const Composer = RestModel.extend({
       postDescription = I18n.t('post.' +  this.get('action'), {
         link: postLink,
         replyAvatar: tinyAvatar(post.get('avatar_template')),
-        username: this.get('post.username'),
+        username: username,
         usernameLink
       });
 
       if (!this.site.mobileView) {
         const replyUsername = post.get('reply_to_user.username');
+        const replyDisplayname = post.get('reply_to_user.display_username');
         const replyAvatarTemplate = post.get('reply_to_user.avatar_template');
         if (replyUsername && replyAvatarTemplate && this.get('action') === EDIT) {
-          postDescription += " <i class='fa fa-mail-forward reply-to-glyph'></i> " + tinyAvatar(replyAvatarTemplate) + " " + replyUsername;
+          postDescription += " <i class='fa fa-mail-forward reply-to-glyph'></i> " + tinyAvatar(replyAvatarTemplate) + " " + replyDisplayname ? replyDisplayname : replyUsername;
         }
       }
     }

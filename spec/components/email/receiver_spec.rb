@@ -1,3 +1,4 @@
+# coding: utf-8
 require "rails_helper"
 require "email/receiver"
 
@@ -358,7 +359,7 @@ describe Email::Receiver do
 
       user = topic.user
       expect(user.staged).to eq(true)
-      expect(user.username).to eq("random.name")
+      expect(user.username).to eq("random_n")
       expect(user.name).to eq("Случайная Имя")
     end
 

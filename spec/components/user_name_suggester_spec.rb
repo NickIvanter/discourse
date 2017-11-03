@@ -1,3 +1,4 @@
+# coding: utf-8
 require 'rails_helper'
 require 'user_name_suggester'
 
@@ -5,7 +6,7 @@ describe UserNameSuggester do
 
   describe 'name heuristics' do
     it 'is able to guess a decent username from an email' do
-      expect(UserNameSuggester.suggest('bob@bob.com')).to eq('bob')
+      expect(UserNameSuggester.suggest('bob@bob.com')).to eq('bob_b')
     end
   end
 
@@ -19,11 +20,11 @@ describe UserNameSuggester do
     end
 
     it 'corrects weird characters' do
-      expect(UserNameSuggester.suggest("Darth%^Vader")).to eq('Darth_Vader')
+      expect(UserNameSuggester.suggest("Darth%^Vader")).to eq('darth_v')
     end
 
     it "transliterates some characters" do
-      expect(UserNameSuggester.suggest("Jørn")).to eq('Jorn')
+      expect(UserNameSuggester.suggest("Jørn")).to eq('jorn')
     end
 
     it 'adds 1 to an existing username' do
@@ -36,8 +37,8 @@ describe UserNameSuggester do
     end
 
     it "has a special case for me and i emails" do
-      expect(UserNameSuggester.suggest('me@eviltrout.com')).to eq('eviltrout')
-      expect(UserNameSuggester.suggest('i@eviltrout.com')).to eq('eviltrout')
+      expect(UserNameSuggester.suggest('me@eviltrout.com')).to eq('me_e')
+      expect(UserNameSuggester.suggest('i@eviltrout.com')).to eq('i_e')
     end
 
     it "shortens very long suggestions" do
@@ -51,13 +52,13 @@ describe UserNameSuggester do
 
     it "doesn't suggest reserved usernames" do
       SiteSetting.reserved_usernames = 'myadmin|steve|steve1'
-      expect(UserNameSuggester.suggest("myadmin@hissite.com")).to eq('myadmin1')
+      expect(UserNameSuggester.suggest("myadmin@hissite.com")).to eq('myadmin_h')
       expect(UserNameSuggester.suggest("steve")).to eq('steve2')
     end
 
     it "doesn't suggest generic usernames" do
       UserNameSuggester::GENERIC_NAMES.each do |name|
-        expect(UserNameSuggester.suggest("#{name}@apple.org")).to eq('apple')
+        expect(UserNameSuggester.suggest("#{name}@apple.org")).to eq("#{name}_a")
       end
     end
 
@@ -74,7 +75,7 @@ describe UserNameSuggester do
     end
 
     it "allows dots in the middle" do
-      expect(UserNameSuggester.suggest("my.name")).to eq('my.name')
+      expect(UserNameSuggester.suggest("my.name")).to eq('my_n')
     end
 
     it "remove leading dots" do
@@ -86,12 +87,12 @@ describe UserNameSuggester do
     end
 
     it 'handles usernames with a sequence of 2 or more special chars' do
-      expect(UserNameSuggester.suggest('Darth__Vader')).to eq('Darth_Vader')
-      expect(UserNameSuggester.suggest('Darth_-_Vader')).to eq('Darth_Vader')
+      expect(UserNameSuggester.suggest('Darth__Vader')).to eq('darthvader')
+      expect(UserNameSuggester.suggest('Darth_-_Vader')).to eq('darth')
     end
 
     it 'should handle typical facebook usernames' do
-      expect(UserNameSuggester.suggest('roger.nelson.3344913')).to eq('roger.nelson.33')
+      expect(UserNameSuggester.suggest('roger.nelson.3344913')).to eq('roger_n')
     end
 
     it 'removes underscore at the end of long usernames that get truncated' do

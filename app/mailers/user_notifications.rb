@@ -147,7 +147,9 @@ class UserNotifications < ActionMailer::Base
 
       opts = {
         from_alias: I18n.t('user_notifications.digest.from', site_name: SiteSetting.title),
-        subject: I18n.t('user_notifications.digest.subject_template', email_prefix: @email_prefix, date: short_date(Time.now)),
+        subject: @featured_topics.length > 0 ? @featured_topics[0].title : I18n.t('user_notifications.digest.subject_template',
+                                                                                  email_prefix: @email_prefix,
+                                                                                  date: short_date(Time.now)),
         add_unsubscribe_link: true,
         unsubscribe_url: "#{Discourse.base_url}/email/unsubscribe/#{@unsubscribe_key}",
       }
@@ -271,14 +273,16 @@ class UserNotifications < ActionMailer::Base
     end
 
     allowed_post_types = [Post.types[:regular]]
-    allowed_post_types << Post.types[:whisper] if topic_user.try(:user).try(:staff?)
+    allowed_post_types << Post.types[:whisper] if user.staff?
 
-    context_posts = Post.where(topic_id: post.topic_id)
-                        .where("post_number < ?", post.post_number)
+    guardian = Guardian.new(user) if NewPostManager.queued_preview_enabled? && user.present?
+    context_posts = Post.hide_queued_preview(guardian)
+                        .where(topic_id: post.topic_id)
+                        .where("posts.post_number < ?", post.post_number)
                         .where(user_deleted: false)
                         .where(hidden: false)
                         .where(post_type: allowed_post_types)
-                        .order('created_at desc')
+                        .order('posts.created_at desc')
                         .limit(SiteSetting.email_posts_context)
 
     if topic_user && topic_user.last_emailed_post_number && user.user_option.email_previous_replies == UserOption.previous_replies_type[:unless_emailed]
@@ -456,7 +460,7 @@ class UserNotifications < ActionMailer::Base
     end
 
     # If we have a display name, change the from address
-    email_opts[:from_alias] = from_alias if from_alias.present?
+    #email_opts[:from_alias] = from_alias if from_alias.present?
 
     TopicUser.change(user.id, post.topic_id, last_emailed_post_number: post.post_number)
 

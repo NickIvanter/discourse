@@ -11,6 +11,7 @@ const bindings = {
   '.':               {click: '.alert.alert-info.clickable', anonymous: true}, // show incoming/updated topics
   'b':               {handler: 'toggleBookmark'},
   'c':               {handler: 'createTopic'},
+  'с':               {handler: 'createTopic'}, // cyrillic
   'ctrl+f':          {handler: 'showPageSearch', anonymous: true},
   'command+f':       {handler: 'showPageSearch', anonymous: true},
   'ctrl+p':          {handler: 'printTopic', anonymous: true},

@@ -31,19 +31,19 @@ class PostMover
         title: title,
         category_id: category_id,
         created_at: post.created_at
-      )
+      ), true
     end
   end
 
   private
 
-  def move_posts_to(topic)
+  def move_posts_to(topic, is_new_topic = false)
     Guardian.new(user).ensure_can_see! topic
     @destination_topic = topic
 
     moving_all_posts = (@original_topic.posts.pluck(:id).sort == @post_ids.sort)
 
-    move_each_post
+    move_each_post is_new_topic
     notify_users_that_posts_have_moved
     update_statistics
     update_user_actions
@@ -57,7 +57,7 @@ class PostMover
     destination_topic
   end
 
-  def move_each_post
+  def move_each_post(is_new_topic = false)
     max_post_number = destination_topic.max_post_number + 1
 
     @move_map = {}
@@ -82,18 +82,60 @@ class PostMover
         PostReply.delete_all(reply_id: post_reply.reply.id, post_id: post_reply.post.id)
       end
     end
+
+    if NewPostManager.queued_preview_enabled?
+      destination_topic.posts.each do |post| # Somewhat suboptimal
+        if post.queued_preview?
+          update_queued_post post
+          update_queued_preview_map post
+        end
+      end
+    end
+
   end
 
-  def create_first_post(post)
-    new_post = PostCreator.create(
-      post.user,
-      raw: post.raw,
-      topic_id: destination_topic.id,
-      acting_user: user,
-      skip_validations: true
-    )
+  def update_queued_post(post)
+    queued_post = post.queued_preview_post_map.queued_post
+    if queued_post.present?
+      if post.is_first_post? # For first post
+        queued_post.post_options['title'] = post.topic.title # Setup new queued topic
+        queued_post.topic_id = nil
+      else # for other posts
+        queued_post.topic_id = post.topic_id # Update topic_id
+      end
+      queued_post.save
+    end
+  end
 
-    PostAction.copy(post, new_post)
+  def update_queued_preview_map(post)
+    if post.is_first_post? # For first post
+      post.queued_preview_post_map.topic_id = post.topic_id
+    else # For other posts
+      post.queued_preview_post_map.topic_id = nil
+    end
+    post.queued_preview_post_map.save
+  end
+
+
+  def create_first_post(post)
+    if NewPostManager.queued_preview_enabled? && post.queued_preview?
+      pm = NewPostManager.new(
+        post.user,
+        raw: post.raw,
+        topic_id: destination_topic.id,
+        acting_user: user,
+        skip_validations: true
+      );
+      new_post = pm.perform().post
+    else
+      new_post = PostCreator.create(
+        post.user,
+        raw: post.raw,
+        topic_id: destination_topic.id,
+        acting_user: user,
+        skip_validations: true
+      )
+    end
     new_post.update_column(:reply_count, @reply_count[1] || 0)
   end
 

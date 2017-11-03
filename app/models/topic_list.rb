@@ -110,7 +110,8 @@ class TopicList
 
       ft.posters = ft.posters_summary(
         avatar_lookup: avatar_lookup,
-        primary_group_lookup: primary_group_lookup
+        primary_group_lookup: primary_group_lookup,
+        user: @current_user
       )
 
       ft.participants = ft.participants_summary(avatar_lookup: avatar_lookup, user: @current_user)

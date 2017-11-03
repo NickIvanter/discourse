@@ -17,7 +17,7 @@ class SpamRule::AutoBlock
   end
 
   def block?
-    return true if @user.blocked?
+    return true if @user.blocked? && !UserHellbanner.enabled?
     return false if @user.staged?
     return false if @user.has_trust_level?(TrustLevel[1])
 

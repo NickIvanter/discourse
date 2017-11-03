@@ -13,15 +13,12 @@ class UserBlocker
   end
 
   def block
-    hide_posts unless @opts[:keep_posts]
+    hide_posts unless @opts[:keep_posts] || UserHellbanner.enabled?
     unless @user.blocked?
       @user.blocked = true
       if @user.save
-        message_type = @opts[:message] || :blocked_by_staff
-        post = SystemMessage.create(@user, message_type)
-        if post && @by_user
-          StaffActionLogger.new(@by_user).log_block_user(@user, {context: "#{message_type}: '#{post.topic&.title rescue ''}' #{@opts[:reason]}"})
-        end
+        SystemMessage.create(@user, @opts[:message] || :blocked_by_staff) unless UserHellbanner.enabled?
+        StaffActionLogger.new(@by_user).log_block_user(@user) if @by_user
       end
     else
       false
@@ -39,7 +36,7 @@ class UserBlocker
   def unblock
     @user.blocked = false
     if @user.save
-      SystemMessage.create(@user, :unblocked)
+      SystemMessage.create(@user, :unblocked) unless UserHellbanner.enabled?
       StaffActionLogger.new(@by_user).log_unblock_user(@user) if @by_user
     end
   end

@@ -125,6 +125,8 @@ module PrettyText
     baked = nil
     text = text || ""
 
+    text = add_quote_real_name(text)
+
     protect do
       context = v8
 

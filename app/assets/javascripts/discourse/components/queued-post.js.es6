@@ -20,10 +20,26 @@ function updateState(state, opts) {
 export default Ember.Component.extend(bufferedProperty('post'), {
   editing: propertyEqual('post', 'currentlyEditing'),
   _confirmDelete: updateState('rejected', {deleteUser: true}),
+  _confirmApprove: updateState('approved'),
+  _confirmReject: updateState('rejected'),
 
   actions: {
-    approve: updateState('approved'),
-    reject: updateState('rejected'),
+
+    approve() {
+      bootbox.confirm(I18n.t('queue.approve_prompt'), (confirmed) => {
+        if (confirmed) {
+          this._confirmApprove();
+        }
+      });
+    },
+
+    reject() {
+      bootbox.confirm(I18n.t('queue.reject_prompt'), (confirmed) => {
+        if (confirmed) {
+          this._confirmReject();
+        }
+      });
+    },
 
     deleteUser() {
       bootbox.confirm(I18n.t('queue.delete_prompt', {username: this.get('post.user.username')}), (confirmed) => {

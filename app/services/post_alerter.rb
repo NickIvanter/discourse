@@ -12,6 +12,7 @@ class PostAlerter
   end
 
   def not_allowed?(user, post)
+    user.hellbanned? ||
     user.blank? ||
     user.id < 0 ||
     user.id == post.user_id
@@ -277,7 +278,7 @@ class PostAlerter
   def create_notification(user, type, post, opts = {})
     opts = @default_opts.merge(opts)
 
-    return if user.blank?
+    return if user.blank? || user.hellbanned?
     return if user.id < 0
 
     return if type == Notification.types[:liked] && user.user_option.like_notification_frequency == UserOption.like_notification_frequency_type[:never]

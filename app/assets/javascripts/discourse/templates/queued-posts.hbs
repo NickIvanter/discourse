@@ -1,11 +1,26 @@
 <div class='container'>
+  <div class="row">
+    <div class="full-width">
+      <ul class="nav nav-pills">
+        <li>{{#link-to "queued-posts" (query-params state="new")}}{{i18n "queue.nav.new"}}{{/link-to}}</li>
+        <li>{{#link-to "queued-posts" (query-params state="rejected")}}{{i18n "queue.nav.rejected"}}{{/link-to}}</li>
+      </ul>
+    </div>
+  </div>
+  <div class="admin-reports-filter">
+    <span>{{i18n "queue.filter.date_from"}}{{date-picker-past-settable value=dateFrom defaultDate=dateFrom}}</span>
+    <span>{{i18n "queue.filter.date_to"}}{{date-picker-past-settable value=dateTo defaultDate=dateTo}}</span>
+  </div>
+  {{d-button action="refresh" label="refresh" icon="refresh" disabled=model.refreshing id='refresh-queued'}}
   <div class='queued-posts'>
     {{#each model as |post|}}
-      {{queued-post post=post currentlyEditing=editing removePost="removePost"}}
+      {{queued-post post=post currentlyEditing=editing removePost="removePost"
+        showApprove=showApproveButton
+        showReject=showRejectButton
+        showEdit=showEditButton
+      }}
     {{else}}
       <p>{{i18n "queue.none"}}</p>
     {{/each}}
-
-    {{d-button action="refresh" label="refresh" icon="refresh" disabled=model.refreshing id='refresh-queued'}}
   </div>
 </div>

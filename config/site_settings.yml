@@ -326,6 +326,8 @@ login:
     default: 1440
     min: 1
     max: 175200
+  hellban_mode:
+    default: false
 
 users:
   min_username_length:
@@ -594,6 +596,8 @@ posting:
     client: true
     default: ''
     type: list
+  queued_preview_mode:
+    default: false
 
 email:
   email_time_window_mins:

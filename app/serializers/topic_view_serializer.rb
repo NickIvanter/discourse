@@ -17,13 +17,11 @@ class TopicViewSerializer < ApplicationSerializer
   attributes_from_topic :id,
                         :title,
                         :fancy_title,
-                        :posts_count,
                         :created_at,
                         :views,
                         :reply_count,
                         :participant_count,
                         :like_count,
-                        :last_posted_at,
                         :visible,
                         :closed,
                         :archived,
@@ -63,6 +61,25 @@ class TopicViewSerializer < ApplicationSerializer
              :topic_timer,
              :unicode_title,
              :message_bus_last_id
+             :last_posted_at,
+             :posts_count
+
+  # Hide some stats
+  def last_posted_at
+    if NewPostManager.queued_preview_enabled?
+      object.topic.posts.find_queued_preview_last_post(scope).created_at
+    else
+      object.topic.last_posted_at
+    end
+  end
+
+  def posts_count
+    if NewPostManager.queued_preview_enabled?
+      object.topic.posts.hide_queued_preview(scope).count
+    else
+      object.topic.posts_count
+    end
+  end
 
   # TODO: Split off into proper object / serializer
   def details
@@ -70,7 +87,11 @@ class TopicViewSerializer < ApplicationSerializer
 
     result = {
       created_by: BasicUserSerializer.new(topic.user, scope: scope, root: false),
-      last_poster: BasicUserSerializer.new(topic.last_poster, scope: scope, root: false)
+      last_poster: if NewPostManager.queued_preview_enabled?
+        BasicUserSerializer.new(object.topic.hide_last_poster(scope), scope: scope, root: false)
+      else
+        BasicUserSerializer.new(object.topic.last_poster, scope: scope, root: false)
+      end
     }
 
     if private_message?(topic)
@@ -248,6 +269,29 @@ class TopicViewSerializer < ApplicationSerializer
 
   def include_pending_posts_count?
     scope.is_staff? && NewPostManager.queue_enabled?
+  end
+
+  # Real name
+  def accepted_answer
+    if info = accepted_answer_post_info
+      {
+        post_number: info[0],
+        username: info[1],
+        name: info[2],
+      }
+    end
+  end
+
+  def accepted_answer_post_info
+    Post.where(id: accepted_answer_post_id, topic_id: object.topic.id)
+      .joins(:user)
+      .pluck('post_number, username, name')
+      .first
+  end
+
+  def accepted_answer_post_id
+    id = object.topic.custom_fields["accepted_answer_post_id"]
+    id && id.to_i
   end
 
   def include_tags?

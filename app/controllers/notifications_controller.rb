@@ -37,6 +37,7 @@ class NotificationsController < ApplicationController
       offset = params[:offset].to_i
 
       notifications = Notification.where(user_id: user.id)
+                                  .hide_queued_preview(guardian)
                                   .visible
                                   .includes(:topic)
                                   .order(created_at: :desc)

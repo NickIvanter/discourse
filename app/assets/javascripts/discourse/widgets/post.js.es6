@@ -14,7 +14,7 @@ export function avatarImg(wanted, attrs) {
 
   // We won't render an invalid url
   if (!url || url.length === 0) { return; }
-  const title = attrs.username;
+  const title = attrs.name ? attrs.name : attrs.username;
 
   const properties = {
     attributes: { alt: '', width: size, height: size, src: Discourse.getURLWithCDN(url), title },
@@ -60,15 +60,14 @@ createWidget('reply-to-tab', {
 
   html(attrs, state) {
     if (state.loading) { return I18n.t('loading'); }
-
     return [iconNode('mail-forward'),
             ' ',
             avatarImg('small', {
               template: attrs.replyToAvatarTemplate,
-              username: attrs.replyToUsername
+              username: attrs.replyToDisplayName ? attrs.replyToDisplayName : attrs.replyToUsername
             }),
             ' ',
-            h('span', attrs.replyToUsername)];
+            h('span', attrs.replyToDisplayName ? attrs.replyToDisplayName : attrs.replyToUsername)];
   },
 
   click() {
@@ -93,6 +92,7 @@ createWidget('post-avatar', {
       body = avatarFor.call(this, this.settings.size, {
         template: attrs.avatar_template,
         username: attrs.username,
+        name: attrs.name,
         url: attrs.usernameUrl,
         className: 'main-avatar'
       });

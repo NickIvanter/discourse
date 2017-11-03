@@ -50,16 +50,20 @@
                    disabled=post.isSaving
                    class="btn-danger cancel"}}
       {{else}}
-        {{d-button action="approve"
-                   disabled=post.isSaving
-                   label="queue.approve"
-                   icon="check"
-                   class="btn-primary approve"}}
-        {{d-button action="reject"
-                   disabled=post.isSaving
-                   label="queue.reject"
-                   icon="times"
-                   class="btn-danger reject"}}
+        {{#if showApprove}}
+          {{d-button action="approve"
+                     disabled=post.isSaving
+                     label="queue.approve"
+                     icon="check"
+                     class="btn-primary approve"}}
+        {{/if}}
+        {{#if showReject}}
+          {{d-button action="reject"
+                     disabled=post.isSaving
+                     label="queue.reject"
+                     icon="times"
+                     class="btn-danger reject"}}
+        {{/if}}
         {{#if post.can_delete_user}}
           {{d-button action="deleteUser"
                      disabled=post.isSaving
@@ -67,11 +71,13 @@
                      icon="trash"
                      class="btn-danger delete-user"}}
         {{/if}}
-        {{d-button action="edit"
-                   disabled=post.isSaving
-                   label="queue.edit"
-                   icon="pencil"
-                   class="edit"}}
+        {{#if showEdit}}
+          {{d-button action="edit"
+                     disabled=post.isSaving
+                     label="queue.edit"
+                     icon="pencil"
+                     class="edit"}}
+        {{/if}}
       {{/if}}
     </div>
   </div>

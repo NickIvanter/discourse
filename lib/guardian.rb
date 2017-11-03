@@ -83,6 +83,24 @@ class Guardian
     @user.staged?
   end
 
+  def can_see_queued_preview?
+    authenticated? && (is_admin? || is_staff? || is_moderator?)
+  end
+
+  def can_hide_queued_preview?
+    authenticated? && (is_admin? || is_staff? || is_moderator?)
+  end
+
+  def queued_preview_actions(user_action: nil, anon_action: nil)
+    if NewPostManager.queued_preview_enabled?
+      if authenticated?
+        user_action.call unless can_see_queued_preview?
+      else
+        anon_action.call
+      end
+    end
+  end
+
   # Can the user see the object?
   def can_see?(obj)
     if obj
@@ -279,8 +297,10 @@ class Guardian
     (is_staff? || SiteSetting.enable_private_messages) &&
     # Can't send PMs to suspended users
     (is_staff? || target.is_a?(Group) || !target.suspended?) &&
+    # With hellban blocked can post
+    (UserHellbanner.enabled? ||
     # Blocked users can only send PM to staff
-    (!is_blocked? || target.staff?)
+    (!is_blocked? || target.staff?))
   end
 
   def can_see_emails?

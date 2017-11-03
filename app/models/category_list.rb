@@ -34,7 +34,7 @@ class CategoryList
 
       category_featured_topics = CategoryFeaturedTopic.select([:category_id, :topic_id]).order(:rank)
 
-      @all_topics = Topic.where(id: category_featured_topics.map(&:topic_id))
+      @all_topics = Topic.hide_queued_preview(@guardian).where(id: category_featured_topics.map(&:topic_id))
       @all_topics = @all_topics.includes(:last_poster) if @options[:include_topics]
       @all_topics.each do |t|
         # hint for the serializer
@@ -94,6 +94,13 @@ class CategoryList
         end
         @categories.each { |c| c.subcategory_ids = subcategories[c.id] }
         @categories.delete_if { |c| to_delete.include?(c) }
+      end
+
+      # Hide queued_preview post data
+      @all_topics.each do |t|
+        t.highest_post_number = t.hide_highest_post_number(@guardian)
+        t.last_posted_at = t.hide_last_posted_at(@guardian)
+        t.last_post_user_id = t.hide_last_post_user_id(@guardian)
       end
 
       if @topics_by_category_id

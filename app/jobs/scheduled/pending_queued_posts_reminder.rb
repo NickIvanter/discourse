@@ -1,7 +1,7 @@
 module Jobs
   class PendingQueuedPostReminder < Jobs::Scheduled
 
-    every 1.hour
+    every 1.minute
 
     def execute(args)
       return true unless SiteSetting.notify_about_queued_posts_after > 0 && SiteSetting.contact_email
@@ -18,7 +18,7 @@ module Jobs
     end
 
     def should_notify_ids
-      QueuedPost.new_posts.visible.where('created_at < ?', SiteSetting.notify_about_queued_posts_after.hours.ago).pluck(:id)
+      QueuedPost.new_posts.visible.where('created_at < ?', SiteSetting.notify_about_queued_posts_after.seconds.ago).pluck(:id)
     end
 
     def last_notified_id

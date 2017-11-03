@@ -28,10 +28,11 @@ createWidget('header-notifications', {
 
   html(attrs) {
     const { currentUser } = this;
+    const real_name = currentUser.get('name') ? currentUser.get('name') : currentUser.get('username');
 
     const contents = [ avatarImg(this.settings.avatarSize, {
       template: currentUser.get('avatar_template'),
-      username: currentUser.get('username')
+      username: real_name
     }) ];
 
     const unreadNotifications = currentUser.get('unread_notifications');
@@ -72,8 +73,9 @@ createWidget('user-dropdown', jQuery.extend({
 
   html(attrs) {
     const { currentUser } = this;
+    const real_name = currentUser.get('name') ? currentUser.get('name') : currentUser.get('username');
 
-    return h('a.icon', { attributes: { href: currentUser.get('path'), 'data-auto-route': true } },
+    return h('a.icon', { attributes: { href: currentUser.get('path'), 'data-auto-route': true, title: real_name, 'aria-label': real_name } },
              this.attach('header-notifications', attrs));
   }
 }, dropdown));

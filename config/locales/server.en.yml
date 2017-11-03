@@ -1480,6 +1480,7 @@ en:
     approve_post_count: "The amount of posts from a new or basic user that must be approved"
     approve_unless_trust_level: "Posts for users below this trust level must be approved"
     approve_new_topics_unless_trust_level: "New topics for users below this trust level must be approved"
+    queued_preview_mode: "Make unapproved posts visible by author"
     notify_about_queued_posts_after: "If there are posts that have been waiting to be reviewed for more than this many hours, an email will be sent to the contact_email. Set to 0 to disable these emails."
     auto_close_messages_post_count: "Maximum number of posts allowed in a message before it is automatically closed (0 to disable)"
     auto_close_topics_post_count: "Maximum number of posts allowed in a topic before it is automatically closed (0 to disable)"
@@ -1565,6 +1566,23 @@ en:
       email_polling_disabled: "You must enable either manual or POP3 polling before enabling reply by email."
       user_locale_not_enabled: "You must first enable 'allow user locale' before enabling this setting."
       invalid_regex: "Regex is invalid or not allowed."
+
+  notification_types:
+    group_mentioned: "%{group_name} was mentioned in %{link}"
+    mentioned: "%{display_username} mentioned you in %{link}"
+    liked: "%{display_username} liked your post in %{link}"
+    replied: "%{display_username} replied to your post in %{link}"
+    quoted: "%{display_username} quoted your post in %{link}"
+    edited: "%{display_username} edited your post in %{link}"
+    posted: "%{display_username} posted in %{link}"
+    moved_post: "%{display_username} moved your post to %{link}"
+    private_message: "%{display_username} sent you a message: %{link}"
+    invited_to_private_message: "%{display_username} invited you to a message: %{link}"
+    invited_to_topic: "%{display_username} invited you to %{link}"
+    invitee_accepted: "%{display_username} accepted your invitation"
+    linked: "%{display_username} linked you in %{link}"
+    granted_badge: "You earned %{link}"
+    queued: "{{display_username}} new post for moderation in: %{link}"
 
   search:
     within_post: "#%{post_number} by %{username}"

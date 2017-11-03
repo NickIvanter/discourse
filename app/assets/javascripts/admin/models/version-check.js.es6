@@ -33,9 +33,9 @@ const VersionCheck = Discourse.Model.extend({
   @computed('git_branch', 'installed_sha')
   gitLink(gitBranch, installedSHA) {
     if (gitBranch) {
-      return `https://github.com/discourse/discourse/compare/${installedSHA}...${gitBranch}`;
+      return `https://github.com/NickIvanter/discourse/compare/${installedSHA}...${gitBranch}`;
     } else {
-      return `https://github.com/discourse/discourse/tree/${installedSHA}`;
+      return `https://github.com/NickIvanter/discourse/tree/${installedSHA}`;
     }
   },
 

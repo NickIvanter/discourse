@@ -1,6 +1,7 @@
 export default {
 
   REGEXP: /\[quote=([^\]]*)\]((?:[\s\S](?!\[quote=[^\]]*\]))*?)\[\/quote\]/im,
+  NOTALPHANUM: /[^a-zA-Z0-9АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЬЫЪЭЮЯабвгдеёжзийклмнопрстуфхцчшщьыъэюя]/g,
 
   // Build the BBCode quote around the selected text
   build(post, contents, opts) {
@@ -19,7 +20,17 @@ export default {
     sansQuotes = sansQuotes.replace(/</g, "&lt;")
                            .replace(/>/g, "&gt;");
 
-    result = "[quote=\"" + post.get('username') + ", post:" + post.get('post_number') + ", topic:" + post.get('topic_id');
+    var real_name = post.get('name');
+    var display_username = post.get('display_username');
+    if (!real_name && display_username) {
+      real_name = display_username;
+    }
+
+    if (real_name) {
+      var real_name_field = ', real_name:'+real_name;
+    }
+
+    result = "[quote=\"" + post.get('username') + real_name_field + ", post:" + post.get('post_number') + ", topic:" + post.get('topic_id');
 
     /* Strip the HTML from cooked */
     tmp = document.createElement('div');
@@ -31,8 +42,8 @@ export default {
       not accurate but it should work almost every time we need it to. It would be unlikely
       that the user would quote another post that matches in exactly this way.
     */
-    stripped_hashed = stripped.replace(/[^a-zA-Z0-9]/g, '');
-    contents_hashed = contents.replace(/[^a-zA-Z0-9]/g, '');
+    stripped_hashed = stripped.replace(this.NOTALPHANUM, '');
+    contents_hashed = contents.replace(this.NOTALPHANUM, '');
 
     /* If the quote is the full message, attribute it as such */
     if (full || stripped_hashed === contents_hashed) result += ", full:true";

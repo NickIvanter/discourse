@@ -5,15 +5,34 @@ class QueuedPostsController < ApplicationController
   before_filter :ensure_staff
 
   def index
-    state = QueuedPost.states[(params[:state] || 'new').to_sym]
+    state_query = params[:state] || 'new'
+    state = QueuedPost.states[(state_query).to_sym]
     state ||= QueuedPost.states[:new]
 
+    limit_query = params[:limit] || 100;
+    dateFrom_query = params[:dateFrom] || nil;
+    dateTo_query = params[:dateTo] || nil;
+
     @queued_posts = QueuedPost.visible.where(state: state).includes(:topic, :user).order(:created_at)
+                    .limit(limit_query)
+
+    @queued_posts = @queued_posts.where("created_at >= to_date( ?, 'YYYY-MM-DD')", dateFrom_query) if dateFrom_query
+    @queued_posts = @queued_posts.where("created_at <= to_date( ?, 'YYYY-MM-DD') + INTERVAL '1 DAY'", dateTo_query) if dateTo_query
+
+    refresher = "/queued_posts?state=#{state_query}&limit=#{limit_query}"
+
+    if dateFrom_query.present?  && !dateFrom_query.empty?
+      refresher += "&dateFrom=#{dateFrom_query}"
+    end
+    if dateTo_query.present? && !dateTo_query.empty?
+      refresher += "&dateTo=#{dateTo_query}"
+    end
+
     render_serialized(@queued_posts,
                       QueuedPostSerializer,
                       root: :queued_posts,
                       rest_serializer: true,
-                      refresh_queued_posts: "/queued_posts?status=new")
+                      refresh_queued_posts: refresher)
 
   end
 
@@ -21,7 +40,7 @@ class QueuedPostsController < ApplicationController
     qp = QueuedPost.where(id: params[:id]).first
 
     if params[:queued_post][:raw].present?
-      qp.update_column(:raw, params[:queued_post][:raw])
+      qp.edit_content!(params[:queued_post][:raw])
     end
 
     state = params[:queued_post][:state]

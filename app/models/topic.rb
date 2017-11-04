@@ -197,7 +197,11 @@ class Topic < ActiveRecord::Base
   end
 
   def hide_highest_post_number(guardian)
-    posts.order('post_number DESC').hide_queued_preview(guardian).pluck(:post_number).first
+    if guardian.is_staff?
+      highest_staff_post_number
+    else
+      posts.order('post_number DESC').hide_queued_preview(guardian).pluck(:post_number).first
+    end
   end
 
   def self.hide_highest_post_number_query(guardian)

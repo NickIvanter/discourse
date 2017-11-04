@@ -243,7 +243,7 @@ SQL
                                     topic_users.notification_level, tu.notification_level old_level, tu.last_read_post_number
                                 "
 
-    UPDATE_TOPIC_USER_SQL_STAFF = UPDATE_TOPIC_USER_SQL.gsub("highest_post_number", "highest_staff_post_number")
+    UPDATE_TOPIC_USER_SQL_STAFF = UPDATE_TOPIC_USER_SQL
 
     INSERT_TOPIC_USER_SQL = "INSERT INTO topic_users (user_id, topic_id, last_read_post_number, highest_seen_post_number, last_visited_at, first_visited_at, notification_level)
                   SELECT :user_id, :topic_id, :post_number, :highest_post_number, :now, :now, :new_status
@@ -254,7 +254,7 @@ SQL
                                    FROM topic_users AS ftu
                                    WHERE ftu.user_id = :user_id and ftu.topic_id = :topic_id)"
 
-    INSERT_TOPIC_USER_SQL_STAFF = INSERT_TOPIC_USER_SQL.gsub("highest_post_number", "highest_staff_post_number")
+    INSERT_TOPIC_USER_SQL_STAFF = INSERT_TOPIC_USER_SQL
 
     def update_last_read(user, topic_id, post_number, msecs, opts={})
       return if post_number.blank?
@@ -270,11 +270,15 @@ SQL
         threshold: SiteSetting.default_other_auto_track_topics_after_msecs
       }
 
+      guardian = Guardian.new(user)
       if NewPostManager.queued_preview_enabled?
-        guardian = Guardian.new(user)
         args[:highest_post_number] = Topic.find(topic_id).hide_highest_post_number(guardian)
       else
-        args[:highest_post_number] = Topic.find(topic_id).highest_post_number
+        if guardian.is_staff?
+          args[:highest_post_number] = Topic.find(topic_id).highest_staff_post_number
+        else
+          args[:highest_post_number] = Topic.find(topic_id).highest_post_number
+        end
       end
 
 

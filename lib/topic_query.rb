@@ -294,7 +294,7 @@ class TopicQuery
     col_name = opts[:staff] ? "highest_staff_post_number" : "highest_post_number"
 
     if NewPostManager.queued_preview_enabled? && opts[:guardian] && !opts[:guardian].can_see_queued_preview?
-      highest_post_number = Topic.hide_highest_post_number_query(guardian)
+      highest_post_number = Topic.hide_highest_post_number_query(opts[:guardian])
     else
       highest_post_number = "topics.#{col_name}"
     end

@@ -2,7 +2,7 @@ import DiscourseRoute from 'discourse/routes/discourse';
 
 export default DiscourseRoute.extend({
 
-  model() {
+  model(params) {
     return this.store.find('queuedPost', {
       //status: "new",
       state: params.state,

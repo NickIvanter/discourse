@@ -204,12 +204,11 @@ class QueuedPost < ActiveRecord::Base
       creator.enqueue_jobs
     end
 
-
-    DiscourseEvent.trigger(:approved_post, self, created_post)
-
     if NewPostManager.queued_preview_enabled? && !reapprove
+      DiscourseEvent.trigger(:approved_post, self, post)
       post
     else
+      DiscourseEvent.trigger(:approved_post, self, created_post)
       created_post
     end
   end

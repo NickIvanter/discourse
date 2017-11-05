@@ -97,10 +97,12 @@ class CategoryList
       end
 
       # Hide queued_preview post data
-      @all_topics.each do |t|
-        t.highest_post_number = t.hide_highest_post_number(@guardian)
-        t.last_posted_at = t.hide_last_posted_at(@guardian)
-        t.last_post_user_id = t.hide_last_post_user_id(@guardian)
+      if @options[:include_topics]
+        @all_topics.each do |t|
+          t.highest_post_number = t.hide_highest_post_number(@guardian)
+          t.last_posted_at = t.hide_last_posted_at(@guardian)
+          t.last_post_user_id = t.hide_last_post_user_id(@guardian)
+        end
       end
 
       if @topics_by_category_id

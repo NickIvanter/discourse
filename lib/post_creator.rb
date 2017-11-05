@@ -160,7 +160,11 @@ class PostCreator
       publish if queued_preview_approving?
 
       track_latest_on_category
-      enqueue_jobs if queued_preview_approving? || !@opts[:skip_jobs]
+      if NewPostManager.queued_preview_enabled?
+        enqueue_jobs if queued_preview_approving?
+      else
+        enqueue_jobs unless @opts[:skip_jobs]
+      end
       BadgeGranter.queue_badge_grant(Badge::Trigger::PostRevision, post: @post) if queued_preview_approving?
 
       trigger_after_events(@post)

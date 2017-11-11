@@ -790,6 +790,7 @@ export default Ember.Controller.extend(SelectedPostsCount, BufferedContent, {
   canMergePosts(selectedPosts, selectedPostsCount, selectedPostsUsername) {
     if (selectedPostsCount < 2) return false;
     if (!selectedPosts.every(p => p.get('can_delete'))) return false;
+    if (selectedPosts.some(p => p.get('queued_preview'))) return false;
     return selectedPostsUsername !== undefined;
   },
 

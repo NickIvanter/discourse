@@ -10,6 +10,7 @@ class PostMerger
     return unless ensure_at_least_two_posts
     ensure_same_topic!
     ensure_same_user!
+    ensure_no_queued_preview! if NewPostManager.queued_preview_enabled?
 
     guardian = Guardian.new(@user)
     ensure_staff_user!(guardian)
@@ -54,5 +55,11 @@ class PostMerger
 
   def ensure_staff_user!(guardian)
     raise Discourse::InvalidAccess unless guardian.is_staff?
+  end
+
+  def ensure_no_queued_preview!
+    @posts.each do |post|
+      raise CannotMergeError.new(I18n.t("merge_posts.errors.queued_preview")) if post.queued_preview?
+    end
   end
 end

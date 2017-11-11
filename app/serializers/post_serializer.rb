@@ -68,7 +68,8 @@ class PostSerializer < BasicPostSerializer
              :via_email,
              :is_auto_generated,
              :action_code,
-             :action_code_who
+             :action_code_who,
+             :queued_preview?
 
   def initialize(object, opts)
     super(object, opts)
@@ -350,6 +351,11 @@ class PostSerializer < BasicPostSerializer
 
   def include_action_code_who?
     include_action_code? && action_code_who.present?
+  end
+
+  def queued_preview?
+    return true if NewPostManager.queued_preview_enabled? && object.queued_preview?
+    false
   end
 
   private

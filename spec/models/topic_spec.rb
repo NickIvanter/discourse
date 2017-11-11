@@ -1934,6 +1934,8 @@ describe Topic do
 
         expect(topic.pm_with_non_human_user?).to be(false)
       end
+    end
+  end
 
   context 'when queued_preview approving on' do
     before(:each) do
@@ -2169,7 +2171,7 @@ describe Topic do
           expect(Topic.by_newest.similar_to('Test topic for the good stuff', 'Test post for the good topic', u)).to eq([t3,t2,t1])
         end
       end
-
     end
   end
+
 end

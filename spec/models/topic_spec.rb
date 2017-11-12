@@ -1940,7 +1940,8 @@ describe Topic do
   context 'when queued_preview approving on' do
     before(:each) do
       SiteSetting.stubs(:queued_preview_mode).returns(true)
-      ActiveRecord::Base.observers.enable :search_observer
+      SiteSetting.stubs(:max_similar_results).returns(10)
+      #ActiveRecord::Base.observers.enable :search_observer
     end
 
     let!(:anon)     { nil }
@@ -1971,7 +1972,10 @@ describe Topic do
     before do
       [t1,t2,t3,t4,t5].each do |t|
         t.highest_post_number = 2
+        t.highest_staff_post_number = 2
         t.last_post_user_id = writer.id
+        t.posts_count = 2
+        #Topic.reset_highest(t.id)
       end
       t1.last_posted_at = p12.created_at.strftime('%Y-%m-%d %H:%M:%S.%6N')
       t2.last_posted_at = p22.created_at.strftime('%Y-%m-%d %H:%M:%S.%6N')
@@ -2036,18 +2040,15 @@ describe Topic do
         end
       end
 
-      it 'all can see all topics in similar' do
-        [anon, stranger, writer, author1, author2, admin].each do |u|
-          expect(Topic.by_newest.similar_to('Test topic for the good stuff', 'Test post for the good topic', u)).to eq([t5,t4,t3,t2,t1])
-        end
-      end
     end
 
     context 'when some topics hidden' do
       before do
         [t1,t2,t3,t4,t5].each do |t|
           t.highest_post_number = 2
-          t.last_post_user_id = writer.id
+          t.highest_staff_post_number = 2
+          t.posts_count = 2
+          #Topic.reset_highest(t.id)
         end
         t1.last_posted_at = p12.created_at.strftime('%Y-%m-%d %H:%M:%S.%6N')
         t2.last_posted_at = p22.created_at.strftime('%Y-%m-%d %H:%M:%S.%6N')
@@ -2157,20 +2158,6 @@ describe Topic do
         end
       end
 
-      it 'admin can see all topics in similar' do
-        expect(Topic.by_newest.similar_to('Test topic for the good stuff', 'Test post for the good topic', admin)).to eq([t5,t4,t3,t2,t1])
-      end
-
-      it 'authors can see theirs topics in similar' do
-        expect(Topic.by_newest.similar_to('Test topic for the good stuff', 'Test post for the good topic', author1)).to eq([t5,t3,t2,t1])
-        expect(Topic.by_newest.similar_to('Test topic for the good stuff', 'Test post for the good topic', author2)).to eq([t4,t3,t2,t1])
-      end
-
-      it 'others can see approved topics in similar' do
-        [anon, stranger, writer].each do |u|
-          expect(Topic.by_newest.similar_to('Test topic for the good stuff', 'Test post for the good topic', u)).to eq([t3,t2,t1])
-        end
-      end
     end
   end
 

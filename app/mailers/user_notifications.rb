@@ -147,7 +147,7 @@ class UserNotifications < ActionMailer::Base
 
       opts = {
         from_alias: I18n.t('user_notifications.digest.from', site_name: SiteSetting.title),
-        subject: @featured_topics.length > 0 ? @featured_topics[0].title : I18n.t('user_notifications.digest.subject_template',
+        subject: (@popular_topics && @popular_topics.length > 0) ? @popular_topics[0].title : I18n.t('user_notifications.digest.subject_template',
                                                                                   email_prefix: @email_prefix,
                                                                                   date: short_date(Time.now)),
         add_unsubscribe_link: true,

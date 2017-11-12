@@ -106,7 +106,7 @@ describe UserNotifications do
     context "with new topics" do
 
       before do
-        Fabricate(:topic, user: Fabricate(:coding_horror))
+        @popular_topics = [Fabricate(:topic, user: Fabricate(:coding_horror))]
       end
 
       it "works" do
@@ -122,17 +122,17 @@ describe UserNotifications do
         SiteSetting.email_prefix = "Try Discourse"
         SiteSetting.title = "Discourse Meta"
 
-        expect(subject.subject).to match(@featured_topics[0].title)
+        expect(subject.subject).to match(@popular_topics[0].title)
         expect(subject.subject).not_to match(/Discourse Meta/)
       end
 
       it "includes email_prefix in email subject instead of site title" do
-        @featured_topics.push Fabricate(:topic, user: Fabricate(:user))
+        @popular_topics.push Fabricate(:topic, user: Fabricate(:user))
 
         SiteSetting.email_prefix = "Try Discourse"
         SiteSetting.title = "Discourse Meta"
 
-        expect(subject.subject).to match(@featured_topics[0].title)
+        expect(subject.subject).to match(@popular_topics[1].title) # subject to last one
         expect(subject.subject).not_to match(/Discourse Meta/)
       end
 

@@ -144,6 +144,7 @@ class QueuedPost < ActiveRecord::Base
   end
 
   def approve!(approved_by)
+    creator = nil
     created_post = nil
     post = nil
     new_topic = false
@@ -151,7 +152,6 @@ class QueuedPost < ActiveRecord::Base
     doubleApprove = false;
 
     QueuedPost.transaction do
-
       begin
         change_to!(:approved, approved_by)
       rescue
@@ -161,7 +161,6 @@ class QueuedPost < ActiveRecord::Base
       UserBlocker.unblock(user, approved_by) if user.blocked? && !UserHellbanner.enabled?
 
       unless doubleApprove
-
         if !NewPostManager.queued_preview_enabled? || reapprove
           creator = PostCreator.new(user, create_options.merge(skip_validations: true, skip_jobs: true))
           created_post = creator.create
@@ -182,7 +181,11 @@ class QueuedPost < ActiveRecord::Base
           cleanup_hideing!
         end
       end
-    end
+
+      if !NewPostManager.queued_preview_enabled? && doubleApprove
+        raise InvalidStateTransition.new
+      end
+    end #Transaction
 
     if NewPostManager.queued_preview_enabled? && queued_preview_post_map.present? && queued_preview_post_map.post_id.present? && !reapprove
 
@@ -199,8 +202,8 @@ class QueuedPost < ActiveRecord::Base
       end
     end
 
-    if !NewPostManager.queued_preview_enabled?
-      # Do sidekiq work outside of the transaction
+    # Do sidekiq work outside of the transaction
+    unless NewPostManager.queued_preview_enabled?
       creator.enqueue_jobs
     end
 

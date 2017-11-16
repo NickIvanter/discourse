@@ -13,26 +13,51 @@ class UserSummary
   end
 
   def topics
-    Topic
-      .secured(@guardian)
-      .listable_topics
-      .visible
-      .where(user: @user)
-      .order('like_count DESC, created_at ASC')
-      .limit(MAX_SUMMARY_RESULTS)
+    if NewPostManager.queued_preview_enabled?
+      Topic
+        .secured(@guardian)
+        .hide_queued_preview(@guardian)
+        .listable_topics
+        .visible
+        .where(user: @user)
+        .order('like_count DESC, topics.created_at ASC')
+        .limit(MAX_SUMMARY_RESULTS)
+    else
+      Topic
+        .secured(@guardian)
+        .listable_topics
+        .visible
+        .where(user: @user)
+        .order('like_count DESC, created_at ASC')
+        .limit(MAX_SUMMARY_RESULTS)
+    end
   end
 
   def replies
-    Post
-      .joins(:topic)
-      .includes(:topic)
-      .secured(@guardian)
-      .merge(Topic.listable_topics.visible.secured(@guardian))
-      .where(user: @user)
-      .where('post_number > 1')
-      .order('posts.like_count DESC, posts.created_at ASC')
-      .limit(MAX_SUMMARY_RESULTS)
+    if NewPostManager.queued_preview_enabled?
+      Post
+        .joins(:topic)
+        .includes(:topic)
+        .secured(@guardian)
+        .hide_queued_preview(@guardian)
+        .merge(Topic.listable_topics.visible.secured(@guardian).hide_queued_preview(@guardian))
+        .where(user: @user)
+        .where('post_number > 1')
+        .order('posts.like_count DESC, posts.created_at ASC')
+        .limit(MAX_SUMMARY_RESULTS)
+    else
+      Post
+        .joins(:topic)
+        .includes(:topic)
+        .secured(@guardian)
+        .merge(Topic.listable_topics.visible.secured(@guardian))
+        .where(user: @user)
+        .where('post_number > 1')
+        .order('posts.like_count DESC, posts.created_at ASC')
+        .limit(MAX_SUMMARY_RESULTS)
+    end
   end
+
 
   def links
     TopicLink
@@ -105,19 +130,36 @@ class UserSummary
   def most_replied_to_users
     replied_users = {}
 
-    Post
-      .joins(:topic)
-      .joins('JOIN posts replies ON posts.topic_id = replies.topic_id AND posts.reply_to_post_number = replies.post_number')
-      .includes(:topic)
-      .secured(@guardian)
-      .merge(Topic.listable_topics.visible.secured(@guardian))
-      .where(user: @user)
-      .where('replies.user_id <> ?', @user.id)
-      .group('replies.user_id')
-      .order('COUNT(*) DESC')
-      .limit(MAX_SUMMARY_RESULTS)
-      .pluck('replies.user_id, COUNT(*)')
-      .each { |r| replied_users[r[0].to_s] = r[1] }
+    if NewPostManager.queued_preview_enabled?
+      Post
+        .joins(:topic)
+        .joins('JOIN posts replies ON posts.topic_id = replies.topic_id AND posts.reply_to_post_number = replies.post_number')
+        .includes(:topic)
+        .secured(@guardian)
+        .hide_queued_preview(@guardian)
+        .merge(Topic.listable_topics.visible.secured(@guardian))
+        .where(user: @user)
+        .where('replies.user_id <> ?', @user.id)
+        .group('replies.user_id')
+        .order('COUNT(*) DESC')
+        .limit(MAX_SUMMARY_RESULTS)
+        .pluck('replies.user_id, COUNT(*)')
+        .each { |r| replied_users[r[0].to_s] = r[1] }
+    else
+      Post
+        .joins(:topic)
+        .joins('JOIN posts replies ON posts.topic_id = replies.topic_id AND posts.reply_to_post_number = replies.post_number')
+        .includes(:topic)
+        .secured(@guardian)
+        .merge(Topic.listable_topics.visible.secured(@guardian))
+        .where(user: @attr = user)
+        .where('replies.user_id <> ?', @user.id)
+        .group('replies.user_id')
+        .order('COUNT(*) DESC')
+        .limit(MAX_SUMMARY_RESULTS)
+        .pluck('replies.user_id, COUNT(*)')
+        .each { |r| replied_users[r[0].to_s] = r[1] }
+    end
 
     User.where(id: replied_users.keys)
         .pluck(:id, :username, :name, :uploaded_avatar_id)
@@ -138,6 +180,10 @@ class UserSummary
 
   def user_id
     @user.id
+  end
+
+  def user
+    @user
   end
 
   def user_stat

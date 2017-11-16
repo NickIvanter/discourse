@@ -50,4 +50,21 @@ class UserSummarySerializer < ApplicationSerializer
   def time_read
     AgeWords.age_words(object.time_read)
   end
+
+  def post_count
+    if NewPostManager.queued_preview_enabled?
+      Post.where(user: object.user).secured(scope).hide_queued_preview(scope).count
+    else
+      @post_count
+    end
+  end
+
+  def topic_count
+    if NewPostManager.queued_preview_enabled?
+      Topic.where(user: object.user).secured(scope).hide_queued_preview(scope).count
+    else
+      @topic_count
+    end
+  end
+
 end

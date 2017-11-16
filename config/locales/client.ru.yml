@@ -574,6 +574,10 @@ ru:
         disable: "Отключить оповещения"
         enable: "Включить оповещения"
         each_browser_note: "Примечание: эта настройка устанавливается в каждом браузере индивидуально."
+        currently_enabled: "Сейчас включены"
+        enable: "Enable Notifications"
+        currently_disabled: "Сейчас выключены"
+
       dismiss_notifications: "Отложить все"
       dismiss_notifications_tooltip: "Пометить все непрочитанные уведомления прочитанными"
       first_notification: "Ваше первое уведомление! Выберите его, чтобы начать."
@@ -629,6 +633,7 @@ ru:
       muted_users_instructions: "Не отображать уведомления от этих пользователей."
       muted_topics_link: "Показать темы \"Без уведомлений\""
       watched_topics_link: "Показать наблюдаемые темы"
+      tracked_topics_link: "Показать отслеживаемые темы"
       automatically_unpin_topics: "Автоматически откреплять топики после прочтения."
       apps: "Приложения"
       revoke_access: "Лишить прав доступа"
@@ -652,6 +657,15 @@ ru:
         move_to_archive: "Архив"
         failed_to_move: "Невозможно переместить выделенные сообщения (возможно, у вас проблемы с Интернетом)"
         select_all: "Выбрать все"
+      preferences_nav:
+        account: "Аккаунт"
+        profile: "Профиль"
+        emails: "E-mail"
+        notifications: "Уведомления"
+        categories: "Категории"
+        tags: "Тэги"
+        interface: "Интерфейс"
+        apps: "Приложения"
       change_password:
         success: "(письмо отправлено)"
         in_progress: "(отправка письма)"
@@ -846,9 +860,9 @@ ru:
           other: "сообщений написал"
         likes_given:
           one: "<i class='fa fa-heart'></i> поставил"
-          few: "<i class='fa fa-heart'></i> given"
-          many: "<i class='fa fa-heart'></i> given"
-          other: "<i class='fa fa-heart'></i> given"
+          few: "<i class='fa fa-heart'></i> поставил"
+          many: "<i class='fa fa-heart'></i> поставил"
+          other: "<i class='fa fa-heart'></i> поставил"
         likes_received:
           one: "<i class='fa fa-heart'></i> получил"
           few: "<i class='fa fa-heart'></i> получил"
@@ -1434,6 +1448,49 @@ ru:
       jump_reply_up: перейти к более ранним ответам
       jump_reply_down: перейти к более поздним ответам
       deleted: "Тема удалена"
+
+      topic_status_update:
+        title: "Set Topic Timer"
+        save: "Set Timer"
+        num_of_hours: "Number of hours:"
+        remove: "Remove Timer"
+        publish_to: "Publish To:"
+        when: "When:"
+      auto_update_input:
+        none: "---"
+        later_today: "Later today"
+        tomorrow: "Tomorrow"
+        later_this_week: "Later this week"
+        this_weekend: "This weekend"
+        next_week: "Next week"
+        next_month: "Next month"
+        pick_date_and_time: "Pick date and time"
+        set_based_on_last_post: "Close based on last post"
+      publish_to_category:
+        title: "Schedule Publishing"
+      temp_open:
+        title: "Open Temporarily"
+      auto_reopen:
+        title: "Auto-open Topic"
+      temp_close:
+        title: "Close Temporarily"
+      auto_close:
+        title: "Auto-Close Topic"
+        label: "Auto-close topic hours:"
+        error: "Please enter a valid value."
+        based_on_last_post: "Don't close until the last post in the topic is at least this old."
+      auto_delete:
+        title: "Auto-Delete Topic"
+      reminder:
+        title: "Remind Me"
+
+      status_update_notice:
+        auto_open: "This topic will automatically open %{timeLeft}."
+        auto_close: "This topic will automatically close %{timeLeft}."
+        auto_publish_to_category: "This topic will be published to <a href=%{categoryUrl}>#%{categoryName}</a> %{timeLeft}."
+        auto_close_based_on_last_post: "This topic will close %{duration} after the last reply."
+        auto_delete: "This topic will be automatically deleted %{timeLeft}."
+        auto_reminder: "You will be reminded about this topic %{timeLeft}."
       auto_close_title: 'Настройки закрытия темы'
       auto_close_immediate:
         one: "Последнее сообщение в этой теме отправлено 1 час назад, поэтому данная тема будет закрыта незамедлительно."
@@ -1510,6 +1567,7 @@ ru:
         reset_read: "Сбросить счетчики"
         make_public: "Сделать тему публичной"
         make_private: "Сделать тему приватной"
+        timed_update: "Set Topic Timer..."
       feature:
         pin: "Закрепить тему"
         unpin: "Открепить тему"
@@ -1633,6 +1691,7 @@ ru:
           other: "Пожалуйста, выберите нового владельца {{count}} сообщений от <b>{{old_user}}</b>."
         instructions_warn: "Обратите внимание, что все уведомления об этом сообщении не будут переданы новому пользователю задним числом. <br>Внимание: В настоящее время никакие данные, имеющие отношение к сообщению, не передаются новому пользователю. Используйте с осторожностью."
       change_timestamp:
+        title: "Изменить временную метку"
         action: "изменить временную метку"
         invalid_timestamp: "Временная метка не может быть в будущем"
         error: "При изменении временной метки темы возникла ошибка"

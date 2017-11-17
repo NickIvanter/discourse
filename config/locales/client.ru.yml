@@ -137,6 +137,7 @@ ru:
           other: "%{count} лет спустя"
       previous_month: 'Предыдущий месяц'
       next_month: 'Следующий месяц'
+      placeholder: 'Укажите дату'
     share:
       topic: 'Поделиться ссылкой на эту тему'
       post: 'Ссылка на сообщение №%{postNumber}'

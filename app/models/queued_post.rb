@@ -87,8 +87,8 @@ class QueuedPost < ActiveRecord::Base
 
   # Delete queued_preview post and topic if any
   def destroy_queued_preview!
-    queued_preview_post_map.post.destroy if queued_preview_post_map.present? && queued_preview_post_map.post_id.present?
-    queued_preview_post_map.topic.destroy if queued_preview_post_map.present? && queued_preview_post_map.topic_id.present?
+    queued_preview_post_map.post.destroy if queued_preview_post_map.present? && queued_preview_post_map.post_id.present? && queued_preview_post_map.post.present?
+    queued_preview_post_map.topic.destroy if queued_preview_post_map.present? && queued_preview_post_map.topic_id.present? && queued_preview_post_map.topic.present?
   end
 
   def cleanup_hideing!
@@ -107,7 +107,7 @@ class QueuedPost < ActiveRecord::Base
     if queued_preview_post_map.present? && queued_preview_post_map.new_topic?
       post_options['old_topic_id'] = queued_preview_post_map.topic_id
       save
-      QueuedPost.where('topic_id = ?', queued_preview_post_map.topic_id).each do |queued|
+      QueuedPost.where('topic_id = ? AND state <> ?', queued_preview_post_map.topic_id, QueuedPost.states[:rejected]).each do |queued|
         queued.reject! rejected_by
       end
     end

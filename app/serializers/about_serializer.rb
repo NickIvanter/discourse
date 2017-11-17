@@ -7,9 +7,14 @@ class AboutSerializer < ApplicationSerializer
              :title,
              :locale,
              :version,
-             :https
+             :https,
+             :staff
 
   def stats
     object.class.fetch_cached_stats || Jobs::AboutStats.new.execute({})
+  end
+
+  def staff
+    scope.is_staff?
   end
 end

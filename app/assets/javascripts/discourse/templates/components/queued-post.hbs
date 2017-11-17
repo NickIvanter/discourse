@@ -6,9 +6,13 @@
   </div>
   <div class='cooked'>
     <div class='names'>
-      <span class="username">
+      <span class="first full-name username">
         {{#user-link user=post.user}}
-          {{post.user.username}}
+        {{#if post.user.name}}
+        {{post.user.name}}
+        {{else}}
+        {{post.user.username}}
+        {{/if}}
         {{/user-link}}
         {{#if post.user.blocked}}
         <i class='fa fa-ban' title='{{i18n "user.blocked_tooltip"}}'></i>

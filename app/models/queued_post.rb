@@ -96,7 +96,7 @@ class QueuedPost < ActiveRecord::Base
   end
 
   def edit_queued_preview!(raw)
-    if queued_preview_post_map.present? && queued_preview_post_map.post_id.present?
+    if queued_preview_post_map.present? && queued_preview_post_map.post_id.present? && queued_preview_post_map.post.present?
       post = Post.find(queued_preview_post_map.post_id)
       post.update_column(:raw, raw)
       post.rebake!

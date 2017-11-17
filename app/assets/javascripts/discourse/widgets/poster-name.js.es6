@@ -59,8 +59,12 @@ export default createWidget('poster-name', {
 
     // Real name
     if (contents.length == 2) {
-      contents.shift(); // Drop username
-      contents[0].properties.className = 'full-name username'; // Decorate full-name as username
+      if (this.siteSettings.prioritize_username_in_ux) {
+        contents.shift(); // Drop username
+      } else {
+        contents.pop(); // Drop username
+      }
+      contents[0].properties.className = 'first full-name'; // Decorate full-name as first name
     }
 
     return contents;

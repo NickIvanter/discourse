@@ -10,6 +10,7 @@ export function wantsNewWindow(e) {
   This jQuery code intercepts clicks on those links and routes them properly.
 **/
 export default function interceptClick(e) {
+    console.log('INTERCEPT');
   if (wantsNewWindow(e)) { return; }
 
   const $currentTarget = $(e.currentTarget),
@@ -29,7 +30,9 @@ export default function interceptClick(e) {
        $currentTarget.hasClass('ember-view')) ||
       $currentTarget.hasClass('lightbox') ||
       href.indexOf("mailto:") === 0 ||
-      (href.match(/^http[s]?:\/\//i) && !href.match(new RegExp("^https?:\\/\\/" + window.location.hostname, "i")))) {
+      //(href.match(/^http[s]?:\/\//i) && !href.match(new RegExp("^https?:\\/\\/" + window.location.hostname, "i")))
+      !DiscourseURL.isInternal(href)
+     ) {
 
     return;
   }

@@ -10,7 +10,6 @@ export function wantsNewWindow(e) {
   This jQuery code intercepts clicks on those links and routes them properly.
 **/
 export default function interceptClick(e) {
-    console.log('INTERCEPT');
   if (wantsNewWindow(e)) { return; }
 
   const $currentTarget = $(e.currentTarget),

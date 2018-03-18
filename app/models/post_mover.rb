@@ -48,6 +48,7 @@ class PostMover
     update_statistics
     update_user_actions
     set_last_post_user_id(destination_topic)
+    update_notifications_in_destination_topic
 
     if moving_all_posts
       @original_topic.update_status('closed', true, @user)
@@ -183,6 +184,16 @@ class PostMover
       post_ids: post_ids,
       moved_by_id: user.id
     )
+  end
+
+  # Copy original topic notification levels to destiation topic for all original users
+  def update_notifications_in_destination_topic
+    original_topic.topic_users.each do |topicUser|
+      destination_topicUser = TopicUser.find_or_initialize_by(user_id: topicUser.user_id, topic_id: destination_topic.id)
+      destination_topicUser.notification_level = topicUser.notification_level
+      destination_topicUser.notifications_reason_id = topicUser.notifications_reason_id
+      destination_topicUser.save
+    end
   end
 
   def create_moderator_post_in_original_topic

@@ -189,9 +189,12 @@ class PostMover
   # Copy original topic notification levels to destiation topic for all original users
   def update_notifications_in_destination_topic
     original_topic.topic_users.each do |topicUser|
+      topicUserGuardian = Guardian.new(topicUser.user)
       destination_topicUser = TopicUser.find_or_initialize_by(user_id: topicUser.user_id, topic_id: destination_topic.id)
       destination_topicUser.notification_level = topicUser.notification_level
       destination_topicUser.notifications_reason_id = topicUser.notifications_reason_id
+      destination_topicUser.highest_seen_post_number = destination_topic.hide_highest_post_number(topicUserGuardian)
+      destination_topicUser.last_read_post_number = destination_topicUser.highest_seen_post_number
       destination_topicUser.save
     end
   end

@@ -159,6 +159,13 @@ class UserNotifications < ActionMailer::Base
   end
 
 
+  def user_liked(user, opts)
+    opts[:allow_reply_by_email] = false
+    opts[:use_site_subject] = false
+    opts[:show_category_in_subject] = true
+    notification_email(user, opts)
+  end
+
   def user_replied(user, opts)
     opts[:allow_reply_by_email] = true
     opts[:use_site_subject] = true

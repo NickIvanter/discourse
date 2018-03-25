@@ -47,6 +47,10 @@ class NotificationEmailer
       enqueue(:user_invited_to_topic, private_delay)
     end
 
+    def liked
+      enqueue :user_liked
+    end
+
     def self.notification_params(notification, type)
       post_id = (notification.data_hash[:original_post_id] || notification.post_id).to_i
 

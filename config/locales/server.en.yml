@@ -2479,6 +2479,16 @@ en:
 
         %{respond_instructions}
 
+    user_liked:
+      title: "User Liked"
+      subject_template: "[%{email_prefix}] [Liked] %{topic_title}"
+      text_body_template: |
+        %{header_instructions}
+
+        %{message}
+
+        %{context}
+
     user_replied_pm:
       title: "User Replied PM"
       subject_template: "[%{email_prefix}] [PM] %{topic_title}"

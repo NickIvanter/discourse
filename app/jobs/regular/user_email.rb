@@ -37,6 +37,12 @@ module Jobs
                                                args[:email_token],
                                                args[:to_address])
 
+      # Fire webhook instead of sending email for likes
+      if notification.present? && notification.notification_type == Notification.types[:liked]
+        WebHook.enqueue_post_hooks(:post_liked, post)
+        return skip(I18n.t('email_log.liked_webhook'))
+      end
+
       if message
         Email::Sender.new(message, type, user).send
       else

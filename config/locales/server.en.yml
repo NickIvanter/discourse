@@ -2799,6 +2799,7 @@ en:
     text_part_body_blank: "text_part.body is blank"
     body_blank: "body is blank"
     no_echo_mailing_list_mode: "Mailing list notifications disabled for user's own posts"
+    liked_webhook: "Webhook called for liked post"
 
   color_schemes:
     base_theme_name: "Base"

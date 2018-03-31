@@ -1,4 +1,9 @@
 class WebHookPostSerializer < PostSerializer
+
+  attributes :user_email,
+             :like_count,
+             :full_url
+
   def include_topic_title?
     true
   end
@@ -14,4 +19,9 @@ class WebHookPostSerializer < PostSerializer
       false
     end
   end
+
+  def user_email
+    object.user.email
+  end
+
 end

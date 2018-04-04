@@ -102,7 +102,7 @@ module Jobs
         end
 
         unless user.user_option.email_always?
-          if ((notification && notification.read?) || (post && post.seen?(user))) && notification.type != Notification.types[:liked]
+          if ((notification && notification.read?) || (post && post.seen?(user))) && notification.notification_type != Notification.types[:liked]
             return skip_message(I18n.t('email_log.notification_already_read'))
           end
         end

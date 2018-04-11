@@ -28,6 +28,12 @@ module Jobs
         notification = Notification.find_by(id: args[:notification_id])
       end
 
+      # Fire webhook instead of sending email for likes
+      if notification && notification.notification_type == Notification.types[:liked]
+        WebHook.enqueue_post_hooks(:post_liked, post)
+        return skip(I18n.t('email_log.liked_webhook'))
+      end
+
       message, skip_reason = message_for_email(user,
                                                post,
                                                type,
@@ -36,12 +42,6 @@ module Jobs
                                                args[:notification_data_hash],
                                                args[:email_token],
                                                args[:to_address])
-
-      # Fire webhook instead of sending email for likes
-      if notification && notification.notification_type == Notification.types[:liked]
-        WebHook.enqueue_post_hooks(:post_liked, post)
-        return skip(I18n.t('email_log.liked_webhook'))
-      end
 
       if message
         Email::Sender.new(message, type, user).send

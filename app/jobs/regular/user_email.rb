@@ -38,7 +38,7 @@ module Jobs
                                                args[:to_address])
 
       # Fire webhook instead of sending email for likes
-      if notification.present? && notification.notification_type == Notification.types[:liked]
+      if notification && notification.notification_type == Notification.types[:liked]
         WebHook.enqueue_post_hooks(:post_liked, post)
         return skip(I18n.t('email_log.liked_webhook'))
       end
@@ -102,7 +102,7 @@ module Jobs
         end
 
         unless user.user_option.email_always?
-          if ((notification && notification.read?) || (post && post.seen?(user))) && notification.notification_type != Notification.types[:liked]
+          if (notification && notification.read? && notification.notification_type != Notification.types[:liked]) || (post && post.seen?(user))
             return skip_message(I18n.t('email_log.notification_already_read'))
           end
         end
